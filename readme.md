@@ -1,4 +1,4 @@
-**Git setup**
+**Git Setup**
 On the remote server:
 >mkdir aedes_aegypti.git
 >cd aedes_aegypti.git/
