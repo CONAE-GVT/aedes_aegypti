@@ -37,37 +37,9 @@ def getValuesFromXls(filename,initial_date,date_column,value_column,filter_value
         #print('world.indices['+str(delta.days)+']='+str(worksheet.cell(row, value_column).value)) #just for dengueme
     return data
 
-
-
-def getValuesFromTxt(filename):
-    with open(filename) as f:
-        content = f.readlines()
-
-    content = [x.strip() for x in content]#strip trailing \n's
-    for line in content:
-        line=' '.join(line.split())#replace several spaces by one space
-        splitted_line=line.split(' ')
-        if(len(splitted_line)>4 and splitted_line[3]== 'CORDOBA' and splitted_line[4]=='OBSERVATORIO'):
-            return {'max':splitted_line[1],'min':splitted_line[2]}
-
 def daterange(start_date, end_date):
     for n in range(int ((end_date - start_date).days)):
         yield start_date + datetime.timedelta(n)
-
-
-def getAverageTemperaturesFromTxts(folder,start_date,end_date):#in Kelvin
-
-    temperatures={}
-    for date in daterange(start_date,end_date):
-        filename='obs'+ str(date.year)+date.strftime('%m') +date.strftime('%d') + '.txt'
-        temperatures[str(date)]=getValuesFromTxt(folder+'/'+filename)
-
-
-    average_temperatures=[]
-    for date in daterange(start_date,end_date):
-        temperature= temperatures[str(date)]
-        average_temperatures.append((float(temperature['max'])+float(temperature['min']))/2.0  + 273.15)
-    return average_temperatures
 
 
 def getValuesFromCsv(filename,start_date,end_date,value_column):

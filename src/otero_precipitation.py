@@ -11,12 +11,12 @@ import math
 
 
 
-#TODO:change the name of the following arrays
-R_D_298K_=[0.24,0.2088,0.384,0.216,0.372]
+
+vR_D_298K=[0.24,0.2088,0.384,0.216,0.372]
 #ro_25_=[0.01066,0.00873,0.01610,0.00898] #replaced by R_D_298K. which:  R_D_298K ~ ro_25*24  #(24 hours)
-deltaH_A_=[10798.0,26018.0,14931.0,15725.0,15725.0]
-deltaH_H_=[100000.0,55990.0,-472379.00,1756481.0,1756481.0] #-472379 vs. -473379
-T_1_2H_=[14184.0,304.6,148.0,447.2,447.2]
+vDeltaH_A=[10798.0,26018.0,14931.0,15725.0,15725.0]
+vDeltaH_H=[100000.0,55990.0,-472379.00,1756481.0,1756481.0] #-472379 vs. -473379
+vT_1_2H=[14184.0,304.6,148.0,447.2,447.2]
 
 
 EGG=0
@@ -106,11 +106,11 @@ def vGamma(vL,vBS_a,vW):
 
 def R_D(stage,T_t):#day^-1
     R=1.987 # universal gas constant
-    R_D_298K=R_D_298K_[stage]
+    R_D_298K=vR_D_298K[stage]
     #ro_25=ro_25_[stage]
-    deltaH_A=deltaH_A_[stage]
-    deltaH_H=deltaH_H_[stage]
-    T_1_2H=T_1_2H_[stage] # K
+    deltaH_A=vDeltaH_A[stage]
+    deltaH_H=vDeltaH_H[stage]
+    T_1_2H=vT_1_2H[stage] # K
     return R_D_298K * (T_t/298.0) * math.exp( (deltaH_A/R)* ((1.0/298.0)- (1.0/T_t)) ) / ( 1.0+ math.exp( (deltaH_H/R)* ((1.0/T_1_2H)-(1.0/T_t)) ) )
 
 

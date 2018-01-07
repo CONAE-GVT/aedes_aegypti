@@ -1,3 +1,9 @@
+**Run**
+>python src/otero_precipitation.py
+>python src/tests.py
+
+
+
 **Git Setup**
 On the remote server:
 >mkdir aedes_aegypti.git
