@@ -21,3 +21,9 @@ To exequiel@zotac.hopto.org:/home/exequiel/repositories/aedes_aegypti.git
  * [new branch]      master -> master
 
 *Not sure if I should on the local, create a repo and push it to the origin (instead of cloning, changing and pushing). like in https://feeding.cloud.geek.nz/posts/setting-up-centralied-git-repository/*
+
+
+**To clone the project**
+>git clone exequiel@zotac.hopto.org:/home/exequiel/repositories/aedes_aegypti.git
+or
+>git clone ssh://exequiel@zotac.hopto.org:8080/home/exequiel/repositories/aedes_aegypti.git
