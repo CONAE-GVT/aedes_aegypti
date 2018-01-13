@@ -5,7 +5,6 @@ import pylab as pl
 import numpy as np
 import matplotlib
 import matplotlib.dates
-import scipy.integrate as spi
 from scipy.stats import stats
 import otero_precipitation as op
 
@@ -23,14 +22,8 @@ def discreteW(a0,BS_c,BS_s,precipitations):#in l
 def step(values,t):
     return values[int(t)]
 
-def solveEquations(INPUT = [100.0, 0.0,0.0,0.0,0.0]+ [op.vBS_oc[i]/2. for i in range(0,op.n)]):#Convenience method for some tests
-    time_range = np.linspace(0, (op.end_date - op.start_date).days-25, (op.end_date - op.start_date).days * 10)
-    RES = spi.odeint(op.diff_eqs,INPUT,time_range)#,hmax=0.01
-    #RES = spi.odeint(op.diff_eqs,INPUT,time_range,hmax=0.5,rtol=[1e-2]*5 +[1e-2]*op.n ,atol=[1]*5 +[1e-4]*op.n)#,hmax=0.01
-    return time_range,INPUT,RES
-
 def printCorrelation():
-    time_range,INPUT,RES=solveEquations()
+    time_range,INPUT,RES=op.solveEquations()
     vT=np.vectorize(op.T)
     print('(Pearson s correlation coefficient,2-tailed p-value): ' + str(stats.pearsonr(RES[:,op.LARVAE], vT(time_range))) )
 
@@ -46,7 +39,7 @@ def testAps():
             print("%i: %f vs. %f " % (t,aps_test[0],op.precipitations[t]) )
             #print("%f: %f vs. %f " % (t,aps_test[0],step_test[0]))
 def testdW():
-    time_range,INPUT,RES=solveEquations()
+    time_range,INPUT,RES=op.solveEquations()
     days=range(0,(op.end_date - op.start_date).days)
     accumulated_water=[discreteW(INPUT[op.WATER+i],op.vBS_oc[i],op.vBS_os[i],op.precipitations) for i in range(0,op.n)]
     print('dW_test')
@@ -65,10 +58,10 @@ def testdW():
     pl.legend(loc=0)
     pl.show()
 
-def testRESvsOldRES():
-    time_range,INPUT,RES=solveEquations()
+def testRESvsOldRES(filename):
+    time_range,INPUT,RES=op.solveEquations()
     print("||old_RES-RES|| = "),
-    old_RES=np.load('RES_old.npy')
+    old_RES=np.load(filename)
     print(np.linalg.norm(old_RES-RES))
     #np.save('backup/RES_%s.npy'%(datetime.datetime.now().isoformat()),RES)
 
@@ -83,7 +76,7 @@ def testModel(vBS_oc=np.array([0.5]),vBS_od=np.array([1.]), precipitations=op.pr
 
     op.precipitations=precipitations
     op.p=op.getAsLambdaFunction(op.aps,op.precipitations)
-    time_range,INPUT,RES=solveEquations([100.0, 0.0,0.0,0.0,0.0]+ [0./2. for i in range(0,op.n)])
+    time_range,INPUT,RES=op.solveEquations([100.0, 0.0,0.0,0.0,0.0]+ [0./2. for i in range(0,op.n)])
 
     #Ploting
     pl.figure()
@@ -158,6 +151,8 @@ if(__name__ == '__main__'):
     #printCorrelation()
     #testAps()
     #testdW()
+    testRESvsOldRES('odeint_otero_precipitation.npy')
+    quit()
 
     vvBS_oc=np.array([np.array([0.1]),np.array([0.5]),np.array([1.2])])#in litres
     #pathological fake precipitations

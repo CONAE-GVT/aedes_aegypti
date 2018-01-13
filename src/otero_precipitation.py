@@ -114,13 +114,13 @@ def R_D(stage,T_t):#day^-1
     return R_D_298K * (T_t/298.0) * math.exp( (deltaH_A/R)* ((1.0/298.0)- (1.0/T_t)) ) / ( 1.0+ math.exp( (deltaH_H/R)* ((1.0/T_1_2H)-(1.0/T_t)) ) )
 
 
-a,b,c = fitter.getOptimalParameters(utils.getAverageTemperaturesFromCsv(WEATHER_STATION_DATA_FILENAME,start_date,end_date))#parameters for T(t)
-def T(t):#K, beginning on the first of july
-    return a + b * math.cos( (2.0* math.pi * t)/365.25 + c) + 273.15 #To Kelvin
+#a,b,c = fitter.getOptimalParameters(utils.getAverageTemperaturesFromCsv(WEATHER_STATION_DATA_FILENAME,start_date,end_date))#parameters for T(t)
+#def T(t):#K, beginning on the first of july
+#    return a + b * math.cos( (2.0* math.pi * t)/365.25 + c) + 273.15 #To Kelvin
 #T=fourier.fourier(utils.getAverageTemperaturesFromCsv(WEATHER_STATION_DATA_FILENAME,start_date,end_date),50)
 #time_domain,min_max_temperatures=utils.getMinMaxTemperaturesFromCsv(WEATHER_STATION_DATA_FILENAME,start_date,end_date)
 #T = interpolate.interp1d(time_domain,min_max_temperatures,'cubic')
-#T=interpolate.interp1d(range(0,(end_date - start_date).days),utils.getAverageTemperaturesFromCsv(WEATHER_STATION_DATA_FILENAME,start_date,end_date),'cubic')
+T=interpolate.interp1d(range(0,(end_date - start_date).days),utils.getAverageTemperaturesFromCsv(WEATHER_STATION_DATA_FILENAME,start_date,end_date),'cubic')
 
 def gamma(L,BS,W):
     epsilon=1e-4
@@ -199,11 +199,16 @@ def diff_eqs(INP,t):
 
     return Y   # For odeint
 
+def solveEquations(INPUT = [100.0, 0.0,0.0,0.0,0.0]+ [0. for i in range(0,n)]):
+    time_range = np.linspace(0, (end_date - start_date).days-2, (end_date - start_date).days * 10)
+    RES = spi.odeint(diff_eqs,INPUT,time_range,hmax=0.01)
+    #RES = spi.odeint(op.diff_eqs,INPUT,time_range,hmax=0.5,rtol=[1e-2]*5 +[1e-2]*op.n ,atol=[1]*5 +[1e-4]*op.n)#,hmax=0.01
+    return time_range,INPUT,RES
+
+
 if(__name__ == '__main__'):
     #Solve differential equations
-    time_range = np.linspace(0, (end_date - start_date).days-2, (end_date - start_date).days * 10)
-    INPUT = [100.0, 0.0,0.0,0.0,0.0]+ [0. for i in range(0,n)]#<---- initial conditions #HARDCODED!
-    RES = spi.odeint(diff_eqs,INPUT,time_range,hmax=0.01)#,hmax=0.01
+    time_range,INPUT,RES=solveEquations()
 
     #Ploting
     #Amount of larvaes,pupaes and adults
@@ -250,6 +255,5 @@ if(__name__ == '__main__'):
     pl.xlabel('Time(in days starting in July)')
     pl.ylabel('')
     pl.legend(loc=0,prop={'size':10})
-
 
     pl.show()
