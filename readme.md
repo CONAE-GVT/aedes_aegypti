@@ -27,3 +27,6 @@ To exequiel@zotac.hopto.org:/home/exequiel/repositories/aedes_aegypti.git
 >git clone exequiel@zotac.hopto.org:/home/exequiel/repositories/aedes_aegypti.git
 or
 >git clone ssh://exequiel@zotac.hopto.org:8080/home/exequiel/repositories/aedes_aegypti.git
+
+**Profiling**
+>python -m cProfile -s cumtime src/tests.py  > p.txt

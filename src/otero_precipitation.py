@@ -86,14 +86,14 @@ dW= { QG(BS_s,t)                  if W <= 0.0
 Note: in the implementation we needed to add functions to make function continuous, otherwise odeint breaks
 '''
 
-def dW(W,BS_c,BS_s,t):#in l/day
+def dW(W,BS_c,BS_s,T_t,t):#in l/day
     epsilon=1e-3
     if(0+epsilon < W < BS_c-epsilon):
-        return QG(BS_s,t)-QR(ws_s*ws(t),BS_s,T(t))
+        return QG(BS_s,t)-QR(ws_s*ws(t),BS_s,T_t)
     elif(W <= 0.0+epsilon):
-        return QG(BS_s,t) - QR(ws_s*ws(t),BS_s,T(t))*(W/epsilon)
+        return QG(BS_s,t) - QR(ws_s*ws(t),BS_s,T_t)*(W/epsilon)
     elif( W >= BS_c-epsilon):
-        return QG(BS_s,t)*((BS_c-W)/epsilon) - QR(ws_s*ws(t),BS_s,T(t))
+        return QG(BS_s,t)*((BS_c-W)/epsilon) - QR(ws_s*ws(t),BS_s,T_t)
 
 def a0(W):
     return 70.0* W
@@ -140,12 +140,12 @@ def gamma(L,BS,W):
 def beta(vW):#~1 if we have water,~0 if we dont
     return np.dot(vBS_od,vW/(vW+1e-4))+ np.dot(vBS_id,np.ones(len(vBS_id)))#TODO:check!
 
-def dE(E,L,P,A1,A2,vW,t):
+def dE(E,L,P,A1,A2,vW,T_t):
     egn=63.0*beta(vW)#The amount of eggs goes to zero when vW goes to zero.In the 1-dimensional case. when W=1e-3, egn(1e-3)~egn(0.5)/2#TODO:instead of 1e-3, it whould be a value related to the min water needed to lay eggs
     me=0.01#mortality of the egg, for T in [278,303]
-    elr=R_D(EGG,T(t))
-    ovr1=R_D(ADULT1,T(t))
-    ovr2=R_D(ADULT2,T(t))
+    elr=R_D(EGG,T_t)
+    ovr1=R_D(ADULT1,T_t)
+    ovr2=R_D(ADULT2,T_t)
     v1=np.ones((n))
     #  ( (1,1,..1) - vGamma(vL,vBS_a,vW) ) . vE = (1- γ(vL[1],vBS_a[1],vW[1],...) ) . vE= Σ (1- γ(vL[i],vBS_a[i],vW[i])) * vE[i]
     inh_o=np.dot(v1 -vGamma(L*vBS_od,BS_a*vBS_od,vW    ) , E*vBS_od )
@@ -154,10 +154,10 @@ def dE(E,L,P,A1,A2,vW,t):
     inh_i=np.dot(v1 -vGamma(L*vBS_id,BS_a*vBS_id,vBS_ic) , E*vBS_id )
     return egn*( ovr1 *A1  + ovr2* A2) - me *E - elr* (inh_o + inh_i )
 
-def dL(E,L,P,A1,A2,vW,t):
-    elr=R_D(EGG,T(t))
-    lpr=R_D(LARVAE,T(t))
-    ml=0.01 + 0.9725 * math.exp(-(T(t)-278.0)/2.7035)#mortality of the larvae, for T in [278,303]
+def dL(E,L,P,A1,A2,vW,T_t):
+    elr=R_D(EGG,T_t)
+    lpr=R_D(LARVAE,T_t)
+    ml=0.01 + 0.9725 * math.exp(-(T_t-278.0)/2.7035)#mortality of the larvae, for T in [278,303]
     alpha0=1.5#Parameter to be fitted #1.0#HARDCODED!!!
     alpha=alpha0/BS_a#Σ vα[i] * vL[i]^2= Σ α0/(BS_a* vBS_d[i]) * (L*vBS_d[i])^2 = Σ α0/BS_a * L^2 * vBS_d[i] = α *L^2 *Σ BS_d[i]=α L^2 #Note: on why this is ok even though BS changed.
     v1=np.ones((n))
@@ -166,37 +166,37 @@ def dL(E,L,P,A1,A2,vW,t):
     inh_i=np.dot(v1 -vGamma(L*vBS_id,BS_a*vBS_id,vBS_ic) , E*vBS_id )
     return elr* (inh_o+inh_i ) - ml*L - alpha* L*L - lpr *L -35.6464*(1.-beta(vW))*L#-24.*(1.-beta(vW))*L# -log(1e-4/5502.)/(1.)=17.823207313460703
 
-def dP(E,L,P,A1,A2,t):
-    lpr=R_D(LARVAE,T(t))
-    par=R_D(PUPAE,T(t))
-    mp=0.01 + 0.9725 * math.exp(-(T(t)-278.0)/2.7035)#death of pupae
+def dP(E,L,P,A1,A2,T_t):
+    lpr=R_D(LARVAE,T_t)
+    par=R_D(PUPAE,T_t)
+    mp=0.01 + 0.9725 * math.exp(-(T_t-278.0)/2.7035)#death of pupae
     return lpr*L - mp*P  - par*P
 
-def dA1(E,L,P,A1,A2,t):
-    par=R_D(PUPAE,T(t))
-    ovr1=R_D(ADULT1,T(t))
+def dA1(E,L,P,A1,A2,T_t):
+    par=R_D(PUPAE,T_t)
+    ovr1=R_D(ADULT1,T_t)
     ef=0.83#emergence factor
     ma=0.09#for T in [278,303]
     return par*ef*P/2.0 - ma*A1 - ovr1*A1
 
-def dA2(E,L,P,A1,A2,t):
-    ovr1=R_D(ADULT1,T(t))
+def dA2(E,L,P,A1,A2,T_t):
+    ovr1=R_D(ADULT1,T_t)
     ma=0.09#for T in [278,303]
     return ovr1*A1 - ma*A2
 
-def diff_eqs(INP,t):
+def diff_eqs(V,t):
     '''The main set of equations'''
     Y=np.zeros((5+n))
-    V = INP
     #V[V<0]=0#this is to make rk work
+    T_t=T(t)
     vW=np.array([V[WATER+i] for i in range(0,n)])
-    Y[EGG] = dE(V[0],V[1],V[2],V[3],V[4],vW,t)
-    Y[LARVAE] = dL(V[0],V[1],V[2],V[3],V[4],vW,t)
-    Y[PUPAE] = dP(V[0],V[1],V[2],V[3],V[4],t)
-    Y[ADULT1] = dA1(V[0],V[1],V[2],V[3],V[4],t)
-    Y[ADULT2] = dA2(V[0],V[1],V[2],V[3],V[4],t)
+    Y[EGG] = dE(V[0],V[1],V[2],V[3],V[4],vW,T_t)
+    Y[LARVAE] = dL(V[0],V[1],V[2],V[3],V[4],vW,T_t)
+    Y[PUPAE] = dP(V[0],V[1],V[2],V[3],V[4],T_t)
+    Y[ADULT1] = dA1(V[0],V[1],V[2],V[3],V[4],T_t)
+    Y[ADULT2] = dA2(V[0],V[1],V[2],V[3],V[4],T_t)
     for i in range(0,n):
-        Y[WATER+i]=dW(V[5+i],vBS_oc[i],vBS_os[i],t)
+        Y[WATER+i]=dW(V[5+i],vBS_oc[i],vBS_os[i],T_t,t)
 
     return Y   # For odeint
 
