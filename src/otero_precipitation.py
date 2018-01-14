@@ -120,7 +120,7 @@ def R_D(stage,T_t):#day^-1
 #T=fourier.fourier(utils.getAverageTemperaturesFromCsv(WEATHER_STATION_DATA_FILENAME,start_date,end_date),50)
 #time_domain,min_max_temperatures=utils.getMinMaxTemperaturesFromCsv(WEATHER_STATION_DATA_FILENAME,start_date,end_date)
 #T = interpolate.interp1d(time_domain,min_max_temperatures,'cubic')
-T=interpolate.interp1d(range(0,(end_date - start_date).days),utils.getAverageTemperaturesFromCsv(WEATHER_STATION_DATA_FILENAME,start_date,end_date),'cubic')
+T=interpolate.InterpolatedUnivariateSpline(range(0,(end_date - start_date).days),utils.getAverageTemperaturesFromCsv(WEATHER_STATION_DATA_FILENAME,start_date,end_date))
 
 def gamma(L,BS,W):
     epsilon=1e-4
