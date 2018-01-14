@@ -8,7 +8,7 @@ import fourier
 import fitter
 import utils
 import math
-
+import rk
 
 
 
@@ -188,6 +188,7 @@ def diff_eqs(INP,t):
     '''The main set of equations'''
     Y=np.zeros((5+n))
     V = INP
+    #V[V<0]=0#this is to make rk work
     vW=np.array([V[WATER+i] for i in range(0,n)])
     Y[EGG] = dE(V[0],V[1],V[2],V[3],V[4],vW,t)
     Y[LARVAE] = dL(V[0],V[1],V[2],V[3],V[4],vW,t)
@@ -202,6 +203,7 @@ def diff_eqs(INP,t):
 def solveEquations(INPUT = [100.0, 0.0,0.0,0.0,0.0]+ [0. for i in range(0,n)]):
     time_range = np.linspace(0, (end_date - start_date).days-2, (end_date - start_date).days * 10)
     RES = spi.odeint(diff_eqs,INPUT,time_range,hmax=0.01)
+    #RES=rk.solve(diff_eqs,INPUT,time_range)
     #RES = spi.odeint(op.diff_eqs,INPUT,time_range,hmax=0.5,rtol=[1e-2]*5 +[1e-2]*op.n ,atol=[1]*5 +[1e-4]*op.n)#,hmax=0.01
     return time_range,INPUT,RES
 
