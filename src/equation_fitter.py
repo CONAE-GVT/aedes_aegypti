@@ -1,20 +1,21 @@
 #coding: utf-8
-from scipy.optimize import minimize
-import scipy.integrate as spi
+import os
 import math
 import utils
 import pylab as pl
 import numpy as np
 import multiprocessing as mp
 import otero_precipitation as op
+from scipy.optimize import minimize
 
 def nL_error(x,real_values):#Normalized Larvaes error#TODO: maybe it's best to use an interpolator polynomial of the real values
     op.vBS_od=x[0:op.n]#this is
     op.vBS_id=x[op.n:op.n+op.m]#a bad
     op.ws_s=x[op.n+op.m]#practice
-    RES = spi.odeint(op.diff_eqs,op.INPUT,op.time_range)#,hmax=0.01
+    time_range,INPUT,RES = op.solveEquations()
     nL=(1.0/max(RES[:,op.LARVAE])) * np.array(RES[:,op.LARVAE])
     error=sum([(real_values[t]-nL[t] )**2  for t in range(0,len(real_values)) if real_values[t]] )
+    print('pid %i :'%os.getpid()),
     print(op.vBS_od),
     print(op.vBS_id),
     print(op.ws_s),
@@ -64,9 +65,9 @@ if(__name__ == '__main__'):
     for i,opt in enumerate(vOpt):
         x=np.array(opt.x)
         vBS_od,vBS_id,ws_s=x[0:op.n],x[op.n:op.n+op.m],x[op.n+op.m]
-        RES = spi.odeint(op.diff_eqs,op.INPUT,op.time_range)#,hmax=0.01
+        time_range,INPUT,RES = op.solveEquations()
         pl.subplot(511 +i)
-        pl.plot(op.time_range, np.multiply(1.0/max(RES[:,op.LARVAE]), RES[:,op.LARVAE]), '-', label=vZones[i] +' Larvaes normalized')
+        pl.plot(time_range, np.multiply(1.0/max(RES[:,op.LARVAE]), RES[:,op.LARVAE]), '-', label=vZones[i] +' Larvaes normalized')
         pl.plot(range(0,len(vNormalized_his[i])),vNormalized_his[i], '^', label=vZones[i] +' Larvaes  normalized',clip_on=False, zorder=100,markersize=8)
         pl.legend(loc=0,prop={'size':10})
 
