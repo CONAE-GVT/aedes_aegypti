@@ -1,0 +1,7 @@
+{
+    "cmd": "pdflatex",
+    "args":["{FILE_ACTIVE}"],
+    "sh": false,
+    "cwd":"{FILE_ACTIVE_PATH}",
+    "keymap":"ctrl-b"
+}
