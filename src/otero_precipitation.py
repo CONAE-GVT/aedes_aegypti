@@ -140,7 +140,7 @@ def gamma(L,BS,W):
 def beta(vW):#~1 if we have water,~0 if we dont
     return np.dot(vBS_od,vW/(vW+1e-4))+ np.dot(vBS_id,np.ones(len(vBS_id)))#TODO:check!
 
-def dE(E,L,P,A1,A2,vW,T_t):
+def dE(E,L,A1,A2,vW,T_t):
     egn=63.0*beta(vW)#The amount of eggs goes to zero when vW goes to zero.In the 1-dimensional case. when W=1e-3, egn(1e-3)~egn(0.5)/2#TODO:instead of 1e-3, it whould be a value related to the min water needed to lay eggs
     me=0.01#mortality of the egg, for T in [278,303]
     elr=R_D(EGG,T_t)
@@ -154,7 +154,7 @@ def dE(E,L,P,A1,A2,vW,T_t):
     inh_i=np.dot(v1 -vGamma(L*vBS_id,BS_a*vBS_id,vBS_ic) , E*vBS_id )
     return egn*( ovr1 *A1  + ovr2* A2) - me *E - elr* (inh_o + inh_i )
 
-def dL(E,L,P,A1,A2,vW,T_t):
+def dL(E,L,vW,T_t):
     elr=R_D(EGG,T_t)
     lpr=R_D(LARVAE,T_t)
     ml=0.01 + 0.9725 * math.exp(-(T_t-278.0)/2.7035)#mortality of the larvae, for T in [278,303]
@@ -166,39 +166,40 @@ def dL(E,L,P,A1,A2,vW,T_t):
     inh_i=np.dot(v1 -vGamma(L*vBS_id,BS_a*vBS_id,vBS_ic) , E*vBS_id )
     return elr* (inh_o+inh_i ) - ml*L - alpha* L*L - lpr *L -35.6464*(1.-beta(vW))*L#-24.*(1.-beta(vW))*L# -log(1e-4/5502.)/(1.)=17.823207313460703
 
-def dP(E,L,P,A1,A2,T_t):
+def dP(L,P,T_t):
     lpr=R_D(LARVAE,T_t)
     par=R_D(PUPAE,T_t)
     mp=0.01 + 0.9725 * math.exp(-(T_t-278.0)/2.7035)#death of pupae
     return lpr*L - mp*P  - par*P
 
-def dA1(E,L,P,A1,A2,T_t):
+def dA1(P,A1,T_t):
     par=R_D(PUPAE,T_t)
     ovr1=R_D(ADULT1,T_t)
     ef=0.83#emergence factor
     ma=0.09#for T in [278,303]
     return par*ef*P/2.0 - ma*A1 - ovr1*A1
 
-def dA2(E,L,P,A1,A2,T_t):
+def dA2(A1,A2,T_t):
     ovr1=R_D(ADULT1,T_t)
     ma=0.09#for T in [278,303]
     return ovr1*A1 - ma*A2
 
-def diff_eqs(V,t):
+def diff_eqs(Y,t):
     '''The main set of equations'''
-    Y=np.zeros((5+n))
+    dY=np.zeros((5+n))
     #V[V<0]=0#this is to make rk work
     T_t=T(t)
-    vW=np.array([V[WATER+i] for i in range(0,n)])
-    Y[EGG] = dE(V[0],V[1],V[2],V[3],V[4],vW,T_t)
-    Y[LARVAE] = dL(V[0],V[1],V[2],V[3],V[4],vW,T_t)
-    Y[PUPAE] = dP(V[0],V[1],V[2],V[3],V[4],T_t)
-    Y[ADULT1] = dA1(V[0],V[1],V[2],V[3],V[4],T_t)
-    Y[ADULT2] = dA2(V[0],V[1],V[2],V[3],V[4],T_t)
-    for i in range(0,n):
-        Y[WATER+i]=dW(V[5+i],vBS_oc[i],vBS_os[i],T_t,t)
+    E,L,P,A1,A2=Y[:WATER]
+    vW=np.array(Y[WATER:])
 
-    return Y   # For odeint
+    dY[EGG]    = dE(E,L,A1,A2,vW,T_t)
+    dY[LARVAE] = dL(E,L,vW,T_t)
+    dY[PUPAE]  = dP(L,P,T_t)
+    dY[ADULT1] = dA1(P,A1,T_t)
+    dY[ADULT2] = dA2(A1,A2,T_t)
+    dY[WATER:] = [dW(vW[i],vBS_oc[i],vBS_os[i],T_t,t) for i in range(0,n)]
+
+    return dY   # For odeint
 
 def solveEquations(INPUT = [100.0, 0.0,0.0,0.0,0.0]+ [0. for i in range(0,n)]):
     time_range = np.linspace(0, (end_date - start_date).days-2, (end_date - start_date).days * 10)
