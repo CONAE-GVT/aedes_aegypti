@@ -151,7 +151,7 @@ if(__name__ == '__main__'):
     #printCorrelation()
     #testAps()
     #testdW()
-    testRESvsOldRES('odeint_otero_precipitation.npy')
+    testRESvsOldRES('data/private/odeint_otero_precipitation_10.npy')
     quit()
 
     vvBS_oc=np.array([np.array([0.1]),np.array([0.5]),np.array([1.2])])#in litres

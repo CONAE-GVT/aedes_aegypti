@@ -21,7 +21,20 @@ def solve(_dYdt,Y0,time_range):
 
 	return Y
 
+from scipy.integrate import ode
+def scipy_solve(_dYdt,Y0,time_range,name,kwargs):
+	def dYdt(Y,t): return np.array(_dYdt(t,Y))#decorate the function to return an np array and swap args.
+	r = ode(dYdt).set_integrator(name,**kwargs)
+	r.set_initial_value(Y0, time_range[0])
+	Y=np.zeros([len(time_range),len(Y0)])
 
+	for i,t in enumerate(time_range[:-1]):
+	    h=time_range[i+1]-time_range[i]
+	    Y[i+1]=r.integrate(r.t+h)
+	    if(not r.successful):
+	        break
+
+	return Y
 
 def diff_eqs(Y,t):
 	b = 0.25

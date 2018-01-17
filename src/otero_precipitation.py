@@ -204,6 +204,7 @@ def solveEquations(INPUT = [100.0, 0.0,0.0,0.0,0.0]+ [0. for i in range(0,n)]):
     time_range = np.linspace(0, (end_date - start_date).days-2, (end_date - start_date).days * 10)
     RES = spi.odeint(diff_eqs,INPUT,time_range,hmax=0.01)
     #RES=rk.solve(diff_eqs,INPUT,time_range)
+    #RES=rk.scipy_solve(diff_eqs,INPUT,time_range,'dopri',{'max_step':time_range[1]-time_range[0],'rtol':1e-3, 'atol':1e-6} )
     #RES = spi.odeint(op.diff_eqs,INPUT,time_range,hmax=0.5,rtol=[1e-2]*5 +[1e-2]*op.n ,atol=[1]*5 +[1e-4]*op.n)#,hmax=0.01
     return time_range,INPUT,RES
 
