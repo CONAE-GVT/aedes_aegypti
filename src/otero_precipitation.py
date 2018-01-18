@@ -187,7 +187,7 @@ def dA2(A1,A2,T_t):
 def diff_eqs(Y,t):
     '''The main set of equations'''
     dY=np.zeros((5+n))
-    #V[V<0]=0#this is to make rk work
+    #Y[Y<0]=0#this is to make rk work
     T_t=T(t)
     E,L,P,A1,A2=Y[:WATER]
     vW=np.array(Y[WATER:])
