@@ -66,12 +66,12 @@ def testRESvsOldRES(filename):
     #np.save('backup/RES_%s.npy'%(datetime.datetime.now().isoformat()),RES)
 
 
-def testModel(vBS_oc=np.array([0.5]),vBS_od=np.array([1.]), precipitations=op.precipitations):
+def testModel(vBS_oc=np.array([0.5]),vBS_os=math.pi*np.array([5.25**2]),vBS_od=np.array([1.]), precipitations=op.precipitations):
     assert(np.sum(vBS_od)==1)
     op.BS_o=1.#proportion of BS that are affected by rain (are outside)
     op.vBS_oc=vBS_oc#[1./2.]#capacity in litres
     op.vBS_od,op.vBS_id=op.BS_o*vBS_od, (1.-op.BS_o)*np.array([1.])#distribution of BS, the sum must be equal to 1.0#[1.0]
-    op.vBS_os=math.pi*np.array([5.25**2]*len(op.vBS_oc))#in cm^2
+    op.vBS_os=vBS_os#in cm^2
     op.n=len(op.vBS_oc)
 
     op.precipitations=precipitations
@@ -87,12 +87,12 @@ def testModel(vBS_oc=np.array([0.5]),vBS_od=np.array([1.]), precipitations=op.pr
     ax1.xaxis.set_major_formatter( matplotlib.dates.DateFormatter('%Y-%m-%d') )
     ax1.xaxis.set_minor_locator( matplotlib.dates.DayLocator() )
 
-    pl.plot(date_range,RES[:,op.EGG]*5e-2, '-k', label='E  5e-2')
-    pl.plot(date_range,RES[:,op.LARVAE], '-r', label='L')
-    pl.plot(date_range,RES[:,op.PUPAE], '-g', label='P')
-    pl.plot(date_range,RES[:,op.ADULT1], '-b', label='A1')
-    pl.plot(date_range,RES[:,op.ADULT2], '-m', label='A2')
-    #pl.plot(date_range,RES[:,op.ADULT2]+RES[:,op.ADULT1], '-m', label='A1+A2')
+    #pl.plot(date_range,RES[:,op.EGG]*5e-2, '-k', label='E  5e-2')
+    #pl.plot(date_range,RES[:,op.LARVAE], '-r', label='L')
+    #pl.plot(date_range,RES[:,op.PUPAE], '-g', label='P')
+    #pl.plot(date_range,RES[:,op.ADULT1], '-b', label='A1')
+    #pl.plot(date_range,RES[:,op.ADULT2], '-m', label='A2')
+    pl.plot(date_range,RES[:,op.ADULT2]+RES[:,op.ADULT1], '-m', label='A1+A2')
     pl.xlabel('Time(in days starting in July)')
     pl.ylabel('')
     pl.legend(loc=0)
@@ -101,7 +101,7 @@ def testModel(vBS_oc=np.array([0.5]),vBS_od=np.array([1.]), precipitations=op.pr
     #Water in containers(in L)
     pl.subplot(312,sharex=ax1)#sharex to zoom all subplots if one is zoomed
     for i in range(0,op.n):
-        pl.plot(date_range,RES[:,op.WATER+i], label='W(t) for %sL, %scm^2'%(op.vBS_oc[i],op.vBS_os[i]) )
+        pl.plot(date_range,RES[:,op.WATER+i], label='W(t) for %sL, %scm^2, %s%%'%(op.vBS_oc[i],op.vBS_os[i],op.vBS_od[i]*100.) )
     pl.xlabel('Time(in days starting in July)')
     pl.ylabel('Litres')
     pl.legend(loc=0)
@@ -111,7 +111,7 @@ def testModel(vBS_oc=np.array([0.5]),vBS_od=np.array([1.]), precipitations=op.pr
     pl.subplot(313,sharex=ax1)
     pl.plot(date_range,[op.p(t) for t in time_range],'-b', label='p(t)')
     pl.xlabel('Time(in days starting in July)')
-    pl.ylabel('mm.')
+    pl.ylabel('mm./day')
     pl.legend(loc=0)
     pl.xticks(rotation='vertical')
 
@@ -151,8 +151,8 @@ if(__name__ == '__main__'):
     #printCorrelation()
     #testAps()
     #testdW()
-    testRESvsOldRES('data/private/odeint_otero_precipitation_10.npy')
-    quit()
+    #testRESvsOldRES('data/private/odeint_otero_precipitation_10.npy')
+    #quit()
 
     vvBS_oc=np.array([np.array([0.1]),np.array([0.5]),np.array([1.2])])#in litres
     #pathological fake precipitations
@@ -170,5 +170,12 @@ if(__name__ == '__main__'):
     #real precipitations
     #for vBS_oc in vvBS_oc:
     #    testModel(vBS_oc=vBS_oc)
-    testModel(vBS_oc=np.array([0.5]),vBS_od=np.array([1.]))
+    #testModel(vBS_oc=np.array([0.5]),vBS_od=np.array([1.]))
+    vBS_os=math.pi*np.array([42.,52.,62.])
+    testModel(vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([1.0,0.0,0.0]))
+    testModel(vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.0,1.0,0.0]))
+    testModel(vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.0,0.0,1.0]))
+
+    #testModel(vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.0,0.0,1.0]),precipitations=[150. if 150<d<160 else 0. for d in range(0,(op.end_date - op.start_date).days)])
+
     pl.show()
