@@ -64,7 +64,7 @@ if(__name__ == '__main__'):
 
     for i,opt in enumerate(vOpt):
         x=np.array(opt.x)
-        vBS_od,vBS_id,ws_s=x[0:op.n],x[op.n:op.n+op.m],x[op.n+op.m]
+        op.vBS_od,op.vBS_id,op.ws_s=x[0:op.n],x[op.n:op.n+op.m],x[op.n+op.m]
         time_range,INPUT,RES = op.solveEquations()
         pl.subplot(511 +i)
         pl.plot(time_range, np.multiply(1.0/max(RES[:,op.LARVAE]), RES[:,op.LARVAE]), '-', label=vZones[i] +' Larvaes normalized')
@@ -72,7 +72,7 @@ if(__name__ == '__main__'):
         pl.legend(loc=0,prop={'size':10})
 
         print(vZones[i])
-        print_parameters(vBS_od,vBS_id,ws_s)
+        print_parameters(op.vBS_od,op.vBS_id,op.ws_s)
         print(vOpt[i])
         print('-'*200)
 
