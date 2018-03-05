@@ -2,7 +2,6 @@
 from scipy import interpolate
 import scipy.integrate as spi
 import numpy as np
-import pylab as pl
 import datetime
 import fourier
 import fitter
@@ -33,12 +32,9 @@ vBS_od, vBS_id=BS_o*np.array([0.1,0.4,0.5]), (1.-BS_o)*np.array([1.])#distributi
 vBS_os, vBS_is=math.pi*np.array([1.25**2,5.25**2,15.25**2]), math.pi*np.array([5.25**2])#in cm^2 #TODO:CHECK THAT ALL UNITS ARE CONSISTENT!!!
 n,m=len(vBS_oc),len(vBS_ic)
 ws_s=0.5#wind shield in [0,1]
-#a0=70.0* BS_capacity #??
+
 #Cordoba
 location,start_date,end_date={'name':'cordoba','station':'SACO','zones':['Centro','NO','NE','SE','SO']},datetime.date(2014, 7, 1),datetime.date(2017, 10, 1)
-#Jujuy
-#location,start_date,end_date={'name':'jujuy libertador','station':'SASJ','zones':[]},datetime.date(2010, 07, 1),datetime.date(2013, 7, 1)
-
 
 AEDIC_INDICES_FILENAME='data/private/Indices aedicos Historicos '+location['name']+'.xlsx'
 WEATHER_STATION_DATA_FILENAME='data/public/wunderground_'+location['station']+'.csv'
@@ -208,56 +204,3 @@ def solveEquations(INPUT = [100.0, 0.0,0.0,0.0,0.0]+ [0. for i in range(0,n)]):
     #RES=rk.scipy_solve(diff_eqs,INPUT,time_range,'dopri',{'max_step':time_range[1]-time_range[0],'rtol':1e-3, 'atol':1e-6} )
     #RES = spi.odeint(op.diff_eqs,INPUT,time_range,hmax=0.5,rtol=[1e-2]*5 +[1e-2]*op.n ,atol=[1]*5 +[1e-4]*op.n)#,hmax=0.01
     return time_range,INPUT,RES
-
-
-if(__name__ == '__main__'):
-    #Solve differential equations
-    time_range,INPUT,RES=solveEquations()
-
-    #Ploting
-    #Amount of larvaes,pupaes and adults
-    pl.subplot(411)
-    pl.plot(time_range,RES[:,LARVAE], '-r', label='L')
-    pl.plot(time_range,RES[:,PUPAE], '-g', label='P')
-    pl.plot(time_range,RES[:,ADULT1], '-b', label='A1')
-    pl.plot(time_range,RES[:,ADULT2], '-m', label='A2')
-    pl.xlabel('Time(in days starting in July)')
-    pl.ylabel('')
-    pl.legend(loc=0)
-
-    #Temperature
-    vT=np.vectorize(T)
-    pl.subplot(412)
-    #pl.plot(time_range,vT(time_range), '-k', label='Temperature')
-    for i in range(0,n):
-        pl.plot(time_range,RES[:,WATER+i], label='W for %sL, %scm^2'%(vBS_oc[i],vBS_os[i]) )
-    pl.xlabel('Time(in days starting in July)')
-    #pl.ylabel('Temperature(in K)')
-    pl.legend(loc=0)
-
-    #Indices
-    pl.subplot(414)
-    hi_days, his=utils.getIndexesForPlot(AEDIC_INDICES_FILENAME,start_date,0,3)
-    pl.plot(hi_days,np.multiply(1.0/max(his),his), '^m', label='House Indices normalized',clip_on=False, zorder=100,markersize=8) #BEWARE!!! they are all relative, so no comparison in absolute terms
-    bi_days, bis=utils.getIndexesForPlot(AEDIC_INDICES_FILENAME,start_date,0,4)
-    pl.plot(bi_days,np.multiply(1.0/max(bis),bis), '^c', label='Breteau Indices normalized',clip_on=False, zorder=100,markersize=8)
-    ri_days, ris=utils.getIndexesForPlot(AEDIC_INDICES_FILENAME,start_date,0,5)
-    pl.plot(ri_days,np.multiply(1.0/max(ris),ris), '^y', label='Recip. Indices normalized',clip_on=False, zorder=100,markersize=8)
-    pl.plot(time_range, np.multiply(1.0/max(RES[:,LARVAE]), RES[:,LARVAE]), '-y', label='Larvaes normalized')
-    pl.xlabel('Time(in days starting in July)')
-    locations,labels= utils.getDatesTicksForPlot(start_date, time_range)
-    pl.xticks(locations,labels,rotation='vertical')
-    pl.ylabel('')
-    pl.grid()
-    pl.legend(loc=0,prop={'size':10})
-
-    #indices by zone
-    pl.subplot(413)
-    for zone in location['zones']:
-        hi_days, his= utils.getIndexesForPlot(AEDIC_INDICES_FILENAME,start_date,0,2,zone,1)
-        pl.plot(hi_days,np.multiply(1.0/max(his),his), '^', label=zone +' normalized',clip_on=False, zorder=100,markersize=8) #BEWARE!!! they are all relative, so no comparison in absolute terms
-    pl.xlabel('Time(in days starting in July)')
-    pl.ylabel('')
-    pl.legend(loc=0,prop={'size':10})
-
-    pl.show()

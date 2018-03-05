@@ -166,7 +166,7 @@ def getFakePrecipitation(days):
     tmp=np.array([np.random.rand(1) if np.random.rand(1)<getRainChances(d) else 0. for d in range(0,days)])#np.random.normal(50,15)
     return (total_precipitation/np.sum(tmp))*tmp
 
-def usefulTests():
+if(__name__ == '__main__'):
     #normal case
     testModel(vBS_oc=np.array([1.2]),subplots=[['E','A1+A2']])
 
@@ -189,37 +189,5 @@ def usefulTests():
     vBS_os=math.pi*np.array([42.,52.,62.])
     testModel(BS_o=0.1,vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.0,0.0,1.0]),subplots=[['nLvsI']])
     testModel(BS_o=0.0,vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.0,0.0,1.0]),subplots=[['nLvsI']])
-
-if(__name__ == '__main__'):
-    usefulTests()
-    #printCorrelation()
-    #testAps()
-    #testdW()
-    #testRESvsOldRES('data/private/odeint_otero_precipitation_10.npy')
-    #quit()
-
-    vvBS_oc=np.array([np.array([0.1]),np.array([0.5]),np.array([1.2])])#in litres
-    #pathological fake precipitations
-
-    #for vBS_oc in vvBS_oc:
-        #testModel(vBS_oc=vBS_oc,precipitations=[0 if d>500 else 15. for d in range(0,(op.end_date - op.start_date).days)])
-        #testModel(vBS_oc=vBS_oc,precipitations=[0. if 365<d<600 else 15. for d in range(0,(op.end_date - op.start_date).days)])
-        #testModel(vBS_oc=vBS_oc,precipitations=[6. for d in range(0,(op.end_date - op.start_date).days)])#I should remove the wind.Maybe using Ivanov model (Romanenko 1961)
-
-    #fake precipitations
-    fake_precipitations=getFakePrecipitation((op.end_date - op.start_date).days)
-    #for vBS_oc in vvBS_oc:
-    #    testModel(vBS_oc=vBS_oc,precipitations=fake_precipitations)
-    #testModel(vBS_oc=vvBS_oc.flatten(),vBS_od=np.array([0.1,0.3,0.6]),precipitations=fake_precipitations)
-    #real precipitations
-    #for vBS_oc in vvBS_oc:
-    #    testModel(vBS_oc=vBS_oc)
-    #testModel(vBS_oc=np.array([0.5]),vBS_od=np.array([1.]))
-    vBS_os=math.pi*np.array([42.,52.,62.])
-    #testModel(vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([1.0,0.0,0.0]))
-    #testModel(vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.0,1.0,0.0]))
-    #testModel(vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.0,0.0,1.0]))
-
-    #testModel(vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.0,0.0,1.0]),precipitations=[150. if 150<d<160 else 0. for d in range(0,(op.end_date - op.start_date).days)])
 
     pl.show()
