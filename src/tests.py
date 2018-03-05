@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib
 import matplotlib.dates
 from scipy.stats import stats
+from scipy import interpolate
 import otero_precipitation as op
 
 def discreteQG(BS_s,precipitations,t):#l/day
@@ -66,9 +67,9 @@ def testRESvsOldRES(filename):
     #np.save('backup/RES_%s.npy'%(datetime.datetime.now().isoformat()),RES)
 
 
-def testModel(vBS_oc=np.array([0.5]),vBS_os=math.pi*np.array([5.25**2]),vBS_od=np.array([1.]), precipitations=op.precipitations):
+def testModel(BS_o=1.0,vBS_oc=np.array([0.5]),vBS_os=math.pi*np.array([5.25**2]),vBS_od=np.array([1.]), precipitations=op.precipitations,subplots=[['E','L'],['W']]):
     assert(np.sum(vBS_od)==1)
-    op.BS_o=1.#proportion of BS that are affected by rain (are outside)
+    op.BS_o=BS_o
     op.vBS_oc=vBS_oc#[1./2.]#capacity in litres
     op.vBS_od,op.vBS_id=op.BS_o*vBS_od, (1.-op.BS_o)*np.array([1.])#distribution of BS, the sum must be equal to 1.0#[1.0]
     op.vBS_os=vBS_os#in cm^2
@@ -80,40 +81,58 @@ def testModel(vBS_oc=np.array([0.5]),vBS_os=math.pi*np.array([5.25**2]),vBS_od=n
 
     #Ploting
     pl.figure()
-    #Amount of larvaes,pupaes and adults
-    ax1 =  pl.subplot(311)
-    date_range=[datetime.timedelta(days=d)+datetime.datetime.combine(op.start_date,datetime.time()) for d in time_range]
-    ax1.xaxis.set_major_locator( matplotlib.dates.MonthLocator() )
-    ax1.xaxis.set_major_formatter( matplotlib.dates.DateFormatter('%Y-%m-%d') )
-    ax1.xaxis.set_minor_locator( matplotlib.dates.DayLocator() )
+    pl.subplots_adjust(top=0.95,hspace=0.28)
+    ax1=None
+    for i,subplot in enumerate(subplots):
+        subplot_id=len(subplots)*100 + 10 + (i+1)
+        if(i==0):
+            ax1=pl.subplot(subplot_id)
+            date_range=[datetime.timedelta(days=d)+datetime.datetime.combine(op.start_date,datetime.time()) for d in time_range]
+            ax1.xaxis.set_major_locator( matplotlib.dates.MonthLocator() )
+            ax1.xaxis.set_major_formatter( matplotlib.dates.DateFormatter('%Y-%m-%d') )
+            ax1.xaxis.set_minor_locator( matplotlib.dates.DayLocator() )
+        else:
+            pl.subplot(subplot_id,sharex=ax1)#sharex to zoom all subplots if one is zoomed
 
-    #pl.plot(date_range,RES[:,op.EGG]*5e-2, '-k', label='E  5e-2')
-    #pl.plot(date_range,RES[:,op.LARVAE], '-r', label='L')
-    #pl.plot(date_range,RES[:,op.PUPAE], '-g', label='P')
-    #pl.plot(date_range,RES[:,op.ADULT1], '-b', label='A1')
-    #pl.plot(date_range,RES[:,op.ADULT2], '-m', label='A2')
-    pl.plot(date_range,RES[:,op.ADULT2]+RES[:,op.ADULT1], '-m', label='A1+A2')
-    pl.xlabel('Time(in days starting in July)')
-    pl.ylabel('')
-    pl.legend(loc=0)
-    pl.xticks(rotation='vertical')
+        #Amount of larvaes,pupaes and adults
+        if ('E' in subplot): pl.plot(date_range,RES[:,op.EGG]*5e-2, '-k', label='E *  5e-2')
+        if ('L' in subplot): pl.plot(date_range,RES[:,op.LARVAE], '-r', label='L')
+        if ('P' in subplot): pl.plot(date_range,RES[:,op.PUPAE], '-g', label='P')
+        if ('A1' in subplot): pl.plot(date_range,RES[:,op.ADULT1], '-b', label='A1')
+        if ('A2' in subplot): pl.plot(date_range,RES[:,op.ADULT2], '-m', label='A2')
+        if ('A1+A2' in subplot): pl.plot(date_range,RES[:,op.ADULT2]+RES[:,op.ADULT1], '-m', label='A1+A2')
+        if ('nLvsI' in subplot):
+            ri_days, ris=utils.getIndexesForPlot(op.AEDIC_INDICES_FILENAME,op.start_date,0,5)
+            pl.plot([datetime.timedelta(days=d)+datetime.datetime.combine(op.start_date,datetime.time()) for d in ri_days], np.array(ris)/max(ris), '^y', label='Recip. Indices normalized',clip_on=False, zorder=100,markersize=8)
+            pl.plot(date_range,RES[:,op.LARVAE]/max(RES[:,op.LARVAE]), '-r', label='Larvaes normalized')
+        pl.ylabel('')
 
-    #Water in containers(in L)
-    pl.subplot(312,sharex=ax1)#sharex to zoom all subplots if one is zoomed
-    for i in range(0,op.n):
-        pl.plot(date_range,RES[:,op.WATER+i], label='W(t) for %sL, %scm^2, %s%%'%(op.vBS_oc[i],op.vBS_os[i],op.vBS_od[i]*100.) )
-    pl.xlabel('Time(in days starting in July)')
-    pl.ylabel('Litres')
-    pl.legend(loc=0)
-    pl.xticks(rotation='vertical')
+        #Water in containers(in L)
+        if ('W' in subplot):
+            for i in range(0,op.n):
+                pl.plot(date_range,RES[:,op.WATER+i], label='W(t) for %sL, %scm^2, %s%%'%(op.vBS_oc[i],op.vBS_os[i],op.vBS_od[i]*100.) )
+            pl.ylabel('Litres')
 
-    #precipitations(in mm.)
-    pl.subplot(313,sharex=ax1)
-    pl.plot(date_range,[op.p(t) for t in time_range],'-b', label='p(t)')
-    pl.xlabel('Time(in days starting in July)')
-    pl.ylabel('mm./day')
-    pl.legend(loc=0)
-    pl.xticks(rotation='vertical')
+        #spaa vs cimsim
+        if ('spaavscimsim' in subplot):
+            for i in range(0,op.n):
+                pl.plot(time_range,RES[:,op.WATER+i]*1000.0/op.vBS_os[i], label='W(t) for %sL, %scm^2, %s%%'%(op.vBS_oc[i],op.vBS_os[i],op.vBS_od[i]*100.) )#L->ml->mm->cm
+            pl.plot(utils.getValuesFromCsv('data/test/cimsim_containers_2015.csv',op.start_date,op.end_date,1),label='CIMSiM')
+
+        #Temperature in K
+        if ('T' in subplot):
+            pl.plot(date_range,[op.T(t) for t in time_range], label='Temperature')
+            pl.ylabel('K')
+
+        #precipitations(in mm.)
+        if ('p' in subplot):
+            pl.plot(date_range,[op.p(t) for t in time_range],'-b', label='p(t)')
+            pl.ylabel('mm./day')
+
+        #common to all subplots
+        pl.xlabel('Time(in days starting in July)')
+        pl.legend(loc=0)
+        pl.xticks(rotation='vertical')
 
     getLarvaeSurvivalDry(time_range,RES[:,op.WATER:op.WATER+op.n],RES[:,op.LARVAE],{'start':100,'end':1600})
     #plotBeta()
@@ -147,7 +166,32 @@ def getFakePrecipitation(days):
     tmp=np.array([np.random.rand(1) if np.random.rand(1)<getRainChances(d) else 0. for d in range(0,days)])#np.random.normal(50,15)
     return (total_precipitation/np.sum(tmp))*tmp
 
+def usefulTests():
+    #normal case
+    testModel(vBS_oc=np.array([1.2]),subplots=[['E','A1+A2']])
+
+    #W->0 test
+    testModel(vBS_oc=np.array([1.2]),precipitations=[0 if d>500 else 15. for d in range(0,(op.end_date - op.start_date).days)],subplots=[['E','L'],['W']])
+
+    #T->0
+    time_range=range(0,(op.end_date - op.start_date).days)
+    T=op.T#save the original function to be able restore it later.
+    op.T=interpolate.InterpolatedUnivariateSpline(time_range,[30.*(1. - t/float(max(time_range)) )+273.15 for t in time_range ])
+    testModel(vBS_oc=np.array([1.2]),subplots=[['A1+A2'],['T']])
+    op.T=T#restore the original function back
+
+    #cimsim vs spaa
+    #diameter:9.5, height:5.8, type: circular, sun exposure:0.9
+    #TODO:we should change the start/end dates to match the ones used in cimsim, but in this case is ok, because the container is empty anyways.
+    testModel(vBS_oc=np.array([0.41]),vBS_os=np.array([math.pi* 4.75**2]),subplots=[['spaavscimsim']])
+
+    #against Indices
+    vBS_os=math.pi*np.array([42.,52.,62.])
+    testModel(BS_o=0.1,vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.0,0.0,1.0]),subplots=[['nLvsI']])
+    testModel(BS_o=0.0,vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.0,0.0,1.0]),subplots=[['nLvsI']])
+
 if(__name__ == '__main__'):
+    usefulTests()
     #printCorrelation()
     #testAps()
     #testdW()
@@ -158,9 +202,9 @@ if(__name__ == '__main__'):
     #pathological fake precipitations
 
     #for vBS_oc in vvBS_oc:
-    #    testModel(vBS_oc=vBS_oc,precipitations=[0 if d>500 else 15. for d in range(0,(op.end_date - op.start_date).days)])
-    #    testModel(vBS_oc=vBS_oc,precipitations=[0. if 365<d<600 else 15. for d in range(0,(op.end_date - op.start_date).days)])
-    #    testModel(vBS_oc=vBS_oc,precipitations=[6. for d in range(0,(op.end_date - op.start_date).days)])#I should remove the wind.Maybe using Ivanov model (Romanenko 1961)
+        #testModel(vBS_oc=vBS_oc,precipitations=[0 if d>500 else 15. for d in range(0,(op.end_date - op.start_date).days)])
+        #testModel(vBS_oc=vBS_oc,precipitations=[0. if 365<d<600 else 15. for d in range(0,(op.end_date - op.start_date).days)])
+        #testModel(vBS_oc=vBS_oc,precipitations=[6. for d in range(0,(op.end_date - op.start_date).days)])#I should remove the wind.Maybe using Ivanov model (Romanenko 1961)
 
     #fake precipitations
     fake_precipitations=getFakePrecipitation((op.end_date - op.start_date).days)
@@ -172,9 +216,9 @@ if(__name__ == '__main__'):
     #    testModel(vBS_oc=vBS_oc)
     #testModel(vBS_oc=np.array([0.5]),vBS_od=np.array([1.]))
     vBS_os=math.pi*np.array([42.,52.,62.])
-    testModel(vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([1.0,0.0,0.0]))
-    testModel(vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.0,1.0,0.0]))
-    testModel(vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.0,0.0,1.0]))
+    #testModel(vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([1.0,0.0,0.0]))
+    #testModel(vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.0,1.0,0.0]))
+    #testModel(vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.0,0.0,1.0]))
 
     #testModel(vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.0,0.0,1.0]),precipitations=[150. if 150<d<160 else 0. for d in range(0,(op.end_date - op.start_date).days)])
 
