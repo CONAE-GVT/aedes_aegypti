@@ -59,7 +59,7 @@ def retrieve_data(year,month):
     parser = TableParser()
     parser.feed(response)
     content=parser.csv
-    content=('\n').join(['%i-%i-'%(year,month)+line for line in content.split('\n')])#we add the year and month at the begining
+    content=('\n').join(['%i-%i-'%(year,month)+line if line.split(',')[0].isdigit() else line for line in content.split('\n')])#we add the year and month at the begining
 
     if(not os.path.isfile(OUT_FILENAME)):
         file = open(OUT_FILENAME,'w')
@@ -70,15 +70,25 @@ def retrieve_data(year,month):
     file.write(content)
     file.close()
 
+#extract just the data we need and put it in an specific order so it can be used by other script.
+def prune_data():
+    file = open(OUT_FILENAME,'r')
+    output='Date,Minimum Temp (C),Mean Temperature (C),Maximum Temp (C),Rain (mm),Relative Humidity %,CloudCover,Mean Wind,SpeedKm/h' + '\n'
+    for line_number,line in enumerate(file):
+        if(line_number<2): continue#skip headers
+        fields=line.split(',')
+        output+=','.join([fields[0],fields[3],fields[2],     fields[1],         fields[19], fields[8],            ',',         fields[17]]) + '\n'
 
-
+    open(OUT_FILENAME.replace('.csv','_pruned.csv'),'w').write(output)
 
 #main
 http = httplib2.Http()
 if(__name__ == '__main__'):
     #retrieve_data('2017','03')
-
-    for d in daterange(datetime.date(2017, 7,01),datetime.date(2017, 10,01)):
+    for d in daterange(datetime.date(2017, 7,01),datetime.date(2017, 8,01)):
         #print(str(d.year) + ' '+str(d.month))
         time.sleep(15)
         retrieve_data(d.year,d.month)
+
+    #put just the info we need into a file, that will be ready to be used by otero_precipitation script.
+    prune_data()
