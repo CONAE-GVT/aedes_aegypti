@@ -73,11 +73,11 @@ def retrieve_data(year,month):
 #extract just the data we need and put it in an specific order so it can be used by other script.
 def prune_data():
     file = open(OUT_FILENAME,'r')
-    output='Date,Minimum Temp (C),Mean Temperature (C),Maximum Temp (C),Rain (mm),Relative Humidity %,CloudCover,Mean Wind,SpeedKm/h' + '\n'
+    output='Date,Minimum Temp (C),Mean Temperature (C),Maximum Temp (C),Rain (mm),Relative Humidity %,CloudCover,Mean Wind SpeedKm/h' + '\n'
     for line_number,line in enumerate(file):
         if(line_number<2): continue#skip headers
         fields=line.split(',')
-        output+=','.join([fields[0],fields[3],fields[2],     fields[1],         fields[19], fields[8],            ',',         fields[17]]) + '\n'
+        output+=','.join([fields[0],fields[3],fields[2],     fields[1],         fields[19], fields[8],            '',         fields[17]]) + '\n'
 
     open(OUT_FILENAME.replace('.csv','_pruned.csv'),'w').write(output)
 
