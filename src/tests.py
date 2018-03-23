@@ -66,6 +66,14 @@ def testRESvsOldRES(filename):
     print(np.linalg.norm(old_RES-RES))
     #np.save('backup/RES_%s.npy'%(datetime.datetime.now().isoformat()),RES)
 
+a_time_range = np.linspace(0, (op.end_date - op.start_date).days-2, (op.end_date - op.start_date).days * 10)#TODO:find a better way...
+calls=np.array([0]*len(a_time_range))
+negatives=np.array([0]*len(a_time_range))
+def decoratedEquations(Y,t):
+    dY=op.diff_eqs(Y,t)
+    calls[(np.abs(a_time_range-t)).argmin()]+=1
+    if(np.any(Y<0)): negatives[(np.abs(a_time_range-t)).argmin()]+=1
+    return dY
 
 def testModel(BS_o=1.0,vBS_oc=np.array([0.5]),vBS_os=math.pi*np.array([5.25**2]),vBS_od=np.array([1.]), precipitations=op.precipitations,subplots=[['E','L'],['W']]):
     assert(np.sum(vBS_od)==1)
@@ -77,7 +85,7 @@ def testModel(BS_o=1.0,vBS_oc=np.array([0.5]),vBS_os=math.pi*np.array([5.25**2])
 
     op.precipitations=precipitations
     op.p=op.getAsLambdaFunction(op.aps,op.precipitations)
-    time_range,INPUT,RES=op.solveEquations([100.0, 0.0,0.0,0.0,0.0]+ [0./2. for i in range(0,op.n)])
+    time_range,INPUT,RES=op.solveEquations([100.0, 0.0,0.0,0.0,0.0]+ [0./2. for i in range(0,op.n)],equations=decoratedEquations)
 
     #Ploting
     pl.figure()
@@ -105,6 +113,11 @@ def testModel(BS_o=1.0,vBS_oc=np.array([0.5]),vBS_os=math.pi*np.array([5.25**2])
             ri_days, ris=utils.getIndexesForPlot(op.AEDIC_INDICES_FILENAME,op.start_date,0,5)
             pl.plot([datetime.timedelta(days=d)+datetime.datetime.combine(op.start_date,datetime.time()) for d in ri_days], np.array(ris)/max(ris), '^y', label='Recip. Indices normalized',clip_on=False, zorder=100,markersize=8)
             pl.plot(date_range,RES[:,op.LARVAE]/max(RES[:,op.LARVAE]), '-r', label='Larvaes normalized')
+        if('nEvsO' in subplot):
+            for i in range(1,30):
+                ovitrap_eggs=utils.getOvitrapEggsFromCsv('data/private/Datos sensores de oviposicion.NO.csv',op.start_date,op.end_date,i)
+                pl.plot([datetime.timedelta(days=d)+datetime.datetime.combine(op.start_date,datetime.time()) for d in range(0,len(ovitrap_eggs))], [e/max(ovitrap_eggs) if e else None for e in ovitrap_eggs], '^', label='Ovitrap %s eggs'%i,clip_on=False, zorder=100,markersize=8)
+            pl.plot(date_range,RES[:,op.EGG]/max(RES[:,op.EGG]), '-k', label='Eggs normalized')
         pl.ylabel('')
 
         #Water in containers(in L)
@@ -117,7 +130,7 @@ def testModel(BS_o=1.0,vBS_oc=np.array([0.5]),vBS_os=math.pi*np.array([5.25**2])
         if ('spaavscimsim' in subplot):
             for i in range(0,op.n):
                 pl.plot(time_range,RES[:,op.WATER+i]*1000.0/op.vBS_os[i], label='W(t) for %sL, %scm^2, %s%%'%(op.vBS_oc[i],op.vBS_os[i],op.vBS_od[i]*100.) )#L->ml->mm->cm
-            pl.plot(utils.getValuesFromCsv('data/test/cimsim_containers_2015.csv',op.start_date,op.end_date,1),label='CIMSiM')
+            pl.plot(utils.getValuesFromCsv('data/test/cimsim_containers_2015.csv',op.start_date,op.end_date,1,verbose=False),label='CIMSiM')
 
         #Temperature in K
         if ('T' in subplot):
@@ -128,6 +141,28 @@ def testModel(BS_o=1.0,vBS_oc=np.array([0.5]),vBS_os=math.pi*np.array([5.25**2])
         if ('p' in subplot):
             pl.plot(date_range,[op.p(t) for t in time_range],'-b', label='p(t)')
             pl.ylabel('mm./day')
+
+        #Wind Speed(in km/h.)
+        if ('ws' in subplot):
+            pl.plot(date_range,[op.ws(t) for t in time_range], label='ws(t)')
+            pl.ylabel('km/h')
+
+        #Beta
+        if ('b' in subplot):
+            pl.plot(date_range,[op.beta(RES[(np.abs(time_range-t)).argmin(),op.WATER:]) for t in time_range], label='beta(vW)')
+            pl.ylabel('')
+
+        #debugging plots
+        #Calls
+        if ('c' in subplot):
+            pl.plot(date_range,calls, label='calls')
+            pl.ylabel('')
+            print('Calls: %s'%sum(calls))
+        #Negatives
+        if ('n' in subplot):
+            pl.plot(date_range,negatives, label='negatives')
+            pl.ylabel('')
+            print('Negatives: %s'%sum(negatives))
 
         #common to all subplots
         pl.xlabel('Time(in days starting in July)')
@@ -189,5 +224,9 @@ if(__name__ == '__main__'):
     vBS_os=math.pi*np.array([42.,52.,62.])
     testModel(BS_o=0.1,vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.0,0.0,1.0]),subplots=[['nLvsI']])
     testModel(BS_o=0.0,vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.0,0.0,1.0]),subplots=[['nLvsI']])
+    #against Ovitraps
+    testModel(BS_o=0.4,vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.1,0.5,0.4]),subplots=[['nEvsO']])
 
+    #performace
+    testModel(BS_o=0.1,vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.0,0.0,1.0]),subplots=[['E'],['b'],['c'],['n']])
     pl.show()
