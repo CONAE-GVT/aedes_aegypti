@@ -42,7 +42,7 @@ def daterange(start_date, end_date):
         yield start_date + datetime.timedelta(n)
 
 
-def getValuesFromCsv(filename,start_date,end_date,value_column):
+def getValuesFromCsv(filename,start_date,end_date,value_column,verbose=True):
     with open(filename) as f:
         content = f.readlines()
 
@@ -77,7 +77,7 @@ def getValuesFromCsv(filename,start_date,end_date,value_column):
                 values_list.append(float(value))
         else:
             values_list.append(None)#no info
-            print ('No info for ' + str(date))
+            if(verbose): print ('No info for ' + str(date))
     return values_list
 
 def getIndexesForPlot(filename,initial_date,date_column,value_column,filter_value=None,filter_column=None):
@@ -116,6 +116,9 @@ def  getRelativeHumidityFromCsv(filename,start_date,end_date):#in percentage
 
 def  getMeanWindSpeedFromCsv(filename,start_date,end_date):#in km/h
     return [x if x else None for x in getValuesFromCsv(filename,start_date,end_date,7)]
+
+def  getOvitrapEggsFromCsv(filename,start_date,end_date,ovitrap):#in km/h
+    return [x if x else None for x in getValuesFromCsv(filename,start_date,end_date,ovitrap,False)]
 
 if (__name__ == '__main__'):
     #values =getAverageTemperaturesFromCsv('data/cordoba_aero_temperatures.csv',datetime.date(2009, 07, 1),datetime.date(2017, 6, 1))
