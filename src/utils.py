@@ -119,38 +119,3 @@ def  getMeanWindSpeedFromCsv(filename,start_date,end_date):#in km/h
 
 def  getOvitrapEggsFromCsv(filename,start_date,end_date,ovitrap):#in km/h
     return [x if x else None for x in getValuesFromCsv(filename,start_date,end_date,ovitrap,False)]
-
-if (__name__ == '__main__'):
-    #values =getAverageTemperaturesFromCsv('data/cordoba_aero_temperatures.csv',datetime.date(2009, 07, 1),datetime.date(2017, 6, 1))
-    #values =getValuesFromCsv('data/cordoba_aero_temperatures.csv',datetime.date(2009, 07, 1),datetime.date(2017, 6, 1),3)
-    #precipitations2 =getPrecipitationsFromCsv('data/noaa.csv',datetime.date(2014, 07, 1),datetime.date(2017, 6, 1))
-
-    start_date=datetime.date(2014, 7, 1)
-    end_date=datetime.date(2017, 6, 1)
-    WEATHER_STATION_DATA_FILENAME='data/wunderground_SACO.csv'
-    temperatures=getAverageTemperaturesFromCsv(WEATHER_STATION_DATA_FILENAME,start_date,end_date)
-    precipitations=getPrecipitationsFromCsv(WEATHER_STATION_DATA_FILENAME,start_date,end_date)
-    relative_humidity=getRelativeHumidityFromCsv(WEATHER_STATION_DATA_FILENAME,start_date,end_date)
-    wind_speed=getMeanWindSpeedFromCsv(WEATHER_STATION_DATA_FILENAME,start_date,end_date)
-    #filled= getBSFills(values,1.0/2.0,0.0)
-    #accumulated_precipitations=getAccumulatedPrecipitations(precipitations)
-    #period=14#2 weeks
-    #max_precipitation_accumulation=getMaxAccumulation(accumulated_precipitations,period)
-    #P_norm=[PNorm(accumulated_precipitations,max_precipitation_accumulation,period,i) for i in range(0,len(precipitations))]
-
-    #plotting
-    time_range = np.arange(0, len(precipitations), 1.0)
-    pl.subplot(111)
-    pl.plot(time_range,temperatures, '-y', label='Real Temperatures')
-    pl.plot(time_range,precipitations, '-b', label='Real Precipitations')
-    pl.plot(time_range,relative_humidity, '-g', label='Real relative humidity')
-    pl.plot(time_range,wind_speed, '-r', label='Real wind speed')
-    #pl.plot(time_range,accumulated_precipitations, '-y', label='Accumulated Precipitations')
-    #pl.plot(time_range,P_norm, '-y', label='P_norm')
-    pl.legend(loc=0)
-
-
-    pl.show()
-
-
-    #print(getDaysFromLastPrecipitation(7,[0,0,0,0,7,0,0,0,0,0,0,0,0,0,0,0]))
