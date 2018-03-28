@@ -197,10 +197,13 @@ def diff_eqs(Y,t):
 
     return dY   # For odeint
 
-def solveEquations(INPUT = [100.0, 0.0,0.0,0.0,0.0]+ [0. for i in range(0,n)],equations=diff_eqs):
-    time_range = np.linspace(0, (end_date - start_date).days-2, (end_date - start_date).days * 10)
-    RES = spi.odeint(equations,INPUT,time_range,hmax=1.0)#TODO: this is because it calls aps out of it's domain.Find a better way.
-    #RES=rk.solve(diff_eqs,INPUT,time_range)
-    #RES=rk.scipy_solve(diff_eqs,INPUT,time_range,'dopri',{'max_step':time_range[1]-time_range[0],'rtol':1e-3, 'atol':1e-6} )
-    #RES = spi.odeint(op.diff_eqs,INPUT,time_range,hmax=0.5,rtol=[1e-2]*5 +[1e-2]*op.n ,atol=[1]*5 +[1e-4]*op.n)#,hmax=0.01
-    return time_range,INPUT,RES
+def getTimeRange():
+    return np.linspace(0, (end_date - start_date).days-2, (end_date - start_date).days * 10)
+
+def solveEquations(initial_condition = [100.0, 0.0,0.0,0.0,0.0]+ [0. for i in range(0,n)],equations=diff_eqs):
+    time_range = getTimeRange()
+    Y = spi.odeint(equations,initial_condition,time_range,hmax=1.0)#TODO: this is because it calls aps out of it's domain.Find a better way.
+    #Y=rk.solve(diff_eqs,INPUT,time_range)
+    #Y=rk.scipy_solve(diff_eqs,INPUT,time_range,'dopri',{'max_step':time_range[1]-time_range[0],'rtol':1e-3, 'atol':1e-6} )
+    #Y = spi.odeint(op.diff_eqs,INPUT,time_range,hmax=0.5,rtol=[1e-2]*5 +[1e-2]*op.n ,atol=[1]*5 +[1e-4]*op.n)#,hmax=0.01
+    return time_range,initial_condition,Y

@@ -85,7 +85,7 @@ def testModel(BS_o=1.0,vBS_oc=np.array([0.5]),vBS_os=math.pi*np.array([5.25**2])
 
     op.precipitations=precipitations
     op.p=op.getAsLambdaFunction(op.aps,op.precipitations)
-    time_range,INPUT,RES=op.solveEquations([100.0, 0.0,0.0,0.0,0.0]+ [0./2. for i in range(0,op.n)],equations=decoratedEquations)
+    time_range,INPUT,RES=op.solveEquations(initial_condition=[100.0, 0.0,0.0,0.0,0.0]+ [0./2. for i in range(0,op.n)],equations=decoratedEquations)
 
     #Ploting
     pl.figure()
@@ -118,8 +118,14 @@ def testModel(BS_o=1.0,vBS_oc=np.array([0.5]),vBS_os=math.pi*np.array([5.25**2])
                 ovitrap_eggs=utils.getOvitrapEggsFromCsv('data/private/Datos sensores de oviposicion.NO.csv',op.start_date,op.end_date,i)
                 pl.plot([datetime.timedelta(days=d)+datetime.datetime.combine(op.start_date,datetime.time()) for d in range(0,len(ovitrap_eggs))], [e/max(ovitrap_eggs) if e else None for e in ovitrap_eggs], '^', label='Ovitrap %s eggs'%i,clip_on=False, zorder=100,markersize=8)
             pl.plot(date_range,RES[:,op.EGG]/max(RES[:,op.EGG]), '-k', label='Eggs normalized')
+        if('lwE' in subplot):
+            pl.plot(date_range, [RES[(np.abs(time_range-t)).argmin(),op.EGG]-RES[(np.abs(time_range-(t-7))).argmin(),op.EGG] for t in time_range], '-', label='Eggs oviposited this week')
         pl.ylabel('')
 
+        #Complete lifecycle
+        if('clc' in subplot):
+            pl.plot(date_range,[sum([1./op.R_D(stage,op.T(t)) for stage in [op.EGG,op.LARVAE,op.PUPAE,op.ADULT1,op.ADULT2]]) for  t in time_range],label='Complete life cicle(from being an egg to the second oviposition)')
+            pl.ylabel('days')
         #Water in containers(in L)
         if ('W' in subplot):
             for i in range(0,op.n):
@@ -229,4 +235,12 @@ if(__name__ == '__main__'):
 
     #performace
     testModel(BS_o=0.1,vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.0,0.0,1.0]),subplots=[['E'],['b'],['c'],['n']])
+
+    #Different container surfaces
+    '''
+    for i in range(1,4):
+        vBS_oc=np.array([10.0])
+        op.BS_a=50.0/np.dot(op.vBS_od,op.vBS_oc)
+        testModel(BS_o=1.0,vBS_oc=vBS_oc,vBS_os=math.pi*np.array([float(i)**2]),vBS_od=np.array([1.]),subplots=[['E'],['lwE'],['W'],['clc']])
+    '''
     pl.show()
