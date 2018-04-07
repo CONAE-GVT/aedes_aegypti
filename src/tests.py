@@ -1,6 +1,5 @@
 import math
 import utils
-from utils import getSurface,getCapacity#not sure if this is a good practice
 import datetime
 import pylab as pl
 import numpy as np
@@ -77,8 +76,14 @@ def decoratedEquations(Y,t):
     return dY
 
 def normalize(values):#TODO:change name.
-    return (values-np.min(values))/(np.max(values)-np.min(values))
-
+    return (values-values.min())/(values.max()-values.min())
+#convenience method
+def normalizeIfAsked(values,subplot):
+    values=np.array(values)
+    if('normalized' in subplot):
+        return normalize(values)
+    else:
+        return values
 def subData(time_range,Y,date_range,an_start_date):
     #get the index of an_start_date
     index=None
@@ -119,23 +124,24 @@ def testModel(BS_o=1.0,vBS_oc=np.array([0.5]),vBS_os=math.pi*np.array([5.25**2])
             time_range,RES,date_range=subData(time_range,RES,date_range,plot_start_date)
 
         #Amount of larvaes,pupaes and adults
-        if ('E' in subplot): pl.plot(date_range,RES[:,op.EGG]*5e-2, '-k', label='E *  5e-2')
-        if ('L' in subplot): pl.plot(date_range,RES[:,op.LARVAE], '-r', label='L')
-        if ('P' in subplot): pl.plot(date_range,RES[:,op.PUPAE], '-g', label='P')
-        if ('A1' in subplot): pl.plot(date_range,RES[:,op.ADULT1], '-b', label='A1')
-        if ('A2' in subplot): pl.plot(date_range,RES[:,op.ADULT2], '-m', label='A2')
-        if ('A1+A2' in subplot): pl.plot(date_range,RES[:,op.ADULT2]+RES[:,op.ADULT1], '-m', label='A1+A2')
-        if ('nLvsI' in subplot):
+        if ('E' in subplot): pl.plot(date_range,normalizeIfAsked(RES[:,op.EGG],subplot), '-k', label='E')
+        if ('L' in subplot): pl.plot(date_range,normalizeIfAsked(RES[:,op.LARVAE],subplot), '-r', label='L')
+        if ('P' in subplot): pl.plot(date_range,normalizeIfAsked(RES[:,op.PUPAE],subplot), '-g', label='P')
+        if ('A1' in subplot): pl.plot(date_range,normalizeIfAsked(RES[:,op.ADULT1],subplot), '-b', label='A1')
+        if ('A2' in subplot): pl.plot(date_range,normalizeIfAsked(RES[:,op.ADULT2],subplot), '-m', label='A2')
+        if ('A1+A2' in subplot): pl.plot(date_range,normalizeIfAsked(RES[:,op.ADULT2]+RES[:,op.ADULT1],subplot), '-m', label='A1+A2')
+        if ('LI' in subplot):
             ri_days, ris=utils.getIndexesForPlot(op.AEDIC_INDICES_FILENAME,op.start_date,0,5)
-            pl.plot([datetime.timedelta(days=d)+datetime.datetime.combine(op.start_date,datetime.time()) for d in ri_days], np.array(ris)/max(ris), '^y', label='Recip. Indices normalized',clip_on=False, zorder=100,markersize=8)
-            pl.plot(date_range,RES[:,op.LARVAE]/max(RES[:,op.LARVAE]), '-r', label='Larvaes normalized')
-        if('nEvsO' in subplot):
+            pl.plot([datetime.timedelta(days=d)+datetime.datetime.combine(op.start_date,datetime.time()) for d in ri_days], normalizeIfAsked(ris,subplot), '^y', label='Recip. Indices',clip_on=False, zorder=100,markersize=8)
+
+        if('O' in subplot):
             for i in range(1,30):
                 ovitrap_eggs=utils.getOvitrapEggsFromCsv('data/private/Datos sensores de oviposicion.NO.csv',op.start_date,op.end_date,i)
-                pl.plot([datetime.timedelta(days=d)+datetime.datetime.combine(op.start_date,datetime.time()) for d in range(0,len(ovitrap_eggs))], [e/max(ovitrap_eggs) if e else None for e in ovitrap_eggs], '^', label='Ovitrap %s eggs'%i,clip_on=False, zorder=100,markersize=8)
-            pl.plot(date_range,RES[:,op.EGG]/max(RES[:,op.EGG]), '-k', label='Eggs normalized')
+                if('normalized' in subplot):ovitrap_eggs=np.array([e/max(ovitrap_eggs) if e else None for e in ovitrap_eggs])#since we have None values normalized won't work
+                pl.plot([datetime.timedelta(days=d)+datetime.datetime.combine(op.start_date,datetime.time()) for d in range(0,len(ovitrap_eggs))], ovitrap_eggs, '^', label='Ovitrap %s eggs'%i,clip_on=False, zorder=100,markersize=8)
+
         if('lwE' in subplot):
-            pl.plot(date_range, [RES[(np.abs(time_range-t)).argmin(),op.EGG]-RES[(np.abs(time_range-(t-7))).argmin(),op.EGG] for t in time_range], '-', label='Eggs oviposited this week')
+            pl.plot(date_range, normalizeIfAsked([RES[(np.abs(time_range-t)).argmin(),op.EGG]-RES[(np.abs(time_range-(t-7))).argmin(),op.EGG] for t in time_range],subplot), '-', label='Eggs oviposited this week')
         pl.ylabel('')
 
         #Complete lifecycle
@@ -145,7 +151,7 @@ def testModel(BS_o=1.0,vBS_oc=np.array([0.5]),vBS_os=math.pi*np.array([5.25**2])
         #Water in containers(in L)
         if ('W' in subplot):
             for i in range(0,op.n):
-                pl.plot(date_range,RES[:,op.WATER+i], label='W(t) for %sL, %scm^2, %s%%'%(op.vBS_oc[i],op.vBS_os[i],op.vBS_od[i]*100.) )
+                pl.plot(date_range,normalizeIfAsked(RES[:,op.WATER+i],subplot), label='W(t) for %sL, %scm^2, %s%%'%(op.vBS_oc[i],op.vBS_os[i],op.vBS_od[i]*100.) )
             pl.ylabel('Litres')
 
         #spaa vs cimsim
@@ -156,17 +162,17 @@ def testModel(BS_o=1.0,vBS_oc=np.array([0.5]),vBS_os=math.pi*np.array([5.25**2])
 
         #Temperature in K
         if ('T' in subplot):
-            pl.plot(date_range,[op.T(t) for t in time_range], label='Temperature')
+            pl.plot(date_range,normalizeIfAsked([op.T(t) for t in time_range],subplot), label='Temperature')
             pl.ylabel('K')
 
         #precipitations(in mm.)
         if ('p' in subplot):
-            pl.plot(date_range,[op.p(t) for t in time_range],'-b', label='p(t)')
+            pl.plot(date_range,normalizeIfAsked([op.p(t) for t in time_range],subplot),'-b', label='p(t)')
             pl.ylabel('mm./day')
 
         #Wind Speed(in km/h.)
         if ('ws' in subplot):
-            pl.plot(date_range,[op.ws(t) for t in time_range], label='ws(t)')
+            pl.plot(date_range,normalizeIfAsked([op.ws(t) for t in time_range],subplot), label='ws(t)')
             pl.ylabel('km/h')
 
         #Beta
@@ -225,10 +231,10 @@ def getFakePrecipitation(days):
 
 if(__name__ == '__main__'):
     #normal case
-    testModel(vBS_oc=np.array([1.2]),subplots=[['E','A1+A2']])
+    testModel(vBS_oc=np.array([1.2]),subplots=[['E','A1+A2','normalized']])
 
     #W->0 test
-    testModel(vBS_oc=np.array([1.2]),precipitations=[0 if d>500 else 15. for d in range(0,(op.end_date - op.start_date).days)],subplots=[['E','L'],['W']])
+    testModel(vBS_oc=np.array([1.2]),precipitations=[0 if d>500 else 15. for d in range(0,(op.end_date - op.start_date).days)],subplots=[['E','L','normalized'],['W']])
 
     #T->0
     time_range=range(0,(op.end_date - op.start_date).days)
@@ -244,10 +250,10 @@ if(__name__ == '__main__'):
 
     #against Indices
     vBS_os=math.pi*np.array([42.,52.,62.])
-    testModel(BS_o=0.1,vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.0,0.0,1.0]),subplots=[['nLvsI']])
-    testModel(BS_o=0.0,vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.0,0.0,1.0]),subplots=[['nLvsI']])
+    testModel(BS_o=0.1,vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.0,0.0,1.0]),subplots=[['L','LI','normalized']])
+    testModel(BS_o=0.0,vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.0,0.0,1.0]),subplots=[['L','LI','normalized']])
     #against Ovitraps
-    testModel(BS_o=0.4,vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.1,0.5,0.4]),subplots=[['nEvsO']])
+    testModel(BS_o=0.4,vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.1,0.5,0.4]),subplots=[['E','O','normalized']])
 
     #performace
     testModel(BS_o=0.1,vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.0,0.0,1.0]),subplots=[['E'],['b'],['c'],['n']])
