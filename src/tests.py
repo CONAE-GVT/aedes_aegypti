@@ -152,7 +152,7 @@ def testModel(BS_o=1.0,vBS_oc=np.array([0.5]),vBS_os=math.pi*np.array([5.25**2])
         if ('spaavscimsim' in subplot):
             for i in range(0,op.n):
                 pl.plot(time_range,RES[:,op.WATER+i]*1000.0/op.vBS_os[i], label='W(t) for %sL, %scm^2, %s%%'%(op.vBS_oc[i],op.vBS_os[i],op.vBS_od[i]*100.) )#L->ml->mm->cm
-            pl.plot(utils.getValuesFromCsv('data/test/cimsim_containers_2015.csv',op.start_date,op.end_date,1,verbose=False),label='CIMSiM')
+            pl.plot(utils.getValuesFromCsv('data/test/cimsim_containers_2015_se09.csv',op.start_date,op.end_date,1,verbose=False),label='CIMSiM')
 
         #Temperature in K
         if ('T' in subplot):
