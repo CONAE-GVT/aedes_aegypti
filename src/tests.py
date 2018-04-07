@@ -1,5 +1,6 @@
 import math
 import utils
+from utils import getSurface,getCapacity#not sure if this is a good practice
 import datetime
 import pylab as pl
 import numpy as np
@@ -75,7 +76,19 @@ def decoratedEquations(Y,t):
     if(np.any(Y<0)): negatives[(np.abs(a_time_range-t)).argmin()]+=1
     return dY
 
-def testModel(BS_o=1.0,vBS_oc=np.array([0.5]),vBS_os=math.pi*np.array([5.25**2]),vBS_od=np.array([1.]), precipitations=op.precipitations,subplots=[['E','L'],['W']]):
+def normalize(values):#TODO:change name.
+    return (values-np.min(values))/(np.max(values)-np.min(values))
+
+def subData(time_range,Y,date_range,an_start_date):
+    #get the index of an_start_date
+    index=None
+    for i,date in enumerate(date_range):
+        if(date.date()==an_start_date):
+            index=i
+            break#conserve the first one.
+    return time_range[index:],Y[index:,:],date_range[index:]
+
+def testModel(BS_o=1.0,vBS_oc=np.array([0.5]),vBS_os=math.pi*np.array([5.25**2]),vBS_od=np.array([1.]), precipitations=op.precipitations,subplots=[['E','L'],['W']],plot_start_date=None):
     assert(np.sum(vBS_od)==1)
     op.BS_o=BS_o
     op.vBS_oc=vBS_oc#[1./2.]#capacity in litres
@@ -101,6 +114,9 @@ def testModel(BS_o=1.0,vBS_oc=np.array([0.5]),vBS_os=math.pi*np.array([5.25**2])
             ax1.xaxis.set_minor_locator( matplotlib.dates.DayLocator() )
         else:
             pl.subplot(subplot_id,sharex=ax1)#sharex to zoom all subplots if one is zoomed
+
+        if(plot_start_date):
+            time_range,RES,date_range=subData(time_range,RES,date_range,plot_start_date)
 
         #Amount of larvaes,pupaes and adults
         if ('E' in subplot): pl.plot(date_range,RES[:,op.EGG]*5e-2, '-k', label='E *  5e-2')
@@ -242,5 +258,14 @@ if(__name__ == '__main__'):
         vBS_oc=np.array([10.0])
         op.BS_a=50.0/np.dot(op.vBS_od,op.vBS_oc)
         testModel(BS_o=1.0,vBS_oc=vBS_oc,vBS_os=math.pi*np.array([float(i)**2]),vBS_od=np.array([1.]),subplots=[['E'],['lwE'],['W'],['clc']])
+    '''
+
+    #with a various of types of containers
+    '''
+                      #Plant plate                  #2-l bottle in half               #dog plate                  #water tank               #'pelopincho'                  #Piscine
+    vBS_os=np.array([getSurface(r=24.5/2.)        ,getSurface(r=10.15/2.)           ,getSurface(r=14./2.)       ,getSurface(r=55.)        ,getSurface(x=155.,y=107.)     ,getSurface(x=700.,y=345.)         ])
+    vBS_oc=np.array([getCapacity(r=24.5/2.,z=3.084),getCapacity(r=10.15/2.,z=33.6/2.),getCapacity(r=14./2.,z=5.),getCapacity(r=55.,z=145.),getCapacity(x=155.,y=107.,z=30.),getCapacity(x=700.,y=345.,z=135.) ])
+    op.ws_s=0.2
+    testModel(BS_o=1.0,vBS_oc=vBS_oc,vBS_os=vBS_os,vBS_od=np.array([0.5,0.5,0.0,0.0,0.0,0.0]),subplots=[['E','A1+A2','nT','np'],['nW']])
     '''
     pl.show()

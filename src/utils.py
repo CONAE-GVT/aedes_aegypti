@@ -119,3 +119,20 @@ def  getMeanWindSpeedFromCsv(filename,start_date,end_date):#in km/h
 
 def  getOvitrapEggsFromCsv(filename,start_date,end_date,ovitrap):#in km/h
     return [x if x else None for x in getValuesFromCsv(filename,start_date,end_date,ovitrap,False)]
+
+#
+def getSurface(x=None,y=None,r=None):#surface in cm2. x,y,r must be in cm
+    if(r):
+        return (math.pi*r**2)
+    elif(x and y):
+        return x*y
+    else:
+        assert(False)
+
+def getCapacity(x=None,y=None,r=None,z=None):#capacity in litres. x,y,z,r must be in cm
+    if (r and z):
+        return getSurface(r=r)*z * 1e-3 # cm3->litres
+    elif(x and y and z):
+        return getSurface(x=x,y=y)*z * 1e-3 # cm3->litres
+    else:
+        assert(False)
