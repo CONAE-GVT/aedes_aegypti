@@ -8,6 +8,7 @@ import matplotlib.dates
 from scipy.stats import stats
 from scipy import interpolate
 import otero_precipitation as op
+from utils import getSurface,getCapacity#not sure if this is a good practice
 
 def discreteQG(BS_s,precipitations,t):#l/day
     return (BS_s * precipitations[int(t)]*0.1) * 1.0 * 1./1000.#*1cm^3=1ml -> litres
@@ -267,11 +268,11 @@ if(__name__ == '__main__'):
     '''
 
     #with a various of types of containers
-    '''
+
                       #Plant plate                  #2-l bottle in half               #dog plate                  #water tank               #'pelopincho'                  #Piscine
     vBS_os=np.array([getSurface(r=24.5/2.)        ,getSurface(r=10.15/2.)           ,getSurface(r=14./2.)       ,getSurface(r=55.)        ,getSurface(x=155.,y=107.)     ,getSurface(x=700.,y=345.)         ])
     vBS_oc=np.array([getCapacity(r=24.5/2.,z=3.084),getCapacity(r=10.15/2.,z=33.6/2.),getCapacity(r=14./2.,z=5.),getCapacity(r=55.,z=145.),getCapacity(x=155.,y=107.,z=30.),getCapacity(x=700.,y=345.,z=135.) ])
     op.ws_s=0.2
-    testModel(BS_o=1.0,vBS_oc=vBS_oc,vBS_os=vBS_os,vBS_od=np.array([0.5,0.5,0.0,0.0,0.0,0.0]),subplots=[['E','A1+A2','nT','np'],['nW']])
-    '''
+    testModel(BS_o=1.0,vBS_oc=vBS_oc,vBS_os=vBS_os,vBS_od=np.array([0.5,0.5,0.0,0.0,0.0,0.0]),subplots=[['E','A1+A2','T','p','normalized'],['W']],plot_start_date=datetime.date(2018,1,1))
+
     pl.show()
