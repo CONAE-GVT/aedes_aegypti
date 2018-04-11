@@ -118,7 +118,7 @@ def  getMeanWindSpeedFromCsv(filename,start_date,end_date):#in km/h
     return [x if x else None for x in getValuesFromCsv(filename,start_date,end_date,7)]
 
 def  getOvitrapEggsFromCsv(filename,start_date,end_date,ovitrap):#in km/h
-    return [x if x else None for x in getValuesFromCsv(filename,start_date,end_date,ovitrap,False)]
+    return [x for x in getValuesFromCsv(filename,start_date,end_date,ovitrap,False)]
 
 #
 def getSurface(x=None,y=None,r=None):#surface in cm2. x,y,r must be in cm
