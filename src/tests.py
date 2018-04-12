@@ -67,13 +67,13 @@ def testRESvsOldRES(filename):
     print(np.linalg.norm(old_RES-RES))
     #np.save('backup/RES_%s.npy'%(datetime.datetime.now().isoformat()),RES)
 
-a_time_range = np.linspace(0, (op.end_date - op.start_date).days-2, (op.end_date - op.start_date).days * 10)#TODO:find a better way...
-calls=np.array([0]*len(a_time_range))
-negatives=np.array([0]*len(a_time_range))
+calls=np.array([0]*len(op.getTimeRange()))
+negatives=np.array([0]*len(op.getTimeRange()))
 def decoratedEquations(Y,t):
     dY=op.diff_eqs(Y,t)
-    calls[(np.abs(a_time_range-t)).argmin()]+=1
-    if(np.any(Y<0)): negatives[(np.abs(a_time_range-t)).argmin()]+=1
+    time_range=op.getTimeRange()
+    calls[(np.abs(time_range-t)).argmin()]+=1
+    if(np.any(Y<0)): negatives[(np.abs(time_range-t)).argmin()]+=1
     return dY
 
 def normalize(values):#TODO:change name.
@@ -95,7 +95,7 @@ def subData(time_range,Y,date_range,an_start_date):
     return time_range[index:],Y[index:,:],date_range[index:]
 
 def testModel(BS_o=1.0,vBS_oc=np.array([0.5]),vBS_os=math.pi*np.array([5.25**2]),vBS_od=np.array([1.]), precipitations=op.precipitations,subplots=[['E','L'],['W']],plot_start_date=None):
-    assert(np.sum(vBS_od)==1)
+    assert(abs(1.-np.sum(vBS_od))<1e-10)
     op.BS_o=BS_o
     op.vBS_oc=vBS_oc#[1./2.]#capacity in litres
     op.vBS_od,op.vBS_id=op.BS_o*vBS_od, (1.-op.BS_o)*np.array([1.])#distribution of BS, the sum must be equal to 1.0#[1.0]
@@ -136,13 +136,16 @@ def testModel(BS_o=1.0,vBS_oc=np.array([0.5]),vBS_os=math.pi*np.array([5.25**2])
             pl.plot([datetime.timedelta(days=d)+datetime.datetime.combine(op.start_date,datetime.time()) for d in ri_days], normalizeIfAsked(ris,subplot), '^y', label='Recip. Indices',clip_on=False, zorder=100,markersize=8)
 
         if('O' in subplot):
-            for i in range(1,30):
+            for i in subplot['O']:
                 ovitrap_eggs=utils.getOvitrapEggsFromCsv('data/private/Datos sensores de oviposicion.NO.csv',op.start_date,op.end_date,i)
-                if('normalized' in subplot):ovitrap_eggs=np.array([e/max(ovitrap_eggs) if e else None for e in ovitrap_eggs])#since we have None values normalized won't work
+                if('normalized' in subplot):ovitrap_eggs=np.array([e/max(ovitrap_eggs) if e!=None else None for e in ovitrap_eggs])#since we have None values normalized won't work
                 pl.plot([datetime.timedelta(days=d)+datetime.datetime.combine(op.start_date,datetime.time()) for d in range(0,len(ovitrap_eggs))], ovitrap_eggs, '^', label='Ovitrap %s eggs'%i,clip_on=False, zorder=100,markersize=8)
 
         if('lwE' in subplot):
-            pl.plot(date_range, normalizeIfAsked([RES[(np.abs(time_range-t)).argmin(),op.EGG]-RES[(np.abs(time_range-(t-7))).argmin(),op.EGG] for t in time_range],subplot), '-', label='Eggs oviposited this week')
+            lwE=np.array([RES[(np.abs(time_range-t)).argmin(),op.EGG]-RES[(np.abs(time_range-(t-7))).argmin(),op.EGG] for t in time_range])
+            if('normalized' in subplot):#not same normalize as a
+                    lwE[lwE<0]=0.#replace negatives with zeros
+            pl.plot(date_range, normalizeIfAsked(lwE,subplot), '-', label='E(t)-E(t-7)')
         pl.ylabel('')
 
         #Complete lifecycle
@@ -209,9 +212,11 @@ def getLarvaeSurvivalDry(time_range,vW,L,time_window):
     times_death_larvae= [t for i,t in enumerate(time_range) if L[i]<epsilon and time_window['start']<t<time_window['end']]
     if not times_dry_container or not times_death_larvae:
         return
-    print('W<epsilon at t=%f with epsilon=%f'%(times_dry_container[0],epsilon) )
-    print('L<epsilon at t=%f with epsilon=%f'%(times_death_larvae[0],epsilon) )
-    print(L[np.where(time_range==times_dry_container[0])])
+    print('Larvae Survival to desiccation:')
+    dry_time=times_dry_container[0]
+    print(' W<epsilon at t=%f with epsilon=%f'%(dry_time,epsilon) )
+    print(' L<epsilon at t=%f with epsilon=%f'%(dry_time,epsilon) )
+    print(' L=%s at t=%f'%(L[np.where(time_range==dry_time)],dry_time))
 
 def plotBeta():
     pl.figure()
@@ -231,6 +236,7 @@ def getFakePrecipitation(days):
     return (total_precipitation/np.sum(tmp))*tmp
 
 if(__name__ == '__main__'):
+
     #normal case
     testModel(vBS_oc=np.array([1.2]),subplots=[['E','A1+A2','normalized']])
 
@@ -254,7 +260,7 @@ if(__name__ == '__main__'):
     testModel(BS_o=0.1,vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.0,0.0,1.0]),subplots=[['L','LI','normalized']])
     testModel(BS_o=0.0,vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.0,0.0,1.0]),subplots=[['L','LI','normalized']])
     #against Ovitraps
-    testModel(BS_o=0.4,vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.1,0.5,0.4]),subplots=[['E','O','normalized']])
+    testModel(BS_o=0.4,vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.1,0.5,0.4]),subplots=[{'E':'','O':range(1,30),'normalized':''}])
 
     #performace
     testModel(BS_o=0.1,vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.0,0.0,1.0]),subplots=[['E'],['b'],['c'],['n']])
@@ -272,7 +278,40 @@ if(__name__ == '__main__'):
                       #Plant plate                  #2-l bottle in half               #dog plate                  #water tank               #'pelopincho'                  #Piscine
     vBS_os=np.array([getSurface(r=24.5/2.)        ,getSurface(r=10.15/2.)           ,getSurface(r=14./2.)       ,getSurface(r=55.)        ,getSurface(x=155.,y=107.)     ,getSurface(x=700.,y=345.)         ])
     vBS_oc=np.array([getCapacity(r=24.5/2.,z=3.084),getCapacity(r=10.15/2.,z=33.6/2.),getCapacity(r=14./2.,z=5.),getCapacity(r=55.,z=145.),getCapacity(x=155.,y=107.,z=30.),getCapacity(x=700.,y=345.,z=135.) ])
+    op.n=len(vBS_oc)
     op.ws_s=0.2
     testModel(BS_o=1.0,vBS_oc=vBS_oc,vBS_os=vBS_os,vBS_od=np.array([0.5,0.5,0.0,0.0,0.0,0.0]),subplots=[['E','A1+A2','T','p','normalized'],['W']],plot_start_date=datetime.date(2018,1,1))
+
+    #*****9*****
+    #ovitrap:9 pid:2382 od:[ 0.03088072  0.20904943  0.23383199  0.16713309  0.17310652  0.11768087] id:[ 0.06831738] ws_s:0.031265688907 Error:0.0765284863715 len:11.0 Error/len: 0.00695713512468
+    vBS_od,op.ws_s=np.array([0.03088072,0.20904943,0.23383199,0.16713309,0.17310652,0.11768087]),0.031265688907
+    BS_o=np.sum(vBS_od)
+    print(BS_o)
+    testModel(BS_o=BS_o,vBS_oc=vBS_oc,vBS_os=vBS_os,vBS_od=vBS_od/BS_o,subplots=[['E','P','A1+A2','normalized'],{'lwE':'','O':[9],'normalized':''}])
+
+    #*****4*****
+    #ovitrap:4 pid:18743 od:[ 0.18299322  0.20899391  0.07332913  0.15454651  0.14291156  0.0308964 ] id:[ 0.20632926] ws_s:0.491606121558 BS_a:2594.27715109 Error:34425.9670772 len:18.0 Error/len: 1912.553
+    op.BS_a=2595.#time_range with 20
+    vBS_od,op.ws_s=np.array([0.18299322,0.20899391,0.07332913,0.15454651,0.14291156,0.0308964]),0.421606121558
+    BS_o=np.sum(vBS_od)
+    print(BS_o)
+    testModel(BS_o=BS_o,vBS_oc=vBS_oc,vBS_os=vBS_os,vBS_od=vBS_od/BS_o,subplots=[['E','P','A1+A2','normalized'],{'lwE':'','O':[4],'normalized':''}])
+
+    #*****3*****
+    #ovitrap:3 pid:18743 od:[ 0.07533379  0.35492456  0.0164825   0.04007676  0.08755963  0.0680057 ] id:[ 0.35761705] ws_s:0.895738915951 BS_a:3132.19610422 Error:5057.73452148 len:20.0 Error/len: 252.886726074
+    op.BS_a=3132.#time_range with 20
+    vBS_od,op.ws_s=np.array([0.07533379 , 0.35492456 , 0.0164825   ,0.04007676 , 0.08755963 , 0.0680057]),0.31738915951
+    BS_o=np.sum(vBS_od)
+    print(BS_o)
+    testModel(BS_o=BS_o,vBS_oc=vBS_oc,vBS_os=vBS_os,vBS_od=vBS_od/BS_o,subplots=[['E','P','A1+A2','normalized'],{'lwE':'','O':[3],'normalized':''}])
+
+    #*****4 but just to compare with something*****
+    op.BS_a=2595.#time_range with 20
+    vBS_od,op.ws_s=np.array([ 0.01 , 0.0 , 0.0 , 0.0 , 0.0 , 0.0 ]),0.421606121558
+    BS_o=np.sum(vBS_od)
+    print(BS_o)
+    testModel(BS_o=BS_o,vBS_oc=vBS_oc,vBS_os=vBS_os,vBS_od=vBS_od/BS_o,subplots=[['E','P','A1+A2','normalized'],{'lwE':'','O':[4],'normalized':''}])
+
+
 
     pl.show()
