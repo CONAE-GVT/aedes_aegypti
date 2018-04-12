@@ -120,6 +120,12 @@ def  getMeanWindSpeedFromCsv(filename,start_date,end_date):#in km/h
 def  getOvitrapEggsFromCsv(filename,start_date,end_date,ovitrap):#in km/h
     return [x for x in getValuesFromCsv(filename,start_date,end_date,ovitrap,False)]
 
+def saveResults(time_range,RES,start_date,end_date):
+    file=open('backup/'+datetime.datetime.now().strftime('%Y-%m-%d__%H_%M_%S')+'.csv','w')
+    for d in range(0,(end_date-start_date).days):
+        date_d=start_date+datetime.timedelta(days=d)
+        mean_RES_d=RES[np.trunc(time_range)==d,:].mean(axis=0)#for the day "d", we calculate the daily mean of E,L,P,etc
+        file.write(date_d.strftime('%Y-%m-%d')+','+','.join([str(value) for value in mean_RES_d ])+ '\n')
 #
 def getSurface(x=None,y=None,r=None):#surface in cm2. x,y,r must be in cm
     if(r):
