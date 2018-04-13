@@ -60,12 +60,22 @@ def testdW():
     pl.legend(loc=0)
     pl.show()
 
-def testRESvsOldRES(filename):
-    time_range,INPUT,RES=op.solveEquations()
-    print("||old_RES-RES|| = "),
-    old_RES=np.load(filename)
-    print(np.linalg.norm(old_RES-RES))
-    #np.save('backup/RES_%s.npy'%(datetime.datetime.now().isoformat()),RES)
+def testRESvsOldRES(new_RES,old_RES_filename):
+    old_RES_start_date=datetime.datetime.strptime(open(old_RES_filename,'r').readline().split(',')[0],'%Y-%m-%d').date()
+    old_RES_end_date=datetime.datetime.strptime(open(old_RES_filename,'r').readlines()[-1].split(',')[0],'%Y-%m-%d').date()
+    assert old_RES_start_date==op.start_date,'Old Result and new result must start at the same date'
+    print("||old_RES-new_RES|| = "),
+    old_RES=utils.loadResults(old_RES_filename,op.start_date)
+    new_RES=utils.getDailyResults(op.getTimeRange(),new_RES,op.start_date,old_RES_end_date+datetime.timedelta(days=1))#the last date save is one day less than the end_date#TODO:not sure if this is correct or just a hack
+    print(np.linalg.norm(old_RES-new_RES))
+
+
+def testSaveLoadResults(time_range,RES):
+    filename=utils.saveResults(time_range,RES,op.start_date,op.end_date)
+    same_RES=utils.loadResults(filename,op.start_date)
+    RES=utils.getDailyResults(time_range,RES,op.start_date,op.end_date)
+    print('%s vs %s'%(len(RES),len(same_RES)))
+    print(np.linalg.norm(RES-same_RES))
 
 calls=np.array([0]*len(op.getTimeRange()))
 negatives=np.array([0]*len(op.getTimeRange()))
@@ -105,6 +115,8 @@ def testModel(BS_o=1.0,vBS_oc=np.array([0.5]),vBS_os=math.pi*np.array([5.25**2])
     op.precipitations=precipitations
     op.p=op.getAsLambdaFunction(op.aps,op.precipitations)
     time_range,INPUT,RES=op.solveEquations(initial_condition=[100.0, 0.0,0.0,0.0,0.0]+ [0./2. for i in range(0,op.n)],equations=decoratedEquations)
+    #print(utils.saveResults(time_range,RES,op.start_date,op.end_date))
+    #testRESvsOldRES(RES,'backup/previous_results/2018-04-12__21_07_10.csv')
 
     #Ploting
     pl.figure()

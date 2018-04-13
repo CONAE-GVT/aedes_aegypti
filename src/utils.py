@@ -120,12 +120,28 @@ def  getMeanWindSpeedFromCsv(filename,start_date,end_date):#in km/h
 def  getOvitrapEggsFromCsv(filename,start_date,end_date,ovitrap):#in km/h
     return [x for x in getValuesFromCsv(filename,start_date,end_date,ovitrap,False)]
 
-def saveResults(time_range,RES,start_date,end_date):
-    file=open('backup/'+datetime.datetime.now().strftime('%Y-%m-%d__%H_%M_%S')+'.csv','w')
+def getDailyResults(time_range,RES,start_date,end_date):
+    daily_RES=[]
     for d in range(0,(end_date-start_date).days):
         date_d=start_date+datetime.timedelta(days=d)
         mean_RES_d=RES[np.trunc(time_range)==d,:].mean(axis=0)#for the day "d", we calculate the daily mean of E,L,P,etc
-        file.write(date_d.strftime('%Y-%m-%d')+','+','.join([str(value) for value in mean_RES_d ])+ '\n')
+        daily_RES.append(mean_RES_d)
+    return np.array(daily_RES)
+
+def saveResults(time_range,RES,start_date,end_date):
+    filename='backup/previous_results/'+datetime.datetime.now().strftime('%Y-%m-%d__%H_%M_%S')+'.csv'
+    file=open(filename,'w')
+    daily_RES=getDailyResults(time_range,RES,start_date,end_date)
+    for d,daily_RES_d in enumerate(daily_RES):
+        date_d=start_date+datetime.timedelta(days=d)
+        file.write(date_d.strftime('%Y-%m-%d')+','+','.join([str(value) for value in daily_RES_d ])+ '\n')
+    return filename
+
+def loadResults(filename,start_date):
+    converters = {0: lambda d: (datetime.datetime.strptime(d, '%Y-%m-%d').date()-start_date).days}#date->days passed from start_date
+    RES=np.loadtxt(filename,delimiter=',',converters=converters)
+    return RES[:,1:]# 1: is to discard the date column
+
 #
 def getSurface(x=None,y=None,r=None):#surface in cm2. x,y,r must be in cm
     if(r):
