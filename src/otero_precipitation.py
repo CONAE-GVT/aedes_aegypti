@@ -1,6 +1,7 @@
 #coding: utf-8
 from scipy import interpolate
 import scipy.integrate as spi
+from config import Configuration
 import numpy as np
 import datetime
 import fourier
@@ -25,16 +26,20 @@ ADULT1=3
 ADULT2=4
 WATER=5
 
-BS_a=50.0#amount of BS #1.0/21.0#??
-BS_o=0.5#1.0/2.0#proportion of BS that are affeted by rain (are outside)
-vBS_oc, vBS_ic=np.array([.04,0.5,20.]), np.array([0.5])#[1./2.]#capacity in litres
-vBS_od, vBS_id=BS_o*np.array([0.1,0.4,0.5]), (1.-BS_o)*np.array([1.])#distribution of BS, the sum must be equal to 1.0#[1.0]
-vBS_os, vBS_is=math.pi*np.array([1.25**2,5.25**2,15.25**2]), math.pi*np.array([5.25**2])#in cm^2 #TODO:CHECK THAT ALL UNITS ARE CONSISTENT!!!
-n,m=len(vBS_oc),len(vBS_ic)
-ws_s=0.5#wind shield in [0,1]
-
+configuration = Configuration('resources/otero_precipitation.cfg')
+BS_a=configuration.getFloat('breeding_site','amount')
+vBS_oc=configuration.getArray('breeding_site','outside_capacity')#in litres
+vBS_ic=configuration.getArray('breeding_site','inside_capacity')#in litres
+vBS_od=configuration.getArray('breeding_site','outside_distribution')#distribution of BS outside # the sum of ouside and in-
+vBS_id=configuration.getArray('breeding_site','inside_distribution')#distribution of BS inside   #  side must be equal to 1
+vBS_os=configuration.getArray('breeding_site','outside_surface')#in cm^2
+n,m=len(vBS_od),len(vBS_id)
+ws_s=configuration.getFloat('weather','wind_shield')#wind shield in [0,1]
 #Cordoba
-location,start_date,end_date={'name':'cordoba','station':'SACO','zones':['Centro','NO','NE','SE','SO']},datetime.date(2014, 7, 1),datetime.date(2018, 04, 5)
+location={'name':configuration.getString('location','name'),'station':configuration.getString('weather','station'),'zones':list(configuration.getString('location','zones'))}
+start_date=configuration.getDate('simulation','start_date')
+end_date=configuration.getDate('simulation','end_date')
+initial_condition=configuration.getArray('simulation','initial_condition')
 
 AEDIC_INDICES_FILENAME='data/private/Indices aedicos Historicos '+location['name']+'.xlsx'
 WEATHER_STATION_DATA_FILENAME='data/public/wunderground_'+location['station']+'.csv'
@@ -198,7 +203,7 @@ def diff_eqs(Y,t):
     return dY   # For odeint
 
 def getTimeRange():
-    return np.linspace(0, (end_date - start_date).days-1, (end_date - start_date).days * 10)
+    return np.linspace(0, (end_date - start_date).days-1, (end_date - start_date).days * 20)
 
 def solveEquations(initial_condition = [100.0, 0.0,0.0,0.0,0.0]+ [0. for i in range(0,n)],equations=diff_eqs):
     time_range = getTimeRange()

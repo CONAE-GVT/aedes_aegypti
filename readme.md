@@ -28,5 +28,14 @@ To exequiel@zotac.hopto.org:/home/exequiel/repositories/aedes_aegypti.git
 or
 >git clone ssh://exequiel@zotac.hopto.org:8080/home/exequiel/repositories/aedes_aegypti.git
 
+**To create a new branch**
+>git checkout -b development
+Commit if you have something
+>git push -u origin development
+
+**To delete a branch**
+>git push origin --delete development
+>git branch -d development
+
 **Profiling**
 >python -m cProfile -s cumtime src/tests.py  > p.txt
