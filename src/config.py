@@ -17,7 +17,7 @@ class Configuration:
                     string_value=str(values)
                 self.config_parser.set(section,option,string_value)
 
-    #self.validate()
+    self.validate()
 
   def getFloat(self,section,option):
       return np.float(self.config_parser.get(section,option))
@@ -34,8 +34,7 @@ class Configuration:
   def validate(self):
     vBS_od=self.getArray('breeding_site','outside_distribution')
     vBS_id=self.getArray('breeding_site','inside_distribution')
-    print(abs(1.-np.sum(vBS_od)+np.sum(vBS_id)))
-    assert abs(1.-np.sum(vBS_od)+np.sum(vBS_id))<1e-10,'sum(vBS_id)+sum(vBS_id)!=1'
+    assert abs(1.-np.sum(vBS_od)-np.sum(vBS_id))<1e-10,'sum(vBS_id)+sum(vBS_id)=%s!=1'%(np.sum(vBS_od)+np.sum(vBS_id))
 
   def save(self,filename):
     self.config_parser.write(open(filename,'w'))

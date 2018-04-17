@@ -1,12 +1,14 @@
 import math
 import utils
+import fourier
 import datetime
 import pylab as pl
 import numpy as np
 import matplotlib
 import matplotlib.dates
-from scipy.stats import stats
 from scipy import interpolate
+from scipy.stats import stats
+from config import Configuration
 import otero_precipitation as op
 from utils import getSurface,getCapacity#not sure if this is a good practice
 
@@ -104,16 +106,39 @@ def subData(time_range,Y,date_range,an_start_date):
             break#conserve the first one.
     return time_range[index:],Y[index:,:],date_range[index:]
 
-def testModel(BS_o=1.0,vBS_oc=np.array([0.5]),vBS_os=math.pi*np.array([5.25**2]),vBS_od=np.array([1.]), precipitations=op.precipitations,subplots=[['E','L'],['W']],plot_start_date=None):
-    assert(abs(1.-np.sum(vBS_od))<1e-10)
-    op.BS_o=BS_o
-    op.vBS_oc=vBS_oc#[1./2.]#capacity in litres
-    op.vBS_od,op.vBS_id=op.BS_o*vBS_od, (1.-op.BS_o)*np.array([1.])#distribution of BS, the sum must be equal to 1.0#[1.0]
-    op.vBS_os=vBS_os#in cm^2
-    op.n=len(op.vBS_oc)
+def configure(configuration):
+    op.BS_a=configuration.getFloat('breeding_site','amount')
+    op.vBS_oc=configuration.getArray('breeding_site','outside_capacity')#in litres
+    op.vBS_ic=configuration.getArray('breeding_site','inside_capacity')#in litres
+    op.vBS_od=configuration.getArray('breeding_site','outside_distribution')#distribution of BS outside # the sum of ouside and in-
+    op.vBS_id=configuration.getArray('breeding_site','inside_distribution')#distribution of BS inside   #  side must be equal to 1
+    op.vBS_os=configuration.getArray('breeding_site','outside_surface')#in cm^2
+    op.n,op.m=len(op.vBS_od),len(op.vBS_id)
+    op.ws_s=configuration.getFloat('weather','wind_shield')#wind shield in [0,1]
+    #Cordoba
+    op.location={'name':configuration.getString('location','name'),'station':configuration.getString('weather','station'),'zones':list(configuration.getString('location','zones'))}
+    op.start_date=configuration.getDate('simulation','start_date')
+    op.end_date=configuration.getDate('simulation','end_date')
 
-    op.precipitations=precipitations
-    op.p=op.getAsLambdaFunction(op.aps,op.precipitations)
+    op.AEDIC_INDICES_FILENAME='data/private/Indices aedicos Historicos '+op.location['name']+'.xlsx'
+    op.WEATHER_STATION_DATA_FILENAME='data/public/wunderground_'+op.location['station']+'.csv'
+
+    precipitations = utils.getPrecipitationsFromCsv(op.WEATHER_STATION_DATA_FILENAME,op.start_date,op.end_date)
+    op.p=op.getAsLambdaFunction(op.aps,precipitations)
+
+    wind_speed=utils.getMeanWindSpeedFromCsv(op.WEATHER_STATION_DATA_FILENAME,op.start_date,op.end_date)
+    op.ws=fourier.fourier(wind_speed,50)
+
+    op.T=interpolate.InterpolatedUnivariateSpline(range(0,(op.end_date - op.start_date).days),utils.getAverageTemperaturesFromCsv(op.WEATHER_STATION_DATA_FILENAME,op.start_date,op.end_date))
+
+
+def testModel(configuration, p=None,T=None,subplots=[['E','L'],['W']],plot_start_date=None):
+    configure(configuration)
+    if(p):
+        op.p=p
+    if(T):
+        op.T=T
+    initial_condition=configuration.getArray('simulation','initial_condition')#TODO:ignoring config...
     time_range,INPUT,RES=op.solveEquations(initial_condition=[100.0, 0.0,0.0,0.0,0.0]+ [0./2. for i in range(0,op.n)],equations=decoratedEquations)
     #print(utils.saveResults(time_range,RES,op.start_date,op.end_date))
     #testRESvsOldRES(RES,'backup/previous_results/2018-04-12__21_07_10.csv')
@@ -249,80 +274,174 @@ def getFakePrecipitation(days):
 
 if(__name__ == '__main__'):
 
+    config=Configuration('resources/otero_precipitation.cfg',
+        {'breeding_site':{
+            'outside_capacity':[1.2],
+            'outside_surface':math.pi*np.array([5.25**2]),
+            'outside_distribution':[1.],
+            'inside_distribution':[0]
+            }
+        })
     #normal case
-    testModel(vBS_oc=np.array([1.2]),subplots=[['E','A1+A2','normalized']])
+    testModel(config,subplots=[['E','A1+A2','normalized']])
 
     #W->0 test
-    testModel(vBS_oc=np.array([1.2]),precipitations=[0 if d>500 else 15. for d in range(0,(op.end_date - op.start_date).days)],subplots=[['E','L','normalized'],['W']])
+    precipitations=[0 if d>500 else 15. for d in range(0,(op.end_date - op.start_date).days)]
+    p=op.getAsLambdaFunction(op.aps,precipitations)
+    testModel(config,p=p,subplots=[['E','L','normalized'],['W']])
 
     #T->0
-    time_range=range(0,(op.end_date - op.start_date).days)
-    T=op.T#save the original function to be able restore it later.
-    op.T=interpolate.InterpolatedUnivariateSpline(time_range,[30.*(1. - t/float(max(time_range)) )+273.15 for t in time_range ])
-    testModel(vBS_oc=np.array([1.2]),subplots=[['A1+A2'],['T']])
-    op.T=T#restore the original function back
+    time_range=range(0,(config.getDate('simulation','end_date') - config.getDate('simulation','start_date')).days )
+    T=interpolate.InterpolatedUnivariateSpline(time_range,[30.*(1. - t/float(max(time_range)) )+273.15 for t in time_range ])
+    testModel(config,subplots=[['A1+A2'],['T']],T=T)
 
     #cimsim vs spaa
+    config=Configuration('resources/otero_precipitation.cfg',
+        {'breeding_site':{
+            'outside_capacity':[0.41],
+            'outside_surface':math.pi*np.array([4.75**2]),
+            'outside_distribution':[1.0],
+            'inside_distribution':[0]
+            }
+        })
     #diameter:9.5, height:5.8, type: circular, sun exposure:0.9
     #TODO:we should change the start/end dates to match the ones used in cimsim, but in this case is ok, because the container is empty anyways.
-    testModel(vBS_oc=np.array([0.41]),vBS_os=np.array([math.pi* 4.75**2]),subplots=[['spaavscimsim']])
+    testModel(config,subplots=[['spaavscimsim']])
 
     #against Indices
     vBS_os=math.pi*np.array([42.,52.,62.])
-    testModel(BS_o=0.1,vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.0,0.0,1.0]),subplots=[['L','LI','normalized']])
-    testModel(BS_o=0.0,vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.0,0.0,1.0]),subplots=[['L','LI','normalized']])
-    #against Ovitraps
-    testModel(BS_o=0.4,vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.1,0.5,0.4]),subplots=[{'E':'','O':range(1,30),'normalized':''}])
+    config=Configuration('resources/otero_precipitation.cfg',
+        {'breeding_site':{
+            'outside_capacity':[0.1,0.6,8.3],
+            'outside_surface':vBS_os,
+            'outside_distribution':[0,0,0.1],
+            'inside_distribution':[0.9]
+            }
+        })
+    testModel(config,subplots=[['L','LI','normalized']])
+
+    config=Configuration('resources/otero_precipitation.cfg',
+        {'breeding_site':{
+            'outside_capacity':[0.1,0.6,8.3],
+            'outside_surface':vBS_os,
+            'outside_distribution':[0,0,0.0],
+            'inside_distribution':[1.0]
+            }
+        })
+    testModel(config,subplots=[['L','LI','normalized']])
 
     #performace
-    testModel(BS_o=0.1,vBS_oc=np.array([0.1,0.6,8.3]),vBS_os=vBS_os,vBS_od=np.array([0.0,0.0,1.0]),subplots=[['E'],['b'],['c'],['n']])
+    testModel(config,subplots=[['E'],['b'],['c'],['n']])
 
-    #Different container surfaces
-    '''
-    for i in range(1,4):
-        vBS_oc=np.array([10.0])
-        op.BS_a=50.0/np.dot(op.vBS_od,op.vBS_oc)
-        testModel(BS_o=1.0,vBS_oc=vBS_oc,vBS_os=math.pi*np.array([float(i)**2]),vBS_od=np.array([1.]),subplots=[['E'],['lwE'],['W'],['clc']])
-    '''
 
     #with a various of types of containers
 
                       #Plant plate                  #2-l bottle in half               #dog plate                  #water tank               #'pelopincho'                  #Piscine
     vBS_os=np.array([getSurface(r=24.5/2.)        ,getSurface(r=10.15/2.)           ,getSurface(r=14./2.)       ,getSurface(r=55.)        ,getSurface(x=155.,y=107.)     ,getSurface(x=700.,y=345.)         ])
     vBS_oc=np.array([getCapacity(r=24.5/2.,z=3.084),getCapacity(r=10.15/2.,z=33.6/2.),getCapacity(r=14./2.,z=5.),getCapacity(r=55.,z=145.),getCapacity(x=155.,y=107.,z=30.),getCapacity(x=700.,y=345.,z=135.) ])
-    op.n=len(vBS_oc)
-    op.ws_s=0.2
-    testModel(BS_o=1.0,vBS_oc=vBS_oc,vBS_os=vBS_os,vBS_od=np.array([0.5,0.5,0.0,0.0,0.0,0.0]),subplots=[['E','A1+A2','T','p','normalized'],['W']],plot_start_date=datetime.date(2018,1,1))
+
+    config=Configuration('resources/otero_precipitation.cfg',{
+        'breeding_site':{
+            'outside_capacity':vBS_oc,
+            'outside_surface':vBS_os,
+            'outside_distribution':[0.5,0.5,0.0,0.0,0.0,0.0],
+            'inside_distribution':[0]
+            },
+        'weather':{
+            'wind_shield':0.2
+        }
+    })
+    testModel(config,subplots=[['E','A1+A2','T','p','normalized'],['W']],plot_start_date=datetime.date(2018,1,1))
 
     #*****9*****
     #ovitrap:9 pid:2382 od:[ 0.03088072  0.20904943  0.23383199  0.16713309  0.17310652  0.11768087] id:[ 0.06831738] ws_s:0.031265688907 Error:0.0765284863715 len:11.0 Error/len: 0.00695713512468
-    vBS_od,op.ws_s=np.array([0.03088072,0.20904943,0.23383199,0.16713309,0.17310652,0.11768087]),0.031265688907
+    vBS_od=np.array([0.03088072,0.20904943,0.23383199,0.16713309,0.17310652,0.11768087])
     BS_o=np.sum(vBS_od)
     print(BS_o)
-    testModel(BS_o=BS_o,vBS_oc=vBS_oc,vBS_os=vBS_os,vBS_od=vBS_od/BS_o,subplots=[['E','P','A1+A2','normalized'],{'lwE':'','O':[9],'normalized':''}])
+    config=Configuration('resources/otero_precipitation.cfg',{
+        'breeding_site':{
+            'outside_capacity':vBS_oc,
+            'outside_surface':vBS_os,
+            'outside_distribution':vBS_od,
+            'inside_distribution':[0.06831738]
+            },
+        'weather':{
+            'wind_shield':0.031265688907
+        },
+        'simulation':{
+            'start_date':datetime.date(2017,7,1),
+            'end_date':datetime.date(2018,4,5)
+        }
+    })
+    testModel(config,subplots=[['E','P','A1+A2','normalized'],{'lwE':'','O':[9],'normalized':''}])
 
     #*****4*****
     #ovitrap:4 pid:18743 od:[ 0.18299322  0.20899391  0.07332913  0.15454651  0.14291156  0.0308964 ] id:[ 0.20632926] ws_s:0.491606121558 BS_a:2594.27715109 Error:34425.9670772 len:18.0 Error/len: 1912.553
-    op.BS_a=2595.#time_range with 20
-    vBS_od,op.ws_s=np.array([0.18299322,0.20899391,0.07332913,0.15454651,0.14291156,0.0308964]),0.421606121558
+    vBS_od=np.array([0.18299322,0.20899391,0.07332913,0.15454651,0.14291156,0.0308964])
     BS_o=np.sum(vBS_od)
     print(BS_o)
-    testModel(BS_o=BS_o,vBS_oc=vBS_oc,vBS_os=vBS_os,vBS_od=vBS_od/BS_o,subplots=[['E','P','A1+A2','normalized'],{'lwE':'','O':[4],'normalized':''}])
+    config=Configuration('resources/otero_precipitation.cfg',{
+        'breeding_site':{
+            'amount':2595,
+            'outside_capacity':vBS_oc,
+            'outside_surface':vBS_os,
+            'outside_distribution':vBS_od,
+            'inside_distribution':[0.20632927]
+            },
+        'weather':{
+            'wind_shield':0.421606121558
+        },
+        'simulation':{
+            'start_date':datetime.date(2017,7,1),
+            'end_date':datetime.date(2018,4,5)
+        }
+    })
+    testModel(config,subplots=[['E','P','A1+A2','normalized'],{'lwE':'','O':[4],'normalized':''}])
 
     #*****3*****
     #ovitrap:3 pid:18743 od:[ 0.07533379  0.35492456  0.0164825   0.04007676  0.08755963  0.0680057 ] id:[ 0.35761705] ws_s:0.895738915951 BS_a:3132.19610422 Error:5057.73452148 len:20.0 Error/len: 252.886726074
-    op.BS_a=3132.#time_range with 20
-    vBS_od,op.ws_s=np.array([0.07533379 , 0.35492456 , 0.0164825   ,0.04007676 , 0.08755963 , 0.0680057]),0.31738915951
+    vBS_od=np.array([0.07533379 , 0.35492456 , 0.0164825   ,0.04007676 , 0.08755963 , 0.0680057])
     BS_o=np.sum(vBS_od)
     print(BS_o)
-    testModel(BS_o=BS_o,vBS_oc=vBS_oc,vBS_os=vBS_os,vBS_od=vBS_od/BS_o,subplots=[['E','P','A1+A2','normalized'],{'lwE':'','O':[3],'normalized':''}])
+    config=Configuration('resources/otero_precipitation.cfg',{
+        'breeding_site':{
+            'amount':3132,
+            'outside_capacity':vBS_oc,
+            'outside_surface':vBS_os,
+            'outside_distribution':vBS_od,
+            'inside_distribution':[0.35761706]
+            },
+        'weather':{
+            'wind_shield':0.31738915951
+        },
+        'simulation':{
+            'start_date':datetime.date(2017,7,1),
+            'end_date':datetime.date(2018,4,5)
+        }
+    })
+    testModel(config,subplots=[['E','P','A1+A2','normalized'],{'lwE':'','O':[3],'normalized':''}])
 
     #*****4 but just to compare with something*****
-    op.BS_a=2595.#time_range with 20
-    vBS_od,op.ws_s=np.array([ 0.01 , 0.0 , 0.0 , 0.0 , 0.0 , 0.0 ]),0.421606121558
+    vBS_od=np.array([ 0.01 , 0.0 , 0.0 , 0.0 , 0.0 , 0.0 ])
     BS_o=np.sum(vBS_od)
     print(BS_o)
-    testModel(BS_o=BS_o,vBS_oc=vBS_oc,vBS_os=vBS_os,vBS_od=vBS_od/BS_o,subplots=[['E','P','A1+A2','normalized'],{'lwE':'','O':[4],'normalized':''}])
+    config=Configuration('resources/otero_precipitation.cfg',{
+        'breeding_site':{
+            'amount':2595,
+            'outside_capacity':vBS_oc,
+            'outside_surface':vBS_os,
+            'outside_distribution':vBS_od,
+            'inside_distribution':[0.99]
+            },
+        'weather':{
+            'wind_shield':0.421606121558
+        },
+        'simulation':{
+            'start_date':datetime.date(2017,7,1),
+            'end_date':datetime.date(2018,4,5)
+        }
+    })
+    testModel(config,subplots=[['E','P','A1+A2','normalized'],{'lwE':'','O':[4],'normalized':''}])
 
 
 
