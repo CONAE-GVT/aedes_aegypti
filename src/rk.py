@@ -6,7 +6,9 @@ def solve(_dYdt,Y0,time_range):
 	#main
 	Y=np.zeros([len(time_range),len(Y0)])
 	Y[0]=Y0#<---initial conditions
-	def dYdt(Y,t): return np.array(_dYdt(Y,t))#decorate the function to return an np array
+	def dYdt(Y,t):
+		Y[Y<0]=0#this is to make rk work
+		return np.array(_dYdt(Y,t))#decorate the function to return an np array
 
 	for i,t in enumerate(time_range[:-1]):
 		h=time_range[i+1]-time_range[i]

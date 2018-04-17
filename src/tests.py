@@ -13,57 +13,12 @@ from config import Configuration
 import otero_precipitation as op
 from utils import getSurface,getCapacity#not sure if this is a good practice
 
-def discreteQG(BS_s,precipitations,t):#l/day
-    return (BS_s * precipitations[int(t)]*0.1) * 1.0 * 1./1000.#*1cm^3=1ml -> litres
-
-def discreteW(a0,BS_c,BS_s,precipitations):#in l
-    a=[0]* len(precipitations)
-    a[0]=a0
-    #here we are counting the amount rained, at the END of the day. That's why we need use the t-1 instead of just t
-    for t in range(1,len(precipitations)):
-        a[t]=max(min(a[t-1] + discreteQG(BS_s,precipitations,t-1) - op.QR(op.ws_s*op.ws(t-1),BS_s,op.T(t-1)),BS_c),0.0)
-    return a
-
-def step(values,t):
-    return values[int(t)]
-
 def printCorrelation():
     time_range,INPUT,RES=op.solveEquations()
     vT=np.vectorize(op.T)
     print('(Pearson s correlation coefficient,2-tailed p-value): ' + str(stats.pearsonr(RES[:,op.LARVAE], vT(time_range))) )
 
-#tests
-def testAps():
-    days=range(0,(op.end_date - op.start_date).days)
-    s=op.getAsLambdaFunction(step,op.precipitations)
-    print('aps_test')
-    for t in days:
-        aps_test=spi.quad(op.p,t,t+1)
-        step_test=spi.quad(s,t,t+1)
-        if(abs(op.precipitations[t]-aps_test[0])>1e-10):
-            print("%i: %f vs. %f " % (t,aps_test[0],op.precipitations[t]) )
-            #print("%f: %f vs. %f " % (t,aps_test[0],step_test[0]))
-def testdW():
-    time_range,INPUT,RES=op.solveEquations()
-    days=range(0,(op.end_date - op.start_date).days)
-    accumulated_water=[discreteW(INPUT[op.WATER+i],op.vBS_oc[i],op.vBS_os[i],op.precipitations) for i in range(0,op.n)]
-    print('dW_test')
-    #compare
-    for i in range(0,op.n):
-        for t in days:
-            if(abs(accumulated_water[i][t]-RES[t,op.WATER+i])>5e-2):
-                print("%i: %f - %f = %f" % (t,RES[t,op.WATER+i],accumulated_water[i][t],RES[t,op.WATER+i]-accumulated_water[i][t]) )
-    #plot
-    for i in range(0,op.n):
-        pl.plot(range(0,len(accumulated_water[i])),accumulated_water[i], label='W (Discrete version) for %sL, %scm^2'%(op.vBS_oc[i],op.vBS_os[i]) )
-        pl.plot(time_range,RES[:,op.WATER+i], label='W (Continuous version) for %sL, %scm^2'%(op.vBS_oc[i],op.vBS_os[i]) )
-    #pl.plot(range(0,600),[gamma(L,0.1) for L in range(0,600)], '-r', label='gamma')
-    pl.xlabel('Time(in days starting in July)')
-    pl.ylabel('Water in Litres')
-    pl.legend(loc=0)
-    pl.show()
-
-def testRESvsOldRES(new_RES,old_RES_filename):
+def compare(new_RES,old_RES_filename):
     old_RES_start_date=datetime.datetime.strptime(open(old_RES_filename,'r').readline().split(',')[0],'%Y-%m-%d').date()
     old_RES_end_date=datetime.datetime.strptime(open(old_RES_filename,'r').readlines()[-1].split(',')[0],'%Y-%m-%d').date()
     assert old_RES_start_date==op.start_date,'Old Result and new result must start at the same date'
@@ -140,7 +95,7 @@ def testModel(configuration, p=None,T=None,subplots=[['E','L'],['W']],plot_start
     if(T):
         op.T=T
     initial_condition=configuration.getArray('simulation','initial_condition')
-    time_range,INPUT,RES=op.solveEquations(initial_condition=initial_condition,equations=decoratedEquations)
+    time_range,INPUT,RES=op.solveEquations(equations=decoratedEquations,initial_condition=initial_condition)
     if(len(sys.argv)>1 and sys.argv[1]=='save' and p==None and T==None):#if asked save, but not with tampered p or T functions
         results_filename=utils.saveResults(time_range,RES,op.start_date,op.end_date)
         configuration.save(results_filename.replace('.csv','.cfg'))
@@ -240,8 +195,6 @@ def testModel(configuration, p=None,T=None,subplots=[['E','L'],['W']],plot_start
         pl.legend(loc=0)
         pl.xticks(rotation='vertical')
 
-    getLarvaeSurvivalDry(time_range,RES[:,op.WATER:op.WATER+op.n],RES[:,op.LARVAE],{'start':100,'end':1600})
-    #plotBeta()
 
 def getLarvaeSurvivalDry(time_range,vW,L,time_window):
     #print(W[:,0]<1e-3)
@@ -257,40 +210,23 @@ def getLarvaeSurvivalDry(time_range,vW,L,time_window):
     print(' L<epsilon at t=%f with epsilon=%f'%(dry_time,epsilon) )
     print(' L=%s at t=%f'%(L[np.where(time_range==dry_time)],dry_time))
 
-def plotBeta():
-    pl.figure()
-    W_range=np.linspace(5, 0,5*20)
-    pl.plot(W_range,[op.beta(np.array([W])) for W in W_range])
-
-#TODO:check this method!!!
-def getRainChances(d):
-    rainy_months=[1,2,3,10,11,12]
-    if (datetime.timedelta(days=d)+op.start_date).month in rainy_months:
-        return 0.3
+def runComparison():
+    filenames=[]
+    if(len(sys.argv)>2):
+        filenames=sys.argv[2:]#command line
     else:
-        return 0.005
-def getFakePrecipitation(days):
-    total_precipitation=1000.#mm
-    tmp=np.array([np.random.rand(1) if np.random.rand(1)<getRainChances(d) else 0. for d in range(0,days)])#np.random.normal(50,15)
-    return (total_precipitation/np.sum(tmp))*tmp
+        filenames=sys.stdin.read().split('\n')[:-1]#command pipe
 
-if(__name__ == '__main__'):
-    if(len(sys.argv)>1 and sys.argv[1]=='compare'):
-        filenames=[]
-        if(len(sys.argv)>2):
-            filenames=sys.argv[2:]#command line
-        else:
-            filenames=sys.stdin.read().split('\n')[:-1]#command pipe
+    if(len(filenames)>0):
+        for filename in filenames:
+            configuration=Configuration(filename.replace('.csv','.cfg'))
+            configure(configuration)
+            initial_condition=configuration.getArray('simulation','initial_condition')
+            time_range,INPUT,RES=op.solveEquations(initial_condition=initial_condition)
+            compare(RES,filename)
+        quit()
 
-        if(len(filenames)>0):
-            for filename in filenames:
-                configuration=Configuration(filename.replace('.csv','.cfg'))
-                configure(configuration)
-                initial_condition=configuration.getArray('simulation','initial_condition')
-                time_range,INPUT,RES=op.solveEquations(initial_condition=initial_condition)
-                testRESvsOldRES(RES,filename)
-            quit()
-
+def runTestCases():
     config=Configuration('resources/otero_precipitation.cfg',
         {'breeding_site':{
             'outside_capacity':[1.2],
@@ -388,8 +324,6 @@ if(__name__ == '__main__'):
     #*****9*****
     #ovitrap:9 pid:2382 od:[ 0.03088072  0.20904943  0.23383199  0.16713309  0.17310652  0.11768087] id:[ 0.06831738] ws_s:0.031265688907 Error:0.0765284863715 len:11.0 Error/len: 0.00695713512468
     vBS_od=np.array([0.03088072,0.20904943,0.23383199,0.16713309,0.17310652,0.11768087])
-    BS_o=np.sum(vBS_od)
-    print(BS_o)
     config=Configuration('resources/otero_precipitation.cfg',{
         'breeding_site':{
             'outside_capacity':vBS_oc,
@@ -411,8 +345,6 @@ if(__name__ == '__main__'):
     #*****4*****
     #ovitrap:4 pid:18743 od:[ 0.18299322  0.20899391  0.07332913  0.15454651  0.14291156  0.0308964 ] id:[ 0.20632926] ws_s:0.491606121558 BS_a:2594.27715109 Error:34425.9670772 len:18.0 Error/len: 1912.553
     vBS_od=np.array([0.18299322,0.20899391,0.07332913,0.15454651,0.14291156,0.0308964])
-    BS_o=np.sum(vBS_od)
-    print(BS_o)
     config=Configuration('resources/otero_precipitation.cfg',{
         'breeding_site':{
             'amount':2595,
@@ -435,8 +367,6 @@ if(__name__ == '__main__'):
     #*****3*****
     #ovitrap:3 pid:18743 od:[ 0.07533379  0.35492456  0.0164825   0.04007676  0.08755963  0.0680057 ] id:[ 0.35761705] ws_s:0.895738915951 BS_a:3132.19610422 Error:5057.73452148 len:20.0 Error/len: 252.886726074
     vBS_od=np.array([0.07533379 , 0.35492456 , 0.0164825   ,0.04007676 , 0.08755963 , 0.0680057])
-    BS_o=np.sum(vBS_od)
-    print(BS_o)
     config=Configuration('resources/otero_precipitation.cfg',{
         'breeding_site':{
             'amount':3132,
@@ -458,8 +388,6 @@ if(__name__ == '__main__'):
 
     #*****4 but just to compare with something*****
     vBS_od=np.array([ 0.01 , 0.0 , 0.0 , 0.0 , 0.0 , 0.0 ])
-    BS_o=np.sum(vBS_od)
-    print(BS_o)
     config=Configuration('resources/otero_precipitation.cfg',{
         'breeding_site':{
             'amount':2595,
@@ -479,6 +407,10 @@ if(__name__ == '__main__'):
     })
     testModel(config,subplots=[['E','P','A1+A2','normalized'],{'lwE':'','O':[4],'normalized':''}])
 
-
-
     pl.show()
+
+if(__name__ == '__main__'):
+    if(len(sys.argv)>1 and sys.argv[1]=='compare'):
+        runComparison()
+    else:
+        runTestCases()

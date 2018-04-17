@@ -188,7 +188,6 @@ def dA2(A1,A2,T_t):
 def diff_eqs(Y,t):
     '''The main set of equations'''
     dY=np.zeros((5+n))
-    #Y[Y<0]=0#this is to make rk work
     T_t=T(t)
     E,L,P,A1,A2=Y[:WATER]
     vW=np.array(Y[WATER:])
@@ -205,10 +204,14 @@ def diff_eqs(Y,t):
 def getTimeRange():
     return np.linspace(0, (end_date - start_date).days-1, (end_date - start_date).days * 20)
 
-def solveEquations(initial_condition = [100.0, 0.0,0.0,0.0,0.0]+ [0. for i in range(0,n)],equations=diff_eqs):
+def solveEquations(equations=diff_eqs,initial_condition = [100.0, 0.0,0.0,0.0,0.0]+ [0. for i in range(0,n)],method='odeint'):
     time_range = getTimeRange()
-    Y = spi.odeint(equations,initial_condition,time_range,hmax=1.0)#TODO: this is because it calls aps out of it's domain.Find a better way.
-    #Y=rk.solve(diff_eqs,INPUT,time_range)
-    #Y=rk.scipy_solve(diff_eqs,INPUT,time_range,'dopri',{'max_step':time_range[1]-time_range[0],'rtol':1e-3, 'atol':1e-6} )
-    #Y = spi.odeint(op.diff_eqs,INPUT,time_range,hmax=0.5,rtol=[1e-2]*5 +[1e-2]*op.n ,atol=[1]*5 +[1e-4]*op.n)#,hmax=0.01
+    Y=None
+    if(method=='odeint'):
+        Y = spi.odeint(equations,initial_condition,time_range,hmax=1.0)#TODO: this is because it calls aps out of it's domain.Find a better way.
+    elif(method=='rk'):
+        Y=rk.solve(equations,initial_condition,time_range)
+    elif(method=='dopri'):
+        Y=rk.scipy_solve(equations,initial_condition,time_range,'dopri',{'max_step':time_range[1]-time_range[0],'rtol':1e-3, 'atol':1e-6} )
+
     return time_range,initial_condition,Y
