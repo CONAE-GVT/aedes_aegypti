@@ -39,3 +39,12 @@ Commit if you have something
 
 **Profiling**
 >python -m cProfile -s cumtime src/tests.py  > p.txt
+
+**Usage**
+To save:
+>python src/tests.py save
+
+To compare against previous results:
+>python src/tests.py compare backup/previous_results/2018-04-17__09_40_45.csv backup/previous_results/2018-04-17__09_39_47.csv
+or
+>ls backup/previous_results/*.csv |  python src/tests.py compare

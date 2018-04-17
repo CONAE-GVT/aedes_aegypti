@@ -1,3 +1,4 @@
+import sys
 import math
 import utils
 import fourier
@@ -138,10 +139,11 @@ def testModel(configuration, p=None,T=None,subplots=[['E','L'],['W']],plot_start
         op.p=p
     if(T):
         op.T=T
-    initial_condition=configuration.getArray('simulation','initial_condition')#TODO:ignoring config...
-    time_range,INPUT,RES=op.solveEquations(initial_condition=[100.0, 0.0,0.0,0.0,0.0]+ [0./2. for i in range(0,op.n)],equations=decoratedEquations)
-    #print(utils.saveResults(time_range,RES,op.start_date,op.end_date))
-    #testRESvsOldRES(RES,'backup/previous_results/2018-04-12__21_07_10.csv')
+    initial_condition=configuration.getArray('simulation','initial_condition')
+    time_range,INPUT,RES=op.solveEquations(initial_condition=initial_condition,equations=decoratedEquations)
+    if(len(sys.argv)>1 and sys.argv[1]=='save' and p==None and T==None):#if asked save, but not with tampered p or T functions
+        results_filename=utils.saveResults(time_range,RES,op.start_date,op.end_date)
+        configuration.save(results_filename.replace('.csv','.cfg'))
 
     #Ploting
     pl.figure()
@@ -273,6 +275,21 @@ def getFakePrecipitation(days):
     return (total_precipitation/np.sum(tmp))*tmp
 
 if(__name__ == '__main__'):
+    if(len(sys.argv)>1 and sys.argv[1]=='compare'):
+        filenames=[]
+        if(len(sys.argv)>2):
+            filenames=sys.argv[2:]#command line
+        else:
+            filenames=sys.stdin.read().split('\n')[:-1]#command pipe
+
+        if(len(filenames)>0):
+            for filename in filenames:
+                configuration=Configuration(filename.replace('.csv','.cfg'))
+                configure(configuration)
+                initial_condition=configuration.getArray('simulation','initial_condition')
+                time_range,INPUT,RES=op.solveEquations(initial_condition=initial_condition)
+                testRESvsOldRES(RES,filename)
+            quit()
 
     config=Configuration('resources/otero_precipitation.cfg',
         {'breeding_site':{
@@ -280,6 +297,9 @@ if(__name__ == '__main__'):
             'outside_surface':math.pi*np.array([5.25**2]),
             'outside_distribution':[1.],
             'inside_distribution':[0]
+            },
+        'simulation':{
+            'initial_condition':[100.0, 0.0,0.0,0.0,0.0]+ [0]
             }
         })
     #normal case
@@ -302,6 +322,9 @@ if(__name__ == '__main__'):
             'outside_surface':math.pi*np.array([4.75**2]),
             'outside_distribution':[1.0],
             'inside_distribution':[0]
+            },
+        'simulation':{
+            'initial_condition':[100.0, 0.0,0.0,0.0,0.0]+ [0]
             }
         })
     #diameter:9.5, height:5.8, type: circular, sun exposure:0.9
@@ -316,6 +339,9 @@ if(__name__ == '__main__'):
             'outside_surface':vBS_os,
             'outside_distribution':[0,0,0.1],
             'inside_distribution':[0.9]
+            },
+        'simulation':{
+            'initial_condition':[100.0, 0.0,0.0,0.0,0.0]+ [0 for x in vBS_os]
             }
         })
     testModel(config,subplots=[['L','LI','normalized']])
@@ -326,6 +352,9 @@ if(__name__ == '__main__'):
             'outside_surface':vBS_os,
             'outside_distribution':[0,0,0.0],
             'inside_distribution':[1.0]
+            },
+        'simulation':{
+            'initial_condition':[100.0, 0.0,0.0,0.0,0.0]+ [0 for x in vBS_os]
             }
         })
     testModel(config,subplots=[['L','LI','normalized']])
@@ -349,6 +378,9 @@ if(__name__ == '__main__'):
             },
         'weather':{
             'wind_shield':0.2
+        },
+        'simulation':{
+            'initial_condition':[100.0, 0.0,0.0,0.0,0.0]+ [0 for x in vBS_os]
         }
     })
     testModel(config,subplots=[['E','A1+A2','T','p','normalized'],['W']],plot_start_date=datetime.date(2018,1,1))
@@ -370,7 +402,8 @@ if(__name__ == '__main__'):
         },
         'simulation':{
             'start_date':datetime.date(2017,7,1),
-            'end_date':datetime.date(2018,4,5)
+            'end_date':datetime.date(2018,4,5),
+            'initial_condition':[100.0, 0.0,0.0,0.0,0.0]+ [0 for x in vBS_os]
         }
     })
     testModel(config,subplots=[['E','P','A1+A2','normalized'],{'lwE':'','O':[9],'normalized':''}])
@@ -393,7 +426,8 @@ if(__name__ == '__main__'):
         },
         'simulation':{
             'start_date':datetime.date(2017,7,1),
-            'end_date':datetime.date(2018,4,5)
+            'end_date':datetime.date(2018,4,5),
+            'initial_condition':[100.0, 0.0,0.0,0.0,0.0]+ [0 for x in vBS_os]
         }
     })
     testModel(config,subplots=[['E','P','A1+A2','normalized'],{'lwE':'','O':[4],'normalized':''}])
@@ -416,7 +450,8 @@ if(__name__ == '__main__'):
         },
         'simulation':{
             'start_date':datetime.date(2017,7,1),
-            'end_date':datetime.date(2018,4,5)
+            'end_date':datetime.date(2018,4,5),
+            'initial_condition':[100.0, 0.0,0.0,0.0,0.0]+ [0 for x in vBS_os]
         }
     })
     testModel(config,subplots=[['E','P','A1+A2','normalized'],{'lwE':'','O':[3],'normalized':''}])
@@ -438,7 +473,8 @@ if(__name__ == '__main__'):
         },
         'simulation':{
             'start_date':datetime.date(2017,7,1),
-            'end_date':datetime.date(2018,4,5)
+            'end_date':datetime.date(2018,4,5),
+            'initial_condition':[100.0, 0.0,0.0,0.0,0.0]+ [0 for x in vBS_os]
         }
     })
     testModel(config,subplots=[['E','P','A1+A2','normalized'],{'lwE':'','O':[4],'normalized':''}])
