@@ -2,15 +2,16 @@
 import os
 import math
 import utils
+import datetime
 import pylab as pl
 import numpy as np
+import scipy.stats as stats
 import multiprocessing as mp
 import otero_precipitation as op
-from scipy.optimize import minimize,differential_evolution
-import datetime
-import scipy.stats as stats
-from utils import getSurface,getCapacity
 import performance_equations as pe
+from scipy.optimize import minimize,differential_evolution
+
+MINIMIZE_METHOD='differential_evolution'
 
 def calculateMetrics(time_range,RES,real_values):
     lwE=np.array([RES[(np.abs(time_range-t)).argmin(),op.EGG]-RES[(np.abs(time_range-(t-7))).argmin(),op.EGG] for t in time_range])
@@ -23,12 +24,7 @@ def calculateMetrics(time_range,RES,real_values):
 def error(x,real_values,ovitrap=None):
     if(not ovitrap):
         real_values,ovitrap=real_values#weird differential_evolution bug...
-    #return np.dot(x,x)
-    #args=np.array(args).flatten()
-    #print(args)
-    #real_values,ovitrap=args[:-1],args[-1]
-    #real_values=np.array(real_values).flatten()
-    #real_values,ovitrap=args
+
     l=np.sum(x[0:op.n+op.m])
     if(l<1e-5): return 500.
     x[0:op.n+op.m]/=l#constraint: #Σ vBS_od[i] + vBS_id[i] = 1
@@ -57,10 +53,12 @@ def getOptimalParameters(args):
     #0<=x<=1,0<=ws_s<=1.
     bounds=tuple((0,1) for x in x0 )#tuple((0,1) for x in range(0,len(x0)-1) ) + tuple((0,1.0) for x in range(0,1))
 
-    #opt=minimize(error,x0,(vNormalized_ovitrap_eggs),method='SLSQP',bounds=bounds,constraints=constraints,options={'eps': 1e-02, 'ftol': 1e-01})
-    opt=differential_evolution(error,bounds,args=args,callback=earlyOut,maxiter=1, popsize=1)
+    opt=None
+    if(MINIMIZE_METHOD=='SLSQP'):
+        opt=minimize(error,x0,args,method='SLSQP',bounds=bounds,constraints=constraints,options={'eps': 1e-02, 'ftol': 1e-01})
+    else:
+        opt=differential_evolution(error,bounds,args=args,callback=earlyOut,maxiter=1, popsize=1)
 
-    #print(res)
     return opt
 
 def populate(time_range,ovitrap_eggs):
@@ -94,7 +92,6 @@ if(__name__ == '__main__'):
     total_weight=np.sum([weight(opt.fun+1e-1) for opt in vOpt])
     weight_mean_x=np.array([weight(opt.fun+1e-1)*opt.x/total_weight for opt in vOpt]).sum(axis=0)
     print(weight_mean_x)
-    #quit()
     for idx,opt in enumerate(vOpt):
         x=np.array(opt.x)
         op.vBS_od,op.vBS_id,op.ws_s=x[0:op.n],x[op.n:op.n+op.m],x[op.n+op.m]
