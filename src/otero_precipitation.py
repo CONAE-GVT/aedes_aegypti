@@ -11,6 +11,8 @@ import rk
 
 class Model:
     def __init__(self, configuration=Configuration('resources/otero_precipitation.cfg')):
+        self.configuration=configuration
+
         self.parameters=Bunch()
         self.parameters.BS_a=configuration.getFloat('breeding_site','amount')
         self.parameters.vBS_oc=configuration.getArray('breeding_site','outside_capacity')#in litres
@@ -29,13 +31,22 @@ class Model:
         WEATHER_STATION_DATA_FILENAME='data/public/wunderground_'+self.parameters.location['station']+'.csv'
         self.parameters.weather=Weather(WEATHER_STATION_DATA_FILENAME,self.start_date,self.end_date)
 
+    def save(self):
+        #save results
+        results_filename='data/test/previous_results/'+datetime.datetime.now().strftime('%Y-%m-%d__%H_%M_%S')+'.csv'
+        file=open(results_filename,'w')
+        daily_Y=utils.getDailyResults(self.time_range,self.Y,self.start_date,self.end_date)
+        for d,daily_Y_d in enumerate(daily_Y):
+            date_d=self.start_date+datetime.timedelta(days=d)
+            file.write(date_d.strftime('%Y-%m-%d')+','+','.join([str(value) for value in daily_Y_d ])+ '\n')
+        #save config
+        self.configuration.save(results_filename.replace('.csv','.cfg'))
 
-    def getTimeRange(self):
-        elapsed_days=(self.end_date - self.start_date).days
-        return np.linspace(0, elapsed_days-1, elapsed_days * 20)
+        return results_filename
+
 
     def solveEquations(self,equations=equations.diff_eqs,method='odeint'):
-        time_range = self.getTimeRange()
+        self.time_range = time_range = np.linspace(0, (self.end_date - self.start_date).days-1, (self.end_date - self.start_date).days * 20)
         initial_condition=self.parameters.initial_condition
         Y=None
 
@@ -46,4 +57,5 @@ class Model:
         elif(method=='dopri'):
             Y=rk.scipy_solve(equations,initial_condition,time_range,'dopri',{'max_step':time_range[1]-time_range[0],'rtol':1e-3, 'atol':1e-6} )
 
+        self.Y=Y
         return time_range,initial_condition,Y
