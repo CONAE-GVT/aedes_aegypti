@@ -1,217 +1,49 @@
 #coding: utf-8
-from scipy import interpolate
 import scipy.integrate as spi
 from config import Configuration
+from weather import Weather
+from bunch import Bunch
 import numpy as np
+import equations
 import datetime
-import fourier
-import fitter
 import utils
-import math
 import rk
 
+class Model:
+    def __init__(self, configuration=Configuration('resources/otero_precipitation.cfg')):
+        self.parameters=Bunch()
+        self.parameters.BS_a=configuration.getFloat('breeding_site','amount')
+        self.parameters.vBS_oc=configuration.getArray('breeding_site','outside_capacity')#in litres
+        self.parameters.vBS_ic=configuration.getArray('breeding_site','inside_capacity')#in litres
+        self.parameters.vBS_od=configuration.getArray('breeding_site','outside_distribution')#distribution of BS outside # the sum of ouside and in-
+        self.parameters.vBS_id=configuration.getArray('breeding_site','inside_distribution')#distribution of BS inside   #  side must be equal to 1
+        self.parameters.vBS_os=configuration.getArray('breeding_site','outside_surface')#in cm^2
+        self.parameters.n,self.parameters.m=len(self.parameters.vBS_od),len(self.parameters.vBS_id)
+        self.parameters.ws_s=configuration.getFloat('weather','wind_shield')#wind shield in [0,1]
+        #Cordoba
+        self.parameters.location={'name':configuration.getString('location','name'),'station':configuration.getString('weather','station'),'zones':list(configuration.getString('location','zones'))}
+        self.start_date=configuration.getDate('simulation','start_date')
+        self.end_date=configuration.getDate('simulation','end_date')
+        self.parameters.initial_condition=configuration.getArray('simulation','initial_condition')
+
+        WEATHER_STATION_DATA_FILENAME='data/public/wunderground_'+self.parameters.location['station']+'.csv'
+        self.parameters.weather=Weather(WEATHER_STATION_DATA_FILENAME,self.start_date,self.end_date)
 
 
-vR_D_298K=[0.24,0.2088,0.384,0.216,0.372]
-#ro_25_=[0.01066,0.00873,0.01610,0.00898] #replaced by R_D_298K. which:  R_D_298K ~ ro_25*24  #(24 hours)
-vDeltaH_A=[10798.0,26018.0,14931.0,15725.0,15725.0]
-vDeltaH_H=[100000.0,55990.0,-472379.00,1756481.0,1756481.0] #-472379 vs. -473379
-vT_1_2H=[14184.0,304.6,148.0,447.2,447.2]
+    def getTimeRange(self):
+        elapsed_days=(self.end_date - self.start_date).days
+        return np.linspace(0, elapsed_days-1, elapsed_days * 20)
 
+    def solveEquations(self,equations=equations.diff_eqs,method='odeint'):
+        time_range = self.getTimeRange()
+        initial_condition=self.parameters.initial_condition
+        Y=None
 
-EGG=0
-LARVAE=1
-PUPAE=2
-ADULT1=3
-ADULT2=4
-WATER=5
+        if(method=='odeint'):
+            Y = spi.odeint(equations,initial_condition,time_range,hmax=1.0,args=(self.parameters,))#the ',' in (parameters,) is very important! '(parameters)' or tuple(parameters) doesn't work#TODO: this is because it calls aps out of it's domain.Find a better way.
+        elif(method=='rk'):
+            Y=rk.solve(equations,initial_condition,time_range,args=(self.parameters,))
+        elif(method=='dopri'):
+            Y=rk.scipy_solve(equations,initial_condition,time_range,'dopri',{'max_step':time_range[1]-time_range[0],'rtol':1e-3, 'atol':1e-6} )
 
-configuration = Configuration('resources/otero_precipitation.cfg')
-BS_a=configuration.getFloat('breeding_site','amount')
-vBS_oc=configuration.getArray('breeding_site','outside_capacity')#in litres
-vBS_ic=configuration.getArray('breeding_site','inside_capacity')#in litres
-vBS_od=configuration.getArray('breeding_site','outside_distribution')#distribution of BS outside # the sum of ouside and in-
-vBS_id=configuration.getArray('breeding_site','inside_distribution')#distribution of BS inside   #  side must be equal to 1
-vBS_os=configuration.getArray('breeding_site','outside_surface')#in cm^2
-n,m=len(vBS_od),len(vBS_id)
-ws_s=configuration.getFloat('weather','wind_shield')#wind shield in [0,1]
-#Cordoba
-location={'name':configuration.getString('location','name'),'station':configuration.getString('weather','station'),'zones':list(configuration.getString('location','zones'))}
-start_date=configuration.getDate('simulation','start_date')
-end_date=configuration.getDate('simulation','end_date')
-initial_condition=configuration.getArray('simulation','initial_condition')
-
-AEDIC_INDICES_FILENAME='data/private/Indices aedicos Historicos '+location['name']+'.xlsx'
-WEATHER_STATION_DATA_FILENAME='data/public/wunderground_'+location['station']+'.csv'
-
-#<precipitation related functionality v>
-'''
-Convenience method
-Let  g=getAsLambdaFunction(aps2,precipitations)
-calling g(t) would be as calling aps2(precipitations,t)
-'''
-def getAsLambdaFunction(f,values):
-    return lambda t: f(values,t)
-
-#Area preserving Sin
-def aps(values,t):
-    return values[int(t)] * (math.sin(2.*math.pi*t + 3.*math.pi/2.) +1.)
-
-#Step
-def step(values,t):
-    return values[int(t)]
-
-precipitations = utils.getPrecipitationsFromCsv(WEATHER_STATION_DATA_FILENAME,start_date,end_date)
-p=getAsLambdaFunction(aps,precipitations)
-
-wind_speed=utils.getMeanWindSpeedFromCsv(WEATHER_STATION_DATA_FILENAME,start_date,end_date)
-ws=fourier.fourier(wind_speed,50)
-
-#NOTE:EPA evaporation in Technical guidance for hazards analysis, eq (7) page G-3
-#TODO:check QS for spilled water
-def QR(u,BS_s,T_t):#in l/day
-    U=u * 1000.0/(3600.0)#step(wind_speed,t) * 1000.0/(60.0*60.0)#in m/s #km/h->m/s
-    MW=18.01528#molecular wight of water in g/mol (gmol often called mol src:https://chemistry.stackexchange.com/questions/53455/g-gmol-vs-lb-lbmol)
-    A=BS_s * 0.00107#in ft^2 #cm^2->ft^2
-    VP=10.0**(8.07131-(1730.63/(233.426+T_t-273.15)))#Vapor pressure by Antoine Equation in mmHg
-    R=82.05 #in atm cm 3 /g mole
-    return ( (0.106 * U**0.78 * MW**(2.0/3.0)* A * VP)/(R* T_t) ) * 453.59237/(1.0/(60.0*24.0)) *1./1000. #Rate of release to air ml/day #(Ibs/min) ->  ml/day ->l/day
-
-def QG(BS_s,t):#Quantity gathered#in litres
-    return (BS_s * p(t)*0.1) * 1.0 * 1./1000.#*1cm^3=1ml -> l
-
-'''
-    { QG(BS_s,t)-QR(BS_s,T(t))    if 0 < W < BS_c
-dW= { QG(BS_s,t)                  if W <= 0.0
-    { -QR(BS_s,T(t))               if W >= BS_c
-Note: in the implementation we needed to add functions to make function continuous, otherwise odeint breaks
-'''
-
-def dW(W,BS_c,BS_s,T_t,t):#in l/day
-    epsilon=1e-3
-    if(0+epsilon < W < BS_c-epsilon):
-        return QG(BS_s,t)-QR(ws_s*ws(t),BS_s,T_t)
-    elif(W <= 0.0+epsilon):
-        return QG(BS_s,t) - QR(ws_s*ws(t),BS_s,T_t)*(W/epsilon)
-    elif( W >= BS_c-epsilon):
-        return QG(BS_s,t)*((BS_c-W)/epsilon) - QR(ws_s*ws(t),BS_s,T_t)
-
-def a0(W):
-    return 70.0* W
-
-def vGamma(vL,vBS_a,vW):
-    return [gamma(vL[i],vBS_a[i],vW[i]) for i in range(0,len(vL))]
-
-#</precipitation related functionality v>
-
-
-def R_D(stage,T_t):#day^-1
-    R=1.987 # universal gas constant
-    R_D_298K=vR_D_298K[stage]
-    #ro_25=ro_25_[stage]
-    deltaH_A=vDeltaH_A[stage]
-    deltaH_H=vDeltaH_H[stage]
-    T_1_2H=vT_1_2H[stage] # K
-    return R_D_298K * (T_t/298.0) * math.exp( (deltaH_A/R)* ((1.0/298.0)- (1.0/T_t)) ) / ( 1.0+ math.exp( (deltaH_H/R)* ((1.0/T_1_2H)-(1.0/T_t)) ) )
-
-
-#a,b,c = fitter.getOptimalParameters(utils.getAverageTemperaturesFromCsv(WEATHER_STATION_DATA_FILENAME,start_date,end_date))#parameters for T(t)
-#def T(t):#K, beginning on the first of july
-#    return a + b * math.cos( (2.0* math.pi * t)/365.25 + c) + 273.15 #To Kelvin
-#T=fourier.fourier(utils.getAverageTemperaturesFromCsv(WEATHER_STATION_DATA_FILENAME,start_date,end_date),50)
-#time_domain,min_max_temperatures=utils.getMinMaxTemperaturesFromCsv(WEATHER_STATION_DATA_FILENAME,start_date,end_date)
-#T = interpolate.interp1d(time_domain,min_max_temperatures,'cubic')
-T=interpolate.InterpolatedUnivariateSpline(range(0,(end_date - start_date).days),utils.getAverageTemperaturesFromCsv(WEATHER_STATION_DATA_FILENAME,start_date,end_date))
-
-def gamma(L,BS,W):
-    epsilon=1e-4
-    if(BS==0 or W <epsilon):#W *1000./BS_s <0.1
-        return 1.0#no water total inhibition#1960 Aedes aegypti (L.), The Yellow Fever Mosquito(Page 165)
-    if(L/BS<=a0(W)-epsilon):
-        return 0
-    elif(a0(W)-epsilon < L/BS <a0(W)+epsilon):
-        #a (a0-e) + b=0 => b=-a (a0 -e)
-        #a (a0 + e) + b=0.63 => a(a0+e) - a(a0-e) = 2 a e = 0.63 =>a=0.63/(2 e)
-        a=0.63/(2.0*epsilon)
-        b=-a*(a0(W)-epsilon)
-        return a * (L/BS) + b
-    elif(L/BS>=a0(W)+epsilon):
-        return 0.63
-
-def beta(vW):#~1 if we have water,~0 if we dont
-    return np.dot(vBS_od,vW/(vW+1e-4))+ np.dot(vBS_id,np.ones(len(vBS_id)))#TODO:check!
-
-def dE(E,L,A1,A2,vW,T_t):
-    egn=63.0*beta(vW)#The amount of eggs goes to zero when vW goes to zero.In the 1-dimensional case. when W=1e-3, egn(1e-3)~egn(0.5)/2#TODO:instead of 1e-3, it whould be a value related to the min water needed to lay eggs
-    me=0.01#mortality of the egg, for T in [278,303]
-    elr=R_D(EGG,T_t)
-    ovr1=R_D(ADULT1,T_t)
-    ovr2=R_D(ADULT2,T_t)
-    v1=np.ones((n))
-    #  ( (1,1,..1) - vGamma(vL,vBS_a,vW) ) . vE = (1- γ(vL[1],vBS_a[1],vW[1],...) ) . vE= Σ (1- γ(vL[i],vBS_a[i],vW[i])) * vE[i]
-    inh_o=np.dot(v1 -vGamma(L*vBS_od,BS_a*vBS_od,vW    ) , E*vBS_od )
-    v1=np.ones((m))
-    #  ( (1,1,..1) - vGamma(vL,vBS_a,vBS_ic) ) . vE = (1-γ(vL[1],vBS_a[1],vBS_ic[1]) ,... ) . vE= Σ (1- γ(vL[i],vBS_a[i],vBS_ic[i])) * vE[i]
-    inh_i=np.dot(v1 -vGamma(L*vBS_id,BS_a*vBS_id,vBS_ic) , E*vBS_id )
-    return egn*( ovr1 *A1  + ovr2* A2) - me *E - elr* (inh_o + inh_i )
-
-def dL(E,L,vW,T_t):
-    elr=R_D(EGG,T_t)
-    lpr=R_D(LARVAE,T_t)
-    ml=0.01 + 0.9725 * math.exp(-(T_t-278.0)/2.7035)#mortality of the larvae, for T in [278,303]
-    alpha0=1.5#Parameter to be fitted #1.0#HARDCODED!!!
-    alpha=alpha0/BS_a#Σ vα[i] * vL[i]^2= Σ α0/(BS_a* vBS_d[i]) * (L*vBS_d[i])^2 = Σ α0/BS_a * L^2 * vBS_d[i] = α *L^2 *Σ BS_d[i]=α L^2 #Note: on why this is ok even though BS changed.
-    v1=np.ones((n))
-    inh_o=np.dot(v1 -vGamma(L*vBS_od,BS_a*vBS_od,vW    ) , E*vBS_od )
-    v1=np.ones((m))
-    inh_i=np.dot(v1 -vGamma(L*vBS_id,BS_a*vBS_id,vBS_ic) , E*vBS_id )
-    return elr* (inh_o+inh_i ) - ml*L - alpha* L*L - lpr *L -35.6464*(1.-beta(vW))*L#-24.*(1.-beta(vW))*L# -log(1e-4/5502.)/(1.)=17.823207313460703
-
-def dP(L,P,T_t):
-    lpr=R_D(LARVAE,T_t)
-    par=R_D(PUPAE,T_t)
-    mp=0.01 + 0.9725 * math.exp(-(T_t-278.0)/2.7035)#death of pupae
-    return lpr*L - mp*P  - par*P
-
-def dA1(P,A1,T_t):
-    par=R_D(PUPAE,T_t)
-    ovr1=R_D(ADULT1,T_t)
-    ef=0.83#emergence factor
-    ma=0.09#for T in [278,303]
-    return par*ef*P/2.0 - ma*A1 - ovr1*A1
-
-def dA2(A1,A2,T_t):
-    ovr1=R_D(ADULT1,T_t)
-    ma=0.09#for T in [278,303]
-    return ovr1*A1 - ma*A2
-
-def diff_eqs(Y,t):
-    '''The main set of equations'''
-    dY=np.zeros((5+n))
-    T_t=T(t)
-    E,L,P,A1,A2=Y[:WATER]
-    vW=np.array(Y[WATER:])
-
-    dY[EGG]    = dE(E,L,A1,A2,vW,T_t)
-    dY[LARVAE] = dL(E,L,vW,T_t)
-    dY[PUPAE]  = dP(L,P,T_t)
-    dY[ADULT1] = dA1(P,A1,T_t)
-    dY[ADULT2] = dA2(A1,A2,T_t)
-    dY[WATER:] = [dW(vW[i],vBS_oc[i],vBS_os[i],T_t,t) for i in range(0,n)]
-
-    return dY   # For odeint
-
-def getTimeRange():
-    return np.linspace(0, (end_date - start_date).days-1, (end_date - start_date).days * 20)
-
-def solveEquations(equations=diff_eqs,initial_condition = [100.0, 0.0,0.0,0.0,0.0]+ [0. for i in range(0,n)],method='odeint'):
-    time_range = getTimeRange()
-    Y=None
-    if(method=='odeint'):
-        Y = spi.odeint(equations,initial_condition,time_range,hmax=1.0)#TODO: this is because it calls aps out of it's domain.Find a better way.
-    elif(method=='rk'):
-        Y=rk.solve(equations,initial_condition,time_range)
-    elif(method=='dopri'):
-        Y=rk.scipy_solve(equations,initial_condition,time_range,'dopri',{'max_step':time_range[1]-time_range[0],'rtol':1e-3, 'atol':1e-6} )
-
-    return time_range,initial_condition,Y
+        return time_range,initial_condition,Y

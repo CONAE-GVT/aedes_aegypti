@@ -10,15 +10,16 @@ import matplotlib.dates
 from scipy import interpolate
 from scipy.stats import stats
 from config import Configuration
-import otero_precipitation as op
+from otero_precipitation import Model
 from utils import getSurface,getCapacity#not sure if this is a good practice
+from equations import EGG,LARVAE,PUPAE,ADULT1,ADULT2,WATER,diff_eqs,beta
 
 def printCorrelation():
     time_range,INPUT,RES=op.solveEquations()
     vT=np.vectorize(op.T)
-    print('(Pearson s correlation coefficient,2-tailed p-value): ' + str(stats.pearsonr(RES[:,op.LARVAE], vT(time_range))) )
+    print('(Pearson s correlation coefficient,2-tailed p-value): ' + str(stats.pearsonr(RES[:,LARVAE], vT(time_range))) )
 
-def compare(new_RES,old_RES_filename):
+def compare(new_RES,old_RES_filename,op):
     old_RES_start_date=datetime.datetime.strptime(open(old_RES_filename,'r').readline().split(',')[0],'%Y-%m-%d').date()
     old_RES_end_date=datetime.datetime.strptime(open(old_RES_filename,'r').readlines()[-1].split(',')[0],'%Y-%m-%d').date()
     assert old_RES_start_date==op.start_date,'Old Result and new result must start at the same date'
@@ -35,14 +36,17 @@ def testSaveLoadResults(time_range,RES):
     print('%s vs %s'%(len(RES),len(same_RES)))
     print(np.linalg.norm(RES-same_RES))
 
-calls=np.array([0]*len(op.getTimeRange()))
-negatives=np.array([0]*len(op.getTimeRange()))
-def decoratedEquations(Y,t):
-    dY=op.diff_eqs(Y,t)
-    time_range=op.getTimeRange()
-    calls[(np.abs(time_range-t)).argmin()]+=1
-    if(np.any(Y<0)): negatives[(np.abs(time_range-t)).argmin()]+=1
-    return dY
+class DecoratedEquations:
+    def __init__(self,model,diff_eqs):
+        self.model=model
+        self.diff_eqs=diff_eqs
+
+    def __call__(self,Y,t,parameters):
+        dY=self.diff_eqs(Y,t,parameters)
+        time_range=self.model.getTimeRange()
+        parameters.calls[(np.abs(time_range-t)).argmin()]+=1
+        if(np.any(Y<0)): parameters.negatives[(np.abs(time_range-t)).argmin()]+=1
+        return dY
 
 def normalize(values):#TODO:change name.
     return (values-values.min())/(values.max()-values.min())
@@ -62,45 +66,29 @@ def subData(time_range,Y,date_range,an_start_date):
             break#conserve the first one.
     return time_range[index:],Y[index:,:],date_range[index:]
 
-def configure(configuration):
-    op.BS_a=configuration.getFloat('breeding_site','amount')
-    op.vBS_oc=configuration.getArray('breeding_site','outside_capacity')#in litres
-    op.vBS_ic=configuration.getArray('breeding_site','inside_capacity')#in litres
-    op.vBS_od=configuration.getArray('breeding_site','outside_distribution')#distribution of BS outside # the sum of ouside and in-
-    op.vBS_id=configuration.getArray('breeding_site','inside_distribution')#distribution of BS inside   #  side must be equal to 1
-    op.vBS_os=configuration.getArray('breeding_site','outside_surface')#in cm^2
-    op.n,op.m=len(op.vBS_od),len(op.vBS_id)
-    op.ws_s=configuration.getFloat('weather','wind_shield')#wind shield in [0,1]
-    #Cordoba
-    op.location={'name':configuration.getString('location','name'),'station':configuration.getString('weather','station'),'zones':list(configuration.getString('location','zones'))}
-    op.start_date=configuration.getDate('simulation','start_date')
-    op.end_date=configuration.getDate('simulation','end_date')
-
-    op.AEDIC_INDICES_FILENAME='data/private/Indices aedicos Historicos '+op.location['name']+'.xlsx'
-    op.WEATHER_STATION_DATA_FILENAME='data/public/wunderground_'+op.location['station']+'.csv'
-
-    precipitations = utils.getPrecipitationsFromCsv(op.WEATHER_STATION_DATA_FILENAME,op.start_date,op.end_date)
-    op.p=op.getAsLambdaFunction(op.aps,precipitations)
-
-    wind_speed=utils.getMeanWindSpeedFromCsv(op.WEATHER_STATION_DATA_FILENAME,op.start_date,op.end_date)
-    op.ws=fourier.fourier(wind_speed,50)
-
-    op.T=interpolate.InterpolatedUnivariateSpline(range(0,(op.end_date - op.start_date).days),utils.getAverageTemperaturesFromCsv(op.WEATHER_STATION_DATA_FILENAME,op.start_date,op.end_date))
-
 
 def testModel(configuration, p=None,T=None,subplots=[['E','L'],['W']],plot_start_date=None):
-    configure(configuration)
+    op=Model(configuration)
+
     if(p):
-        op.p=p
+        op.parameters.weather.p=p
     if(T):
-        op.T=T
-    initial_condition=configuration.getArray('simulation','initial_condition')
-    time_range,INPUT,RES=op.solveEquations(equations=decoratedEquations,initial_condition=initial_condition)
+        op.parameters.weather.T=T
+
+    op.parameters.calls=np.array([0]*len(op.getTimeRange()))
+    op.parameters.negatives=np.array([0]*len(op.getTimeRange()))
+    time_range,INPUT,RES=op.solveEquations(equations=DecoratedEquations(op,diff_eqs) )
     if(len(sys.argv)>1 and sys.argv[1]=='save' and p==None and T==None):#if asked save, but not with tampered p or T functions
         results_filename=utils.saveResults(time_range,RES,op.start_date,op.end_date)
         configuration.save(results_filename.replace('.csv','.cfg'))
 
     #Ploting
+    T=op.parameters.weather.T
+    p=op.parameters.weather.p
+    ws=op.parameters.weather.ws
+    BS_a,vBS_oc,vBS_ic,vBS_od,vBS_id,vBS_os,n,m=op.parameters.BS_a,op.parameters.vBS_oc,op.parameters.vBS_ic,op.parameters.vBS_od,op.parameters.vBS_id,op.parameters.vBS_os,op.parameters.n,op.parameters.m
+    AEDIC_INDICES_FILENAME='data/private/Indices aedicos Historicos '+op.parameters.location['name']+'.xlsx'
+
     pl.figure()
     pl.subplots_adjust(top=0.95,hspace=0.28)
     ax1=None
@@ -119,14 +107,14 @@ def testModel(configuration, p=None,T=None,subplots=[['E','L'],['W']],plot_start
             time_range,RES,date_range=subData(time_range,RES,date_range,plot_start_date)
 
         #Amount of larvaes,pupaes and adults
-        if ('E' in subplot): pl.plot(date_range,normalizeIfAsked(RES[:,op.EGG],subplot), '-k', label='E')
-        if ('L' in subplot): pl.plot(date_range,normalizeIfAsked(RES[:,op.LARVAE],subplot), '-r', label='L')
-        if ('P' in subplot): pl.plot(date_range,normalizeIfAsked(RES[:,op.PUPAE],subplot), '-g', label='P')
-        if ('A1' in subplot): pl.plot(date_range,normalizeIfAsked(RES[:,op.ADULT1],subplot), '-b', label='A1')
-        if ('A2' in subplot): pl.plot(date_range,normalizeIfAsked(RES[:,op.ADULT2],subplot), '-m', label='A2')
-        if ('A1+A2' in subplot): pl.plot(date_range,normalizeIfAsked(RES[:,op.ADULT2]+RES[:,op.ADULT1],subplot), '-m', label='A1+A2')
+        if ('E' in subplot): pl.plot(date_range,normalizeIfAsked(RES[:,EGG],subplot), '-k', label='E')
+        if ('L' in subplot): pl.plot(date_range,normalizeIfAsked(RES[:,LARVAE],subplot), '-r', label='L')
+        if ('P' in subplot): pl.plot(date_range,normalizeIfAsked(RES[:,PUPAE],subplot), '-g', label='P')
+        if ('A1' in subplot): pl.plot(date_range,normalizeIfAsked(RES[:,ADULT1],subplot), '-b', label='A1')
+        if ('A2' in subplot): pl.plot(date_range,normalizeIfAsked(RES[:,ADULT2],subplot), '-m', label='A2')
+        if ('A1+A2' in subplot): pl.plot(date_range,normalizeIfAsked(RES[:,ADULT2]+RES[:,ADULT1],subplot), '-m', label='A1+A2')
         if ('LI' in subplot):
-            ri_days, ris=utils.getIndexesForPlot(op.AEDIC_INDICES_FILENAME,op.start_date,0,5)
+            ri_days, ris=utils.getIndexesForPlot(AEDIC_INDICES_FILENAME,op.start_date,0,5)
             pl.plot([datetime.timedelta(days=d)+datetime.datetime.combine(op.start_date,datetime.time()) for d in ri_days], normalizeIfAsked(ris,subplot), '^y', label='Recip. Indices',clip_on=False, zorder=100,markersize=8)
 
         if('O' in subplot):
@@ -136,7 +124,7 @@ def testModel(configuration, p=None,T=None,subplots=[['E','L'],['W']],plot_start
                 pl.plot([datetime.timedelta(days=d)+datetime.datetime.combine(op.start_date,datetime.time()) for d in range(0,len(ovitrap_eggs))], ovitrap_eggs, '^', label='Ovitrap %s eggs'%i,clip_on=False, zorder=100,markersize=8)
 
         if('lwE' in subplot):
-            lwE=np.array([RES[(np.abs(time_range-t)).argmin(),op.EGG]-RES[(np.abs(time_range-(t-7))).argmin(),op.EGG] for t in time_range])
+            lwE=np.array([RES[(np.abs(time_range-t)).argmin(),EGG]-RES[(np.abs(time_range-(t-7))).argmin(),EGG] for t in time_range])
             if('normalized' in subplot):#not same normalize as a
                     lwE[lwE<0]=0.#replace negatives with zeros
             pl.plot(date_range, normalizeIfAsked(lwE,subplot), '-', label='E(t)-E(t-7)')
@@ -144,51 +132,51 @@ def testModel(configuration, p=None,T=None,subplots=[['E','L'],['W']],plot_start
 
         #Complete lifecycle
         if('clc' in subplot):
-            pl.plot(date_range,[sum([1./op.R_D(stage,op.T(t)) for stage in [op.EGG,op.LARVAE,op.PUPAE,op.ADULT1,op.ADULT2]]) for  t in time_range],label='Complete life cicle(from being an egg to the second oviposition)')
+            pl.plot(date_range,[sum([1./op.R_D(stage,op.T(t)) for stage in [EGG,LARVAE,PUPAE,ADULT1,ADULT2]]) for  t in time_range],label='Complete life cicle(from being an egg to the second oviposition)')
             pl.ylabel('days')
         #Water in containers(in L)
         if ('W' in subplot):
-            for i in range(0,op.n):
-                pl.plot(date_range,normalizeIfAsked(RES[:,op.WATER+i],subplot), label='W(t) for %sL, %scm^2, %s%%'%(op.vBS_oc[i],op.vBS_os[i],op.vBS_od[i]*100.) )
+            for i in range(0,n):
+                pl.plot(date_range,normalizeIfAsked(RES[:,WATER+i],subplot), label='W(t) for %sL, %scm^2, %s%%'%(vBS_oc[i],vBS_os[i],vBS_od[i]*100.) )
             pl.ylabel('Litres')
 
         #spaa vs cimsim
         if ('spaavscimsim' in subplot):
-            for i in range(0,op.n):
-                pl.plot(time_range,RES[:,op.WATER+i]*1000.0/op.vBS_os[i], label='W(t) for %sL, %scm^2, %s%%'%(op.vBS_oc[i],op.vBS_os[i],op.vBS_od[i]*100.) )#L->ml->mm->cm
+            for i in range(0,n):
+                pl.plot(time_range,RES[:,WATER+i]*1000.0/vBS_os[i], label='W(t) for %sL, %scm^2, %s%%'%(vBS_oc[i],vBS_os[i],vBS_od[i]*100.) )#L->ml->mm->cm
             pl.plot(utils.getValuesFromCsv('data/test/cimsim_containers_2015_se09.csv',op.start_date,op.end_date,1,verbose=False),label='CIMSiM')
 
         #Temperature in K
         if ('T' in subplot):
-            pl.plot(date_range,normalizeIfAsked([op.T(t) for t in time_range],subplot), label='Temperature')
+            pl.plot(date_range,normalizeIfAsked([T(t) for t in time_range],subplot), label='Temperature')
             pl.ylabel('K')
 
         #precipitations(in mm.)
         if ('p' in subplot):
-            pl.plot(date_range,normalizeIfAsked([op.p(t) for t in time_range],subplot),'-b', label='p(t)')
+            pl.plot(date_range,normalizeIfAsked([p(t) for t in time_range],subplot),'-b', label='p(t)')
             pl.ylabel('mm./day')
 
         #Wind Speed(in km/h.)
         if ('ws' in subplot):
-            pl.plot(date_range,normalizeIfAsked([op.ws(t) for t in time_range],subplot), label='ws(t)')
+            pl.plot(date_range,normalizeIfAsked([ws(t) for t in time_range],subplot), label='ws(t)')
             pl.ylabel('km/h')
 
         #Beta
         if ('b' in subplot):
-            pl.plot(date_range,[op.beta(RES[(np.abs(time_range-t)).argmin(),op.WATER:]) for t in time_range], label='beta(vW)')
+            pl.plot(date_range,[beta(RES[(np.abs(time_range-t)).argmin(),WATER:],vBS_od,vBS_id) for t in time_range], label='beta(vW,vBS_od,vBS_id)')
             pl.ylabel('')
 
         #debugging plots
         #Calls
         if ('c' in subplot):
-            pl.plot(date_range,calls, label='calls')
+            pl.plot(date_range,op.parameters.calls, label='calls')
             pl.ylabel('')
-            print('Calls: %s'%sum(calls))
+            print('Calls: %s'%sum(op.parameters.calls))
         #Negatives
         if ('n' in subplot):
-            pl.plot(date_range,negatives, label='negatives')
+            pl.plot(date_range,op.parameters.negatives, label='negatives')
             pl.ylabel('')
-            print('Negatives: %s'%sum(negatives))
+            print('Negatives: %s'%sum(op.parameters.negatives))
 
         #common to all subplots
         pl.xlabel('Time(in days starting in July)')
@@ -220,10 +208,9 @@ def runComparison():
     if(len(filenames)>0):
         for filename in filenames:
             configuration=Configuration(filename.replace('.csv','.cfg'))
-            configure(configuration)
-            initial_condition=configuration.getArray('simulation','initial_condition')
-            time_range,INPUT,RES=op.solveEquations(initial_condition=initial_condition)
-            compare(RES,filename)
+            op=Model(configuration)
+            time_range,INPUT,RES=op.solveEquations()
+            compare(RES,filename,op)
         quit()
 
 def runTestCases():
@@ -242,8 +229,9 @@ def runTestCases():
     testModel(config,subplots=[['E','A1+A2','normalized']])
 
     #W->0 test
-    precipitations=[0 if d>500 else 15. for d in range(0,(op.end_date - op.start_date).days)]
-    p=op.getAsLambdaFunction(op.aps,precipitations)
+    tmp=Model()#kind of a hack
+    precipitations=[0 if d>500 else 15. for d in range(0,(tmp.end_date - tmp.start_date).days)]
+    p=tmp.parameters.weather.getAsLambdaFunction(tmp.parameters.weather.aps,precipitations)
     testModel(config,p=p,subplots=[['E','L','normalized'],['W']])
 
     #T->0
