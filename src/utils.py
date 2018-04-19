@@ -129,7 +129,7 @@ def getDailyResults(time_range,RES,start_date,end_date):
     return np.array(daily_RES)
 
 def saveResults(time_range,RES,start_date,end_date):
-    filename='backup/previous_results/'+datetime.datetime.now().strftime('%Y-%m-%d__%H_%M_%S')+'.csv'
+    filename='data/test/previous_results/'+datetime.datetime.now().strftime('%Y-%m-%d__%H_%M_%S')+'.csv'
     file=open(filename,'w')
     daily_RES=getDailyResults(time_range,RES,start_date,end_date)
     for d,daily_RES_d in enumerate(daily_RES):

@@ -37,6 +37,25 @@ Commit if you have something
 >git push origin --delete development
 >git branch -d development
 
+**To create a tag**
+>git checkout master
+>git tag -a v0.1 -m "Version: 0.1"
+>git tag -l
+>git push origin v0.1
+
+**To merge**
+First merge master -> development
+>git checkout development
+>git merge master development
+>git push origin development
+
+Now merge development -> master
+>git checkout master
+>git merge master development
+>git push origin master
+
+ *the branch order in the merge command is not important*
+
 **Profiling**
 >python -m cProfile -s cumtime src/tests.py  > p.txt
 
@@ -45,6 +64,6 @@ To save:
 >python src/tests.py save
 
 To compare against previous results:
->python src/tests.py compare backup/previous_results/2018-04-17__09_40_45.csv backup/previous_results/2018-04-17__09_39_47.csv
+>python src/tests.py compare data/test/previous_results/2018-04-17__09_40_45.csv data/test/previous_results/2018-04-17__09_39_47.csv
 or
->ls backup/previous_results/*.csv |  python src/tests.py compare
+>ls data/test/previous_results/*.csv |  python src/tests.py compare
