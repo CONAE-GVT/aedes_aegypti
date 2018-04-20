@@ -19,10 +19,9 @@ def compare(new_RES,old_RES_filename,model):
     old_RES_start_date=datetime.datetime.strptime(open(old_RES_filename,'r').readline().split(',')[0],'%Y-%m-%d').date()
     old_RES_end_date=datetime.datetime.strptime(open(old_RES_filename,'r').readlines()[-1].split(',')[0],'%Y-%m-%d').date()
     assert old_RES_start_date==model.start_date,'Old Result and new result must start at the same date'
-    print("||old_RES-new_RES|| = "),
     old_RES=utils.loadResults(old_RES_filename,model.start_date)
     new_RES=utils.getDailyResults(model.time_range,new_RES,model.start_date,old_RES_end_date+datetime.timedelta(days=1))#the last date save is one day less than the end_date#TODO:not sure if this is correct or just a hack
-    print(np.linalg.norm(old_RES-new_RES))
+    print('||old_RES-new_RES|| = %s'% np.linalg.norm(old_RES-new_RES) )
 
 
 def testSaveLoadResults(model):

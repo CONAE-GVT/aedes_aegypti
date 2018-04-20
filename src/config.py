@@ -1,9 +1,9 @@
-import ConfigParser
+from configparser import ConfigParser
 import numpy as np
 import datetime
 class Configuration:
   def __init__(self, filename=None,dict_config=None):
-    self.config_parser = ConfigParser.ConfigParser()
+    self.config_parser = ConfigParser()
     if(filename):
         self.config_parser.readfp(open(filename))
     if(dict_config):

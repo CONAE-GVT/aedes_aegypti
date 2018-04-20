@@ -132,7 +132,7 @@ def getDailyResults(time_range,RES,start_date,end_date):
     return np.array(daily_RES)
 
 def loadResults(filename,start_date):
-    converters = {0: lambda d: (datetime.datetime.strptime(d, '%Y-%m-%d').date()-start_date).days}#date->days passed from start_date
+    converters = {0: lambda d: (datetime.datetime.strptime(d.decode('ascii'), '%Y-%m-%d').date()-start_date).days}#date->days passed from start_date
     RES=np.loadtxt(filename,delimiter=',',converters=converters)
     return RES[:,1:]# 1: is to discard the date column
 
@@ -212,8 +212,8 @@ def plot(model,subplots,plot_start_date):
 
         if('O' in subplot):
             for i in subplot['O']:
-                ovitrap_eggs=getOvitrapEggsFromCsv('data/private/Datos sensores de oviposicion.NO.csv',model.start_date,model.end_date,i)
-                if('normalized' in subplot):ovitrap_eggs=np.array([e/max(ovitrap_eggs) if e!=None else None for e in ovitrap_eggs])#since we have None values normalized won't work
+                ovitrap_eggs=np.array(getOvitrapEggsFromCsv('data/private/Datos sensores de oviposicion.NO.csv',model.start_date,model.end_date,i))
+                if('normalized' in subplot):ovitrap_eggs=np.array([e/(ovitrap_eggs[ovitrap_eggs!=[None]].max()) if e!=None else None for e in ovitrap_eggs])#since we have None values normalized won't work
                 pl.plot([datetime.timedelta(days=d)+datetime.datetime.combine(model.start_date,datetime.time()) for d in range(0,len(ovitrap_eggs))], ovitrap_eggs, '^', label='Ovitrap %s eggs'%i,clip_on=False, zorder=100,markersize=8)
 
         if('lwE' in subplot):
