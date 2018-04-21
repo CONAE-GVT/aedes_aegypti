@@ -8,7 +8,7 @@ from scipy.stats import stats
 from config import Configuration
 from otero_precipitation import Model
 from utils import getSurface,getCapacity#not sure if this is a good practice
-from equations import diff_eqs
+from cpp_equations import diff_eqs
 
 def printCorrelation():
     time_range,INPUT,RES=model.solveEquations()
@@ -90,7 +90,7 @@ def runComparison():
         for filename in filenames:
             configuration=Configuration(filename.replace('.csv','.cfg'))
             model=Model(configuration)
-            time_range,INPUT,RES=model.solveEquations()
+            time_range,INPUT,RES=model.solveEquations(equations=diff_eqs)
             compare(RES,filename,model)
         quit()
 
