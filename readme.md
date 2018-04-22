@@ -67,3 +67,7 @@ To compare against previous results:
 >python src/tests.py compare data/test/previous_results/2018-04-17__09_40_45.csv data/test/previous_results/2018-04-17__09_39_47.csv
 or
 >ls data/test/previous_results/*.csv |  python src/tests.py compare
+
+**Cython**
+>cd src
+>python setup.py build_ext --inplace
