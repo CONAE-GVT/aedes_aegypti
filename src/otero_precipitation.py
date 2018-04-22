@@ -19,6 +19,7 @@ class Model:
         self.parameters.vBS_ic=configuration.getArray('breeding_site','inside_capacity')#in litres
         self.parameters.vBS_od=configuration.getArray('breeding_site','outside_distribution')#distribution of BS outside # the sum of ouside and in-
         self.parameters.vBS_id=configuration.getArray('breeding_site','inside_distribution')#distribution of BS inside   #  side must be equal to 1
+        self.parameters.vBS_d=np.concatenate((self.parameters.vBS_od,self.parameters.vBS_id))
         self.parameters.vBS_os=configuration.getArray('breeding_site','outside_surface')#in cm^2
         self.parameters.n,self.parameters.m=len(self.parameters.vBS_od),len(self.parameters.vBS_id)
         self.parameters.ws_s=configuration.getFloat('weather','wind_shield')#wind shield in [0,1]

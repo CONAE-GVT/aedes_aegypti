@@ -1,4 +1,4 @@
-from equations import EGG,LARVAE,PUPAE,ADULT1,ADULT2,WATER,beta
+from equations import f
 import matplotlib.dates
 import collections
 import numpy as np
@@ -156,13 +156,29 @@ def getCapacity(x=None,y=None,r=None,z=None):#capacity in litres. x,y,z,r must b
 ###############################################################Plot###############################################################
 def normalize(values):#TODO:change name.
     return (values-values.min())/(values.max()-values.min())
-#convenience method
-def normalizeIfAsked(values,subplot):
-    values=np.array(values)
-    if('normalized' in subplot):
-        return normalize(values)
-    else:
+
+def safeNormalize(values):#take care of None values
+    values=np.array([v/(values[values!=[None]].max()) if v!=None else None for v in values])
+    return values
+
+def safeAdd(values):
+    if(len(values.shape)!=2):
         return values
+    else:
+        return np.sum(values,axis=1)
+
+def replaceNegativesWithZeros(values):
+    values[values<0]=0.#replace negatives with zeros
+    return values
+
+def applyFs(values,subplot):
+    if(type(subplot) is dict): subplot=subplot.values()#if we pass a dict, we need to iterate over the values(were the functions are.)
+    for f_list in subplot:#first we assume all elements
+        for f in f_list:   #in subplots are a list of f to apply
+            if(callable(f)):# and then we check if it's actually a function
+                values=f(values)
+    return values
+
 def subData(time_range,Y,date_range,an_start_date):
     #get the index of an_start_date
     index=None
@@ -180,6 +196,7 @@ def plot(model,subplots,plot_start_date):
     p=model.parameters.weather.p
     ws=model.parameters.weather.ws
     BS_a,vBS_oc,vBS_ic,vBS_od,vBS_id,vBS_os,n,m=model.parameters.BS_a,model.parameters.vBS_oc,model.parameters.vBS_ic,model.parameters.vBS_od,model.parameters.vBS_id,model.parameters.vBS_os,model.parameters.n,model.parameters.m
+    EGG,LARVAE,PUPAE,ADULT1,ADULT2,WATER=range(0,n+m),range(n+m,2*(n+m)),range(2*(n+m),3*(n+m)),3*(n+m),3*(n+m)+1,3*(n+m)+2
     AEDIC_INDICES_FILENAME='data/private/Indices aedicos Historicos '+model.parameters.location['name']+'.xlsx'
 
     pl.figure()
@@ -200,27 +217,24 @@ def plot(model,subplots,plot_start_date):
             time_range,RES,date_range=subData(time_range,RES,date_range,plot_start_date)
 
         #Amount of larvaes,pupaes and adults
-        if ('E' in subplot): pl.plot(date_range,normalizeIfAsked(RES[:,EGG],subplot), '-k', label='E')
-        if ('L' in subplot): pl.plot(date_range,normalizeIfAsked(RES[:,LARVAE],subplot), '-r', label='L')
-        if ('P' in subplot): pl.plot(date_range,normalizeIfAsked(RES[:,PUPAE],subplot), '-g', label='P')
-        if ('A1' in subplot): pl.plot(date_range,normalizeIfAsked(RES[:,ADULT1],subplot), '-b', label='A1')
-        if ('A2' in subplot): pl.plot(date_range,normalizeIfAsked(RES[:,ADULT2],subplot), '-m', label='A2')
-        if ('A1+A2' in subplot): pl.plot(date_range,normalizeIfAsked(RES[:,ADULT2]+RES[:,ADULT1],subplot), '-m', label='A1+A2')
+        if ('E' in subplot): pl.plot(date_range,applyFs(RES[:,EGG],subplot), '-k', label='E')
+        if ('L' in subplot): pl.plot(date_range,applyFs(RES[:,LARVAE],subplot), '-r', label='L')
+        if ('P' in subplot): pl.plot(date_range,applyFs(RES[:,PUPAE],subplot), '-g', label='P')
+        if ('A1' in subplot): pl.plot(date_range,applyFs(RES[:,ADULT1],subplot), '-b', label='A1')
+        if ('A2' in subplot): pl.plot(date_range,applyFs(RES[:,ADULT2],subplot), '-m', label='A2')
+        if ('A1+A2' in subplot): pl.plot(date_range,applyFs(RES[:,ADULT2]+RES[:,ADULT1],subplot), '-m', label='A1+A2')
         if ('LI' in subplot):
-            ri_days, ris=getIndexesForPlot(AEDIC_INDICES_FILENAME,model.start_date,0,5)
-            pl.plot([datetime.timedelta(days=d)+datetime.datetime.combine(model.start_date,datetime.time()) for d in ri_days], normalizeIfAsked(ris,subplot), '^y', label='Recip. Indices',clip_on=False, zorder=100,markersize=8)
+            ri_days, ris=np.array(getIndexesForPlot(AEDIC_INDICES_FILENAME,model.start_date,0,5))
+            pl.plot([datetime.timedelta(days=d)+datetime.datetime.combine(model.start_date,datetime.time()) for d in ri_days], applyFs(ris,subplot), '^y', label='Recip. Indices',clip_on=False, zorder=100,markersize=8)
 
         if('O' in subplot):
             for i in subplot['O']:
                 ovitrap_eggs=np.array(getOvitrapEggsFromCsv('data/private/Datos sensores de oviposicion.NO.csv',model.start_date,model.end_date,i))
-                if('normalized' in subplot):ovitrap_eggs=np.array([e/(ovitrap_eggs[ovitrap_eggs!=[None]].max()) if e!=None else None for e in ovitrap_eggs])#since we have None values normalized won't work
-                pl.plot([datetime.timedelta(days=d)+datetime.datetime.combine(model.start_date,datetime.time()) for d in range(0,len(ovitrap_eggs))], ovitrap_eggs, '^', label='Ovitrap %s eggs'%i,clip_on=False, zorder=100,markersize=8)
+                pl.plot([datetime.timedelta(days=d)+datetime.datetime.combine(model.start_date,datetime.time()) for d in range(0,len(ovitrap_eggs))], applyFs(ovitrap_eggs,subplot), '^', label='Ovitrap %s eggs'%i,clip_on=False, zorder=100,markersize=8)
 
         if('lwE' in subplot):
             lwE=np.array([RES[(np.abs(time_range-t)).argmin(),EGG]-RES[(np.abs(time_range-(t-7))).argmin(),EGG] for t in time_range])
-            if('normalized' in subplot):#not same normalize as a
-                    lwE[lwE<0]=0.#replace negatives with zeros
-            pl.plot(date_range, normalizeIfAsked(lwE,subplot), '-', label='E(t)-E(t-7)')
+            pl.plot(date_range, applyFs(lwE,subplot), '-', label='E(t)-E(t-7)')
         pl.ylabel('')
 
         #Complete lifecycle
@@ -230,7 +244,7 @@ def plot(model,subplots,plot_start_date):
         #Water in containers(in L)
         if ('W' in subplot):
             for i in range(0,n):
-                pl.plot(date_range,normalizeIfAsked(RES[:,WATER+i],subplot), label='W(t) for %sL, %scm^2, %s%%'%(vBS_oc[i],vBS_os[i],vBS_od[i]*100.) )
+                pl.plot(date_range,applyFs(RES[:,WATER+i],subplot), label='W(t) for %sL, %scm^2, %s%%'%(vBS_oc[i],vBS_os[i],vBS_od[i]*100.) )
             pl.ylabel('Litres')
 
         #spaa vs cimsim
@@ -241,22 +255,22 @@ def plot(model,subplots,plot_start_date):
 
         #Temperature in K
         if ('T' in subplot):
-            pl.plot(date_range,normalizeIfAsked([T(t) for t in time_range],subplot), label='Temperature')
+            pl.plot(date_range,applyFs(np.array([T(t) for t in time_range]),subplot), label='Temperature')
             pl.ylabel('K')
 
         #precipitations(in mm.)
         if ('p' in subplot):
-            pl.plot(date_range,normalizeIfAsked([p(t) for t in time_range],subplot),'-b', label='p(t)')
+            pl.plot(date_range,applyFs(np.array([p(t) for t in time_range]),subplot),'-b', label='p(t)')
             pl.ylabel('mm./day')
 
         #Wind Speed(in km/h.)
         if ('ws' in subplot):
-            pl.plot(date_range,normalizeIfAsked([ws(t) for t in time_range],subplot), label='ws(t)')
+            pl.plot(date_range,applyFs(np.array([ws(t) for t in time_range]),subplot), label='ws(t)')
             pl.ylabel('km/h')
 
-        #Beta
+        #f
         if ('b' in subplot):
-            pl.plot(date_range,[beta(RES[(np.abs(time_range-t)).argmin(),WATER:],vBS_od,vBS_id) for t in time_range], label='beta(vW,vBS_od,vBS_id)')
+            pl.plot(date_range,[f( np.concatenate((RES[(np.abs(time_range-t)).argmin(),WATER:],vBS_ic)), np.concatenate((vBS_od,vBS_id)) ) for t in time_range], label='f(vW,vBS_d)')
             pl.ylabel('')
 
         #debugging plots
