@@ -95,6 +95,7 @@ def runComparison():
         quit()
 
 def runTestCases():
+
     config=Configuration('resources/otero_precipitation.cfg',
         {'breeding_site':{
             'outside_capacity':[1.2],
@@ -103,17 +104,17 @@ def runTestCases():
             'inside_distribution':[0]
             },
         'simulation':{
-            'initial_condition':[100.0, 0.0,0.0,0.0,0.0]+ [0]
+            'initial_condition':[100.]*2 + [0.]*2 +[0.]*2 + [0.,0.]+ [0]
             }
         })
     #normal case
-    testModel(config,subplots=[['E','A1+A2','normalized']])
+    testModel(config,subplots=[['E','A1+A2',[utils.safeAdd,utils.normalize] ]])
 
     #W->0 test
     tmp=Model()#kind of a hack
     precipitations=[0 if d>500 else 15. for d in range(0,(tmp.end_date - tmp.start_date).days)]
     p=tmp.parameters.weather.getAsLambdaFunction(tmp.parameters.weather.aps,precipitations)
-    testModel(config,p=p,subplots=[['E','L','normalized'],['W']])
+    testModel(config,p=p,subplots=[['E','L',[utils.safeAdd,utils.normalize] ],['W']])
 
     #T->0
     time_range=range(0,(config.getDate('simulation','end_date') - config.getDate('simulation','start_date')).days )
@@ -129,7 +130,7 @@ def runTestCases():
             'inside_distribution':[0]
             },
         'simulation':{
-            'initial_condition':[100.0, 0.0,0.0,0.0,0.0]+ [0]
+            'initial_condition':[100.]*2 + [0.]*2 +[0.]*2 + [0.,0.]+ [0]
             }
         })
     #diameter:9.5, height:5.8, type: circular, sun exposure:0.9
@@ -146,10 +147,10 @@ def runTestCases():
             'inside_distribution':[0.9]
             },
         'simulation':{
-            'initial_condition':[100.0, 0.0,0.0,0.0,0.0]+ [0 for x in vBS_os]
+            'initial_condition':[100.]*4 + [0.]*4 +[0.]*4 + [0.,0.]+ [0 for x in vBS_os]
             }
         })
-    testModel(config,subplots=[['L','LI','normalized']])
+    testModel(config,subplots=[['L','LI',[utils.safeAdd,utils.normalize] ]])
 
     config=Configuration('resources/otero_precipitation.cfg',
         {'breeding_site':{
@@ -159,10 +160,10 @@ def runTestCases():
             'inside_distribution':[1.0]
             },
         'simulation':{
-            'initial_condition':[100.0, 0.0,0.0,0.0,0.0]+ [0 for x in vBS_os]
+            'initial_condition':[100.]*4 + [0.]*4 +[0.]*4 + [0.,0.]+ [0 for x in vBS_os]
             }
         })
-    testModel(config,subplots=[['L','LI','normalized']])
+    testModel(config,subplots=[['L','LI',[utils.safeAdd,utils.normalize] ]])
 
     #performace
     testModel(config,subplots=[['E'],['b'],['c'],['n']])
@@ -185,10 +186,10 @@ def runTestCases():
             'wind_shield':0.2
         },
         'simulation':{
-            'initial_condition':[100.0, 0.0,0.0,0.0,0.0]+ [0 for x in vBS_os]
+            'initial_condition':[100.]*7 + [0.]*7 +[0.]*7 + [0.,0.]+ [0 for x in vBS_os]
         }
     })
-    testModel(config,subplots=[['E','A1+A2','T','p','normalized'],['W']],plot_start_date=datetime.date(2018,1,1))
+    testModel(config,subplots=[['E','A1+A2','T','p',[utils.safeAdd,utils.normalize] ],['W']],plot_start_date=datetime.date(2018,1,1))
 
     #*****9*****
     #ovitrap:9 pid:2382 od:[ 0.03088072  0.20904943  0.23383199  0.16713309  0.17310652  0.11768087] id:[ 0.06831738] ws_s:0.031265688907 Error:0.0765284863715 len:11.0 Error/len: 0.00695713512468
@@ -206,10 +207,10 @@ def runTestCases():
         'simulation':{
             'start_date':datetime.date(2017,7,1),
             'end_date':datetime.date(2018,4,5),
-            'initial_condition':[100.0, 0.0,0.0,0.0,0.0]+ [0 for x in vBS_os]
+            'initial_condition':[100.]*7 + [0.]*7 +[0.]*7 + [0.,0.]+ [0 for x in vBS_os]
         }
     })
-    testModel(config,subplots=[['E','P','A1+A2','normalized'],{'lwE':'','O':[9],'normalized':''}])
+    testModel(config,subplots=[['E','P','A1+A2',[utils.safeAdd,utils.normalize] ],{'lwE':'','O':[9],'f' :[utils.replaceNegativesWithZeros,utils.safeAdd,utils.safeNormalize]}])
 
     #*****4*****
     #ovitrap:4 pid:18743 od:[ 0.18299322  0.20899391  0.07332913  0.15454651  0.14291156  0.0308964 ] id:[ 0.20632926] ws_s:0.491606121558 BS_a:2594.27715109 Error:34425.9670772 len:18.0 Error/len: 1912.553
@@ -228,10 +229,10 @@ def runTestCases():
         'simulation':{
             'start_date':datetime.date(2017,7,1),
             'end_date':datetime.date(2018,4,5),
-            'initial_condition':[100.0, 0.0,0.0,0.0,0.0]+ [0 for x in vBS_os]
+            'initial_condition':[100.]*7 + [0.]*7 +[0.]*7 + [0.,0.]+ [0 for x in vBS_os]
         }
     })
-    testModel(config,subplots=[['E','P','A1+A2','normalized'],{'lwE':'','O':[4],'normalized':''}])
+    testModel(config,subplots=[['E','P','A1+A2',[utils.safeAdd,utils.normalize] ],{'lwE':'','O':[4],'f':[utils.replaceNegativesWithZeros,utils.safeAdd,utils.safeNormalize]}])
 
     #*****3*****
     #ovitrap:3 pid:18743 od:[ 0.07533379  0.35492456  0.0164825   0.04007676  0.08755963  0.0680057 ] id:[ 0.35761705] ws_s:0.895738915951 BS_a:3132.19610422 Error:5057.73452148 len:20.0 Error/len: 252.886726074
@@ -250,10 +251,10 @@ def runTestCases():
         'simulation':{
             'start_date':datetime.date(2017,7,1),
             'end_date':datetime.date(2018,4,5),
-            'initial_condition':[100.0, 0.0,0.0,0.0,0.0]+ [0 for x in vBS_os]
+            'initial_condition':[100.]*7 + [0.]*7 +[0.]*7 + [0.,0.]+ [0 for x in vBS_os]
         }
     })
-    testModel(config,subplots=[['E','P','A1+A2','normalized'],{'lwE':'','O':[3],'normalized':''}])
+    testModel(config,subplots=[['E','P','A1+A2',[utils.safeAdd,utils.normalize] ],{'lwE':'','O':[3],'f':[utils.replaceNegativesWithZeros,utils.safeAdd,utils.safeNormalize]}])
 
     #*****4 but just to compare with something*****
     vBS_od=np.array([ 0.01 , 0.0 , 0.0 , 0.0 , 0.0 , 0.0 ])
@@ -271,10 +272,10 @@ def runTestCases():
         'simulation':{
             'start_date':datetime.date(2017,7,1),
             'end_date':datetime.date(2018,4,5),
-            'initial_condition':[100.0, 0.0,0.0,0.0,0.0]+ [0 for x in vBS_os]
+            'initial_condition':[100.]*7 + [0.]*7 +[0.]*7 + [0.,0.]+ [0 for x in vBS_os]
         }
     })
-    testModel(config,subplots=[['E','P','A1+A2','normalized'],{'lwE':'','O':[4],'normalized':''}])
+    testModel(config,subplots=[['E','P','A1+A2',[utils.safeAdd,utils.normalize] ],{'lwE':'','O':[4],'f':[utils.replaceNegativesWithZeros,utils.safeAdd,utils.safeNormalize]}])
 
     utils.showPlot()
 

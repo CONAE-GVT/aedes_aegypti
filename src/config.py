@@ -37,8 +37,11 @@ class Configuration:
     vBS_od=self.getArray('breeding_site','outside_distribution')
     vBS_id=self.getArray('breeding_site','inside_distribution')
     vBS_os=self.getArray('breeding_site','outside_surface')
+    initial_condition=self.getArray('simulation','initial_condition')
     assert len(vBS_od) == len(vBS_oc) == len(vBS_os),'vBS_od,vBS_oc and vBS_os must have the same dimension!'
     assert len(vBS_id) == len(vBS_ic),'vBS_id and vBS_ic must have the same dimension!'
+    n,m=len(vBS_od),len(vBS_id)
+    assert len(initial_condition)==3*(n+m)+1+1+n#(vE+vL+vP) +A1 +A2 +vW
     assert abs(1.-np.sum(vBS_od)-np.sum(vBS_id))<1e-10,'sum(vBS_id)+sum(vBS_id)=%s!=1'%(np.sum(vBS_od)+np.sum(vBS_id))
 
   def save(self,filename):

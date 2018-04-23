@@ -68,6 +68,11 @@ To compare against previous results:
 or
 >ls data/test/previous_results/*.csv |  python src/tests.py compare
 
+
+**Cython**
+>cd src
+>python setup.py build_ext --inplace
+
 ** c++ binding **
 >g++  -Wall -std=c++11 -I/usr/include/python2.7 -fpic  src/_equationsmodule.cpp -shared -lboost_python -o src/_equations.so -O3
 >python src/_equationsmodule_test.py
