@@ -68,11 +68,21 @@ To compare against previous results:
 or
 >ls data/test/previous_results/*.csv |  python src/tests.py compare
 
-
 **Cython**
 >cd src
 >python setup.py build_ext --inplace
 
-** c++ binding **
->g++  -Wall -std=c++11 -I/usr/include/python2.7 -fpic  src/_equationsmodule.cpp -shared -lboost_python -o src/_equations.so -O3
+**Installing Boost**
+>wget https://dl.bintray.com/boostorg/release/1.67.0/source/boost_1_67_0.tar.gz
+>tar --gz -xf boost_1_67_0.tar.gz
+>cd boost_1_67_0/
+>sudo mkdir /usr/local/boost_1_67_0
+>sudo chown exequiel /usr/local/boost_1_67_0/
+>./bootstrap.sh --prefix=/usr/local/boost_1_67_0/ -with-libraries=python
+>./b2 install
+
+
+**c++ binding**
+> g++ -Wall -std=c++11 -Wno-deprecated-declarations  -I /usr/local/boost_1_67_0/include/ -I/usr/include/python2.7 -fpic  src/_equationsmodule.cpp -shared  -L /usr/local/boost_1_67_0/lib/ -lboost_python27 -lboost_numpy27 -o src/_equations.so -O3
+>export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/boost_1_67_0/lib
 >python src/_equationsmodule_test.py
