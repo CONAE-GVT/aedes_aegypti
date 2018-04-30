@@ -168,7 +168,7 @@ def safeAdd(values):
         return np.sum(values,axis=1)
 
 def replaceNegativesWithZeros(values):
-    values[values<0]=0.#replace negatives with zeros
+    values[np.logical_and(values<0,values!=[None])]=0.#replace negatives with zeros, preserving Nones
     return values
 
 def applyFs(values,subplot):
