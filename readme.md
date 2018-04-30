@@ -76,10 +76,15 @@ or
 >wget https://dl.bintray.com/boostorg/release/1.67.0/source/boost_1_67_0.tar.gz
 >tar --gz -xf boost_1_67_0.tar.gz
 >cd boost_1_67_0/
->sudo mkdir /usr/local/boost_1_67_0
->sudo chown exequiel /usr/local/boost_1_67_0/
->./bootstrap.sh --prefix=/usr/local/boost_1_67_0/ -with-libraries=python
+>sudo mkdir /home/exequiel/Downloads/libboost-python1.67/
+>./bootstrap.sh --prefix=/home/exequiel/Downloads/libboost-python1.67/ -with-libraries=python
 >./b2 install
+>cd /home/exequiel/Downloads
+inside libboost-python1.67, create a folder "usr" and move "lib" and "include" there.
+Also create a folder "DEBIAN" with a file called "control" with Package:,Version:, Architecture:, etc. (you can download a deb package and use the control in there as a guide)
+>dpkg-deb --build libboost-python1.67
+>sudo dpkg -i libboost-python1.67
+Source: http://www.king-foo.com/2011/11/creating-debianubuntu-deb-packages/
 
 
 **c++ binding**
