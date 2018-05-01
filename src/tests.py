@@ -8,7 +8,7 @@ from scipy.stats import stats
 from config import Configuration
 from otero_precipitation import Model
 from utils import getSurface,getCapacity#not sure if this is a good practice
-from cpp_equations import diff_eqs
+from equations import diff_eqs
 
 def printCorrelation():
     time_range,INPUT,RES=model.solveEquations()
