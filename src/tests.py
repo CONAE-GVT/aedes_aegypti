@@ -210,7 +210,7 @@ def runTestCases():
             'initial_condition':[100.]*7 + [0.]*7 +[0.]*7 + [0.,0.]+ [0 for x in vBS_os]
         }
     })
-    testModel(config,subplots=[['E','P','A1+A2',[utils.safeAdd,utils.normalize] ],{'lwE':'','O':[9],'f' :[utils.replaceNegativesWithZeros,utils.safeAdd,utils.safeNormalize]}])
+    testModel(config,subplots=[['E','P','A1+A2',[utils.safeAdd,utils.normalize] ],['dY'],{'lwE':'','O':[9],'f' :[utils.replaceNegativesWithZeros,utils.safeAdd,utils.safeNormalize]}])
 
     #*****4*****
     #ovitrap:4 pid:18743 od:[ 0.18299322  0.20899391  0.07332913  0.15454651  0.14291156  0.0308964 ] id:[ 0.20632926] ws_s:0.491606121558 BS_a:2594.27715109 Error:34425.9670772 len:18.0 Error/len: 1912.553

@@ -1,4 +1,4 @@
-from equations import f
+from equations import f,diff_eqs
 import matplotlib.dates
 import collections
 import numpy as np
@@ -120,7 +120,7 @@ def  getRelativeHumidityFromCsv(filename,start_date,end_date):#in percentage
 def  getMeanWindSpeedFromCsv(filename,start_date,end_date):#in km/h
     return [x if x else None for x in getValuesFromCsv(filename,start_date,end_date,7)]
 
-def  getOvitrapEggsFromCsv(filename,start_date,end_date,ovitrap):#in km/h
+def  getOvitrapEggsFromCsv(filename,start_date,end_date,ovitrap):#amount
     return [x for x in getValuesFromCsv(filename,start_date,end_date,ovitrap,False)]
 
 def getDailyResults(time_range,RES,start_date,end_date):
@@ -168,7 +168,7 @@ def safeAdd(values):
         return np.sum(values,axis=1)
 
 def replaceNegativesWithZeros(values):
-    values[values<0]=0.#replace negatives with zeros
+    values[np.logical_and(values<0,values!=[None])]=0.#replace negatives with zeros, preserving Nones
     return values
 
 def applyFs(values,subplot):
@@ -187,7 +187,6 @@ def subData(time_range,Y,date_range,an_start_date):
             index=i
             break#conserve the first one.
     return time_range[index:],Y[index:,:],date_range[index:]
-
 
 def plot(model,subplots,plot_start_date):
     time_range=model.time_range
@@ -218,6 +217,11 @@ def plot(model,subplots,plot_start_date):
 
         #Amount of larvaes,pupaes and adults
         if ('E' in subplot): pl.plot(date_range,applyFs(RES[:,EGG],subplot), '-k', label='E')
+        if ('dY' in subplot):
+            dY=np.zeros(RES.shape)
+            for i,t in enumerate(time_range):
+                dY[i,:]=diff_eqs(RES[i,:],t,model.parameters)
+            pl.plot(date_range,applyFs(dY[:,:],subplot),  label='dY')
         if ('L' in subplot): pl.plot(date_range,applyFs(RES[:,LARVAE],subplot), '-r', label='L')
         if ('P' in subplot): pl.plot(date_range,applyFs(RES[:,PUPAE],subplot), '-g', label='P')
         if ('A1' in subplot): pl.plot(date_range,applyFs(RES[:,ADULT1],subplot), '-b', label='A1')
