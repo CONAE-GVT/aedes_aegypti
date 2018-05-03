@@ -105,6 +105,9 @@ def runTestCases():
             },
         'simulation':{
             'initial_condition':[100.]*2 + [0.]*2 +[0.]*2 + [0.,0.]+ [0]
+            },
+        'biology':{
+            'alpha0':[1.5,1.5]
             }
         })
     #normal case
@@ -131,6 +134,9 @@ def runTestCases():
             },
         'simulation':{
             'initial_condition':[100.]*2 + [0.]*2 +[0.]*2 + [0.,0.]+ [0]
+            },
+        'biology':{
+            'alpha0':[1.5,1.5]
             }
         })
     #diameter:9.5, height:5.8, type: circular, sun exposure:0.9
@@ -148,6 +154,9 @@ def runTestCases():
             },
         'simulation':{
             'initial_condition':[100.]*4 + [0.]*4 +[0.]*4 + [0.,0.]+ [0 for x in vBS_os]
+            },
+        'biology':{
+            'alpha0':[1.5,1.5,1.5,1.5]
             }
         })
     testModel(config,subplots=[['L','LI',[utils.safeAdd,utils.normalize] ]])
@@ -161,6 +170,9 @@ def runTestCases():
             },
         'simulation':{
             'initial_condition':[100.]*4 + [0.]*4 +[0.]*4 + [0.,0.]+ [0 for x in vBS_os]
+            },
+        'biology':{
+            'alpha0':[1.5,1.5,1.5,1.5]
             }
         })
     testModel(config,subplots=[['L','LI',[utils.safeAdd,utils.normalize] ]])

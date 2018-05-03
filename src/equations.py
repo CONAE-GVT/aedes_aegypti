@@ -84,11 +84,13 @@ def dvE(vE,vL,A1,A2,vW,T_t,BS_a,vBS_d,elr,ovr1,ovr2):
     me=0.01#mortality of the egg, for T in [278,303]
     return egn*( ovr1 *A1  + ovr2* A2)*f(vW,vBS_d) - me * vE - elr* (1-vGamma(vL,BS_a*vBS_d,vW)) * vE
 
-def dvL(vE,vL,vW,T_t,BS_a,vBS_d,elr,lpr):
+def dvL(vE,vL,vW,T_t,BS_a,vBS_d,elr,lpr,vAlpha0):
     ml=0.01 + 0.9725 * math.exp(-(T_t-278.0)/2.7035)#mortality of the larvae, for T in [278,303]
-    alpha0=1.5#Parameter to be fitted #1.0#HARDCODED!!!
-    alpha=alpha0/BS_a#Σ vα[i] * vL[i]^2= Σ α0/(BS_a* vBS_d[i]) * (L*vBS_d[i])^2 = Σ α0/BS_a * L^2 * vBS_d[i] = α *L^2 *Σ BS_d[i]=α L^2 #Note: on why this is ok even though BS changed.
-    return elr* (1-vGamma(vL,BS_a*vBS_d,vW)) * vE - ml*vL - alpha* vL*vL - lpr *vL #-35.6464*(1.-beta(vW,vBS_od,vBS_id))*L#-24.*(1.-beta(vW))*L# -log(1e-4/5502.)/(1.)=17.823207313460703
+    vBS_a=BS_a*vBS_d
+    vBS_a[vBS_a==0]=1e-4#to avoid divison by zero.Change!!!
+    vAlpha0[vBS_a==0]=0#hack
+    vAlpha=vAlpha0/vBS_a
+    return elr* (1-vGamma(vL,BS_a*vBS_d,vW)) * vE - ml*vL - vAlpha* vL*vL - lpr *vL #-35.6464*(1.-beta(vW,vBS_od,vBS_id))*L#-24.*(1.-beta(vW))*L# -log(1e-4/5502.)/(1.)=17.823207313460703
 
 def dvP(vL,vP,T_t,lpr,par):
     mp=0.01 + 0.9725 * math.exp(-(T_t-278.0)/2.7035)#death of pupae
@@ -110,7 +112,7 @@ def diff_eqs(Y,t,parameters):
     ws_t=parameters.weather.ws(t)
     wss_t=parameters.ws_s*ws_t
     elr,lpr,par,ovr1,ovr2=vR_D(T_t)
-    BS_a,vBS_oc,vBS_ic,vBS_d,vBS_os,n,m=parameters.BS_a,parameters.vBS_oc,parameters.vBS_ic,parameters.vBS_d,parameters.vBS_os,parameters.n,parameters.m
+    BS_a,vBS_oc,vBS_ic,vBS_d,vBS_os,vAlpha0,n,m=parameters.BS_a,parameters.vBS_oc,parameters.vBS_ic,parameters.vBS_d,parameters.vBS_os,parameters.vAlpha0,parameters.n,parameters.m
     EGG,LARVAE,PUPAE,ADULT1,ADULT2,WATER=range(0,n+m),range(n+m,2*(n+m)),range(2*(n+m),3*(n+m)),3*(n+m),3*(n+m)+1,3*(n+m)+2
 
     vE,vL,vP,A1,A2,vW=Y[EGG],Y[LARVAE],Y[PUPAE],Y[ADULT1],Y[ADULT2],Y[WATER:]
@@ -118,7 +120,7 @@ def diff_eqs(Y,t,parameters):
 
     dY=np.zeros((3*(n+m)+2+n))
     dY[EGG]    = dvE(vE,vL,A1,A2,vW,T_t,BS_a,vBS_d,elr,ovr1,ovr2)
-    dY[LARVAE] = dvL(vE,vL,vW,T_t,      BS_a,vBS_d,elr,lpr)
+    dY[LARVAE] = dvL(vE,vL,vW,T_t,      BS_a,vBS_d,elr,lpr,vAlpha0)
     dY[PUPAE]  = dvP(vL,vP,T_t,lpr,par)
     dY[ADULT1] = dA1(vP,A1,T_t,par,ovr1)
     dY[ADULT2] = dA2(A1,A2,T_t,ovr1)
