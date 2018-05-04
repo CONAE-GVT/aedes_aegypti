@@ -197,9 +197,6 @@ def runTestCases():
             'inside_distribution':[],
             'inside_capacity':[]
             },
-        'weather':{
-            'wind_shield':0.2
-        },
         'simulation':{
             'initial_condition':[100.]*2 + [0.]*2 +[0.]*2 + [0.,0.]+ [0 for x in vBS_os[0:2]]
         },
@@ -219,9 +216,6 @@ def runTestCases():
             'outside_distribution':vBS_od,
             'inside_distribution':[0.06831738]
             },
-        'weather':{
-            'wind_shield':0.031265688907
-        },
         'simulation':{
             'start_date':datetime.date(2017,7,1),
             'end_date':datetime.date(2018,4,5),
@@ -241,9 +235,6 @@ def runTestCases():
             'outside_distribution':vBS_od,
             'inside_distribution':[0.20632927]
             },
-        'weather':{
-            'wind_shield':0.421606121558
-        },
         'simulation':{
             'start_date':datetime.date(2017,7,1),
             'end_date':datetime.date(2018,4,5),
@@ -263,9 +254,6 @@ def runTestCases():
             'outside_distribution':vBS_od,
             'inside_distribution':[0.35761706]
             },
-        'weather':{
-            'wind_shield':0.31738915951
-        },
         'simulation':{
             'start_date':datetime.date(2017,7,1),
             'end_date':datetime.date(2018,4,5),
@@ -284,9 +272,6 @@ def runTestCases():
             'outside_distribution':vBS_od[0:1],
             'inside_distribution':[0.99]
             },
-        'weather':{
-            'wind_shield':0.421606121558
-        },
         'simulation':{
             'start_date':datetime.date(2017,7,1),
             'end_date':datetime.date(2018,4,5),

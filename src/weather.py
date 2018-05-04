@@ -16,13 +16,12 @@ class Weather:
         return values[int(t)] * (math.sin(2.*math.pi*t + 3.*math.pi/2.) +1.)
     #will be defined in init
     p=None
-    ws=None
     T=None
+    RH=None
     def __init__(self, filename,start_date,end_date):
         precipitations = utils.getPrecipitationsFromCsv(filename,start_date,end_date)
         self.p=self.getAsLambdaFunction(self.aps,precipitations)
 
-        wind_speed=utils.getMeanWindSpeedFromCsv(filename,start_date,end_date)
-        self.ws=fourier.fourier(wind_speed,50)
-
         self.T=interpolate.InterpolatedUnivariateSpline(range(0,(end_date - start_date).days),utils.getAverageTemperaturesFromCsv(filename,start_date,end_date))
+
+        self.RH=interpolate.InterpolatedUnivariateSpline(range(0,(end_date - start_date).days),utils.getRelativeHumidityFromCsv(filename,start_date,end_date))

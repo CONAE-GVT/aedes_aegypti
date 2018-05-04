@@ -193,7 +193,7 @@ def plot(model,subplots,plot_start_date):
     RES=model.Y
     T=model.parameters.weather.T
     p=model.parameters.weather.p
-    ws=model.parameters.weather.ws
+    RH=model.parameters.weather.RH
     BS_a,vBS_oc,vBS_ic,vBS_od,vBS_id,vBS_os,n,m=model.parameters.BS_a,model.parameters.vBS_oc,model.parameters.vBS_ic,model.parameters.vBS_od,model.parameters.vBS_id,model.parameters.vBS_os,model.parameters.n,model.parameters.m
     EGG,LARVAE,PUPAE,ADULT1,ADULT2,WATER=range(0,n+m),range(n+m,2*(n+m)),range(2*(n+m),3*(n+m)),3*(n+m),3*(n+m)+1,3*(n+m)+2
     AEDIC_INDICES_FILENAME='data/private/Indices aedicos Historicos '+model.parameters.location['name']+'.xlsx'
@@ -267,10 +267,10 @@ def plot(model,subplots,plot_start_date):
             pl.plot(date_range,applyFs(np.array([p(t) for t in time_range]),subplot),'-b', label='p(t)')
             pl.ylabel('mm./day')
 
-        #Wind Speed(in km/h.)
-        if ('ws' in subplot):
-            pl.plot(date_range,applyFs(np.array([ws(t) for t in time_range]),subplot), label='ws(t)')
-            pl.ylabel('km/h')
+        #relative Humidity
+        if ('RH' in subplot):
+            pl.plot(date_range,applyFs(np.array([RH(t) for t in time_range]),subplot), label='RH(t)')
+            pl.ylabel('%')
 
         #f
         if ('b' in subplot):

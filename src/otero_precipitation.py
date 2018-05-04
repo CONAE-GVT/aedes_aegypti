@@ -23,7 +23,6 @@ class Model:
         self.parameters.vBS_os=configuration.getArray('breeding_site','outside_surface')#in cm^2
         self.parameters.n,self.parameters.m=len(self.parameters.vBS_od),len(self.parameters.vBS_id)
         self.parameters.vAlpha0=configuration.getArray('biology','alpha0')#constant to be fitted
-        self.parameters.ws_s=configuration.getFloat('weather','wind_shield')#wind shield in [0,1]
         #Cordoba
         self.parameters.location={'name':configuration.getString('location','name'),'station':configuration.getString('weather','station'),'zones':list(configuration.getString('location','zones'))}
         self.start_date=configuration.getDate('simulation','start_date')
