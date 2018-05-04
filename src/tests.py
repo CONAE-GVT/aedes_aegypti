@@ -101,13 +101,14 @@ def runTestCases():
             'outside_capacity':[1.2],
             'outside_surface':math.pi*np.array([5.25**2]),
             'outside_distribution':[1.],
-            'inside_distribution':[0]
+            'inside_distribution':[],
+            'inside_capacity':[]
             },
         'simulation':{
-            'initial_condition':[100.]*2 + [0.]*2 +[0.]*2 + [0.,0.]+ [0]
+            'initial_condition':[100.]*1 + [0.]*1 +[0.]*1 + [0.,0.]+ [0]
             },
         'biology':{
-            'alpha0':[1.5,1.5]
+            'alpha0':[1.5]
             }
         })
     #normal case
@@ -130,13 +131,14 @@ def runTestCases():
             'outside_capacity':[0.41],
             'outside_surface':math.pi*np.array([4.75**2]),
             'outside_distribution':[1.0],
-            'inside_distribution':[0]
+            'inside_distribution':[],
+            'inside_capacity':[]
             },
         'simulation':{
-            'initial_condition':[100.]*2 + [0.]*2 +[0.]*2 + [0.,0.]+ [0]
+            'initial_condition':[100.]*1 + [0.]*1 +[0.]*1 + [0.,0.]+ [0]
             },
         'biology':{
-            'alpha0':[1.5,1.5]
+            'alpha0':[1.5]
             }
         })
     #diameter:9.5, height:5.8, type: circular, sun exposure:0.9
@@ -147,32 +149,32 @@ def runTestCases():
     vBS_os=math.pi*np.array([42.,52.,62.])
     config=Configuration('resources/otero_precipitation.cfg',
         {'breeding_site':{
-            'outside_capacity':[0.1,0.6,8.3],
-            'outside_surface':vBS_os,
-            'outside_distribution':[0,0,0.1],
+            'outside_capacity':[8.3],
+            'outside_surface':vBS_os[0:1],
+            'outside_distribution':[0.1],
             'inside_distribution':[0.9]
             },
         'simulation':{
-            'initial_condition':[100.]*4 + [0.]*4 +[0.]*4 + [0.,0.]+ [0 for x in vBS_os]
+            'initial_condition':[100.]*2 + [0.]*2 +[0.]*2 + [0.,0.]+ [0 for x in vBS_os[0:1]]
             },
         'biology':{
-            'alpha0':[1.5,1.5,1.5,1.5]
+            'alpha0':[1.5]*2
             }
         })
     testModel(config,subplots=[['L','LI',[utils.safeAdd,utils.normalize] ]])
 
     config=Configuration('resources/otero_precipitation.cfg',
         {'breeding_site':{
-            'outside_capacity':[0.1,0.6,8.3],
-            'outside_surface':vBS_os,
-            'outside_distribution':[0,0,0.0],
+            'outside_capacity':[],
+            'outside_surface':[],
+            'outside_distribution':[],
             'inside_distribution':[1.0]
             },
         'simulation':{
-            'initial_condition':[100.]*4 + [0.]*4 +[0.]*4 + [0.,0.]+ [0 for x in vBS_os]
+            'initial_condition':[100.]*1 + [0.]*1 +[0.]*1 + [0.,0.]
             },
         'biology':{
-            'alpha0':[1.5,1.5,1.5,1.5]
+            'alpha0':[1.5]*1
             }
         })
     testModel(config,subplots=[['L','LI',[utils.safeAdd,utils.normalize] ]])
@@ -189,16 +191,20 @@ def runTestCases():
 
     config=Configuration('resources/otero_precipitation.cfg',{
         'breeding_site':{
-            'outside_capacity':vBS_oc,
-            'outside_surface':vBS_os,
-            'outside_distribution':[0.5,0.5,0.0,0.0,0.0,0.0],
-            'inside_distribution':[0]
+            'outside_capacity':vBS_oc[0:2],
+            'outside_surface':vBS_os[0:2],
+            'outside_distribution':[0.5,0.5],
+            'inside_distribution':[],
+            'inside_capacity':[]
             },
         'weather':{
             'wind_shield':0.2
         },
         'simulation':{
-            'initial_condition':[100.]*7 + [0.]*7 +[0.]*7 + [0.,0.]+ [0 for x in vBS_os]
+            'initial_condition':[100.]*2 + [0.]*2 +[0.]*2 + [0.,0.]+ [0 for x in vBS_os[0:2]]
+        },
+        'biology':{
+            'alpha0':[1.5]*2
         }
     })
     testModel(config,subplots=[['E','A1+A2','T','p',[utils.safeAdd,utils.normalize] ],['W']],plot_start_date=datetime.date(2018,1,1))
@@ -269,13 +275,13 @@ def runTestCases():
     testModel(config,subplots=[['E','P','A1+A2',[utils.safeAdd,utils.normalize] ],{'lwE':'','O':[3],'f':[utils.replaceNegativesWithZeros,utils.safeAdd,utils.safeNormalize]}])
 
     #*****4 but just to compare with something*****
-    vBS_od=np.array([ 0.01 , 0.0 , 0.0 , 0.0 , 0.0 , 0.0 ])
+    vBS_od=np.array([ 0.01])
     config=Configuration('resources/otero_precipitation.cfg',{
         'breeding_site':{
             'amount':2595,
-            'outside_capacity':vBS_oc,
-            'outside_surface':vBS_os,
-            'outside_distribution':vBS_od,
+            'outside_capacity':vBS_oc[0:1],
+            'outside_surface':vBS_os[0:1],
+            'outside_distribution':vBS_od[0:1],
             'inside_distribution':[0.99]
             },
         'weather':{
@@ -284,7 +290,10 @@ def runTestCases():
         'simulation':{
             'start_date':datetime.date(2017,7,1),
             'end_date':datetime.date(2018,4,5),
-            'initial_condition':[100.]*7 + [0.]*7 +[0.]*7 + [0.,0.]+ [0 for x in vBS_os]
+            'initial_condition':[100.]*2 + [0.]*2 +[0.]*2 + [0.,0.]+ [0 for x in vBS_os[0:1]]
+        },
+        'biology':{
+            'alpha0':[1.5]*2
         }
     })
     testModel(config,subplots=[['E','P','A1+A2',[utils.safeAdd,utils.normalize] ],{'lwE':'','O':[4],'f':[utils.replaceNegativesWithZeros,utils.safeAdd,utils.safeNormalize]}])

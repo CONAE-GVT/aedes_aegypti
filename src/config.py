@@ -38,9 +38,13 @@ class Configuration:
     vBS_id=self.getArray('breeding_site','inside_distribution')
     vBS_os=self.getArray('breeding_site','outside_surface')
     initial_condition=self.getArray('simulation','initial_condition')
+    alpha0=self.getArray('biology','alpha0')
+    assert np.all(vBS_id>0),'vBS_id cannot have a zero in it'#not allowed anymore, to achieve the same,
+    assert np.all(vBS_od>0),'vBS_od cannot have a zero in it'#just don't put the container (empty arrays are allowed)
     assert len(vBS_od) == len(vBS_oc) == len(vBS_os),'vBS_od,vBS_oc and vBS_os must have the same dimension!'
     assert len(vBS_id) == len(vBS_ic),'vBS_id and vBS_ic must have the same dimension!'
     n,m=len(vBS_od),len(vBS_id)
+    assert len(alpha0)== n+m, 'dim(alpha0)!=%s'%(n+m)
     assert len(initial_condition)==3*(n+m)+1+1+n#(vE+vL+vP) +A1 +A2 +vW
     assert abs(1.-np.sum(vBS_od)-np.sum(vBS_id))<1e-10,'sum(vBS_id)+sum(vBS_id)=%s!=1'%(np.sum(vBS_od)+np.sum(vBS_id))
 

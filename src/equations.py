@@ -86,10 +86,7 @@ def dvE(vE,vL,A1,A2,vW,T_t,BS_a,vBS_d,elr,ovr1,ovr2):
 
 def dvL(vE,vL,vW,T_t,BS_a,vBS_d,elr,lpr,vAlpha0):
     ml=0.01 + 0.9725 * math.exp(-(T_t-278.0)/2.7035)#mortality of the larvae, for T in [278,303]
-    vBS_a=BS_a*vBS_d
-    vBS_a[vBS_a==0]=1e-4#to avoid divison by zero.Change!!!
-    vAlpha0[vBS_a==0]=0#hack
-    vAlpha=vAlpha0/vBS_a
+    vAlpha=vAlpha0/(BS_a*vBS_d)
     return elr* (1-vGamma(vL,BS_a*vBS_d,vW)) * vE - ml*vL - vAlpha* vL*vL - lpr *vL #-35.6464*(1.-beta(vW,vBS_od,vBS_id))*L#-24.*(1.-beta(vW))*L# -log(1e-4/5502.)/(1.)=17.823207313460703
 
 def dvP(vL,vP,T_t,lpr,par):
