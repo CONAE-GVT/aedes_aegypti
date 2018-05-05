@@ -217,25 +217,36 @@ def plot(model,subplots,plot_start_date):
 
         #Amount of larvaes,pupaes and adults
         if ('E' in subplot): pl.plot(date_range,applyFs(RES[:,EGG],subplot), '-k', label='E')
-        if ('dY' in subplot):
-            dY=np.zeros(RES.shape)
-            for i,t in enumerate(time_range):
-                dY[i,:]=diff_eqs(RES[i,:],t,model.parameters)
-            pl.plot(date_range,applyFs(dY[:,:],subplot),  label='dY')
         if ('L' in subplot): pl.plot(date_range,applyFs(RES[:,LARVAE],subplot), '-r', label='L')
         if ('P' in subplot): pl.plot(date_range,applyFs(RES[:,PUPAE],subplot), '-g', label='P')
         if ('A1' in subplot): pl.plot(date_range,applyFs(RES[:,ADULT1],subplot), '-b', label='A1')
         if ('A2' in subplot): pl.plot(date_range,applyFs(RES[:,ADULT2],subplot), '-m', label='A2')
         if ('A1+A2' in subplot): pl.plot(date_range,applyFs(RES[:,ADULT2]+RES[:,ADULT1],subplot), '-m', label='A1+A2')
+
+        #derivate
+        dY=np.zeros(RES.shape)
+        if(np.any([a==b for a in subplot for b in ['dE','dL','dP','dA1','dA1']])):#if any of dE,...,dA2 is asked, calculate the whole dY
+            for i,t in enumerate(time_range):
+                dY[i,:]=diff_eqs(RES[i,:],t,model.parameters)
+
+        if ('dE' in subplot): pl.plot(date_range,applyFs(dY[:,EGG],subplot), '-k', label='dE')
+        if ('dL' in subplot): pl.plot(date_range,applyFs(dY[:,LARVAE],subplot), '-r', label='dL')
+        if ('dP' in subplot): pl.plot(date_range,applyFs(dY[:,PUPAE],subplot), '-g', label='dP')
+        if ('dA1' in subplot): pl.plot(date_range,applyFs(dY[:,ADULT1],subplot), '-b', label='dA1')
+        if ('dA2' in subplot): pl.plot(date_range,applyFs(dY[:,ADULT2],subplot), '-m', label='dA2')
+
+        #larvae indices
         if ('LI' in subplot):
             ri_days, ris=np.array(getIndexesForPlot(AEDIC_INDICES_FILENAME,model.start_date,0,5))
             pl.plot([datetime.timedelta(days=d)+datetime.datetime.combine(model.start_date,datetime.time()) for d in ri_days], applyFs(ris,subplot), '^y', label='Recip. Indices',clip_on=False, zorder=100,markersize=8)
 
+        #ovitraps
         if('O' in subplot):
             for i in subplot['O']:
                 ovitrap_eggs=np.array(getOvitrapEggsFromCsv('data/private/Datos sensores de oviposicion.NO.csv',model.start_date,model.end_date,i))
                 pl.plot([datetime.timedelta(days=d)+datetime.datetime.combine(model.start_date,datetime.time()) for d in range(0,len(ovitrap_eggs))], applyFs(ovitrap_eggs,subplot), '^', label='Ovitrap %s eggs'%i,clip_on=False, zorder=100,markersize=8)
 
+        #delta Eggs
         if('lwE' in subplot):
             lwE=np.array([RES[(np.abs(time_range-t)).argmin(),EGG]-RES[(np.abs(time_range-(t-7))).argmin(),EGG] for t in time_range])
             pl.plot(date_range, applyFs(lwE,subplot), '-', label='E(t)-E(t-7)')

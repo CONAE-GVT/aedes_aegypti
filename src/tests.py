@@ -204,7 +204,7 @@ def runTestCases():
             'alpha0':[1.5]*2
         }
     })
-    testModel(config,subplots=[['E','A1+A2','T','p',[utils.safeAdd,utils.normalize] ],['W']],plot_start_date=datetime.date(2018,1,1))
+    testModel(config,subplots=[['E','A1+A2','T','p','RH',[utils.safeAdd,utils.normalize] ],['W']],plot_start_date=datetime.date(2018,1,1))
 
     #*****9*****
     #ovitrap:9 pid:2382 od:[ 0.03088072  0.20904943  0.23383199  0.16713309  0.17310652  0.11768087] id:[ 0.06831738] ws_s:0.031265688907 Error:0.0765284863715 len:11.0 Error/len: 0.00695713512468
@@ -222,7 +222,7 @@ def runTestCases():
             'initial_condition':[100.]*7 + [0.]*7 +[0.]*7 + [0.,0.]+ [0 for x in vBS_os]
         }
     })
-    testModel(config,subplots=[['E','P','A1+A2',[utils.safeAdd,utils.normalize] ],['dY'],{'lwE':'','O':[9],'f' :[utils.replaceNegativesWithZeros,utils.safeAdd,utils.safeNormalize]}])
+    testModel(config,subplots=[['E','P','A1+A2',[utils.safeAdd,utils.normalize] ],['dE','dL','dP','dA1','dA2',[utils.safeAdd]],{'lwE':'','O':[9],'f' :[utils.replaceNegativesWithZeros,utils.safeAdd,utils.safeNormalize]}])
 
     #*****4*****
     #ovitrap:4 pid:18743 od:[ 0.18299322  0.20899391  0.07332913  0.15454651  0.14291156  0.0308964 ] id:[ 0.20632926] ws_s:0.491606121558 BS_a:2594.27715109 Error:34425.9670772 len:18.0 Error/len: 1912.553
