@@ -191,12 +191,13 @@ def subData(time_range,Y,date_range,an_start_date):
 def plot(model,subplots,plot_start_date):
     time_range=model.time_range
     RES=model.Y
-    T=model.parameters.weather.T
-    p=model.parameters.weather.p
-    RH=model.parameters.weather.RH
-    BS_a,vBS_oc,vBS_ic,vBS_od,vBS_id,vBS_os,n,m=model.parameters.BS_a,model.parameters.vBS_oc,model.parameters.vBS_ic,model.parameters.vBS_od,model.parameters.vBS_id,model.parameters.vBS_os,model.parameters.n,model.parameters.m
-    EGG,LARVAE,PUPAE,ADULT1,ADULT2,WATER=range(0,n+m),range(n+m,2*(n+m)),range(2*(n+m),3*(n+m)),3*(n+m),3*(n+m)+1,3*(n+m)+2
-    AEDIC_INDICES_FILENAME='data/private/Indices aedicos Historicos '+model.parameters.location['name']+'.xlsx'
+    parameters=model.parameters
+    T=parameters.weather.T
+    p=parameters.weather.p
+    RH=parameters.weather.RH
+    BS_a,vBS_oc,vBS_ic,vBS_od,vBS_id,vBS_os,n,m=parameters.BS_a,parameters.vBS_oc,parameters.vBS_ic,parameters.vBS_od,parameters.vBS_id,parameters.vBS_os,parameters.n,parameters.m
+    EGG,LARVAE,PUPAE,ADULT1,ADULT2,WATER=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.ADULT2,parameters.WATER
+    AEDIC_INDICES_FILENAME='data/private/Indices aedicos Historicos '+parameters.location['name']+'.xlsx'
 
     pl.figure()
     pl.subplots_adjust(top=0.95,hspace=0.28)
@@ -259,13 +260,13 @@ def plot(model,subplots,plot_start_date):
         #Water in containers(in L)
         if ('W' in subplot):
             for i in range(0,n):
-                pl.plot(date_range,applyFs(RES[:,WATER+i],subplot), label='W(t) for %sL, %scm^2, %s%%'%(vBS_oc[i],vBS_os[i],vBS_od[i]*100.) )
+                pl.plot(date_range,applyFs(RES[:,WATER[i] ],subplot), label='W(t) for %sL, %scm^2, %s%%'%(vBS_oc[i],vBS_os[i],vBS_od[i]*100.) )
             pl.ylabel('Litres')
 
         #spaa vs cimsim
         if ('spaavscimsim' in subplot):
             for i in range(0,n):
-                pl.plot(time_range,RES[:,WATER+i]*1000.0/vBS_os[i], label='W(t) for %sL, %scm^2, %s%%'%(vBS_oc[i],vBS_os[i],vBS_od[i]*100.) )#L->ml->mm->cm
+                pl.plot(time_range,RES[:,WATER[i] ]*1000.0/vBS_os[i], label='W(t) for %sL, %scm^2, %s%%'%(vBS_oc[i],vBS_os[i],vBS_od[i]*100.) )#L->ml->mm->cm
             pl.plot(getValuesFromCsv('data/test/cimsim_containers_2015_se09.csv',model.start_date,model.end_date,1,verbose=False),label='CIMSiM')
 
         #Temperature in K
@@ -285,7 +286,7 @@ def plot(model,subplots,plot_start_date):
 
         #f
         if ('b' in subplot):
-            pl.plot(date_range,[f( np.concatenate((RES[(np.abs(time_range-t)).argmin(),WATER:],vBS_ic)), np.concatenate((vBS_od,vBS_id)) ) for t in time_range], label='f(vW,vBS_d)')
+            pl.plot(date_range,[f( np.concatenate((RES[(np.abs(time_range-t)).argmin(),WATER],vBS_ic)), np.concatenate((vBS_od,vBS_id)) ) for t in time_range], label='f(vW,vBS_d)')
             pl.ylabel('')
 
         #debugging plots

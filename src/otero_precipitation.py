@@ -22,7 +22,16 @@ class Model:
         self.parameters.vBS_d=np.concatenate((self.parameters.vBS_od,self.parameters.vBS_id))
         self.parameters.vBS_os=configuration.getArray('breeding_site','outside_surface')#in cm^2
         self.parameters.n,self.parameters.m=len(self.parameters.vBS_od),len(self.parameters.vBS_id)
+
+        n,m=self.parameters.n,self.parameters.m
+        self.parameters.EGG=range(0,n+m)#in R^(n+m)
+        self.parameters.LARVAE=range(n+m,2*(n+m))#in R^(n+m)
+        self.parameters.PUPAE=range(2*(n+m),3*(n+m))#in R^(n+m)
+        self.parameters.ADULT1=3*(n+m)#in R
+        self.parameters.ADULT2=3*(n+m)+1#in R
+        self.parameters.WATER=range(3*(n+m)+2,3*(n+m)+2+n)#in R^n #cause we only track outside containers
         self.parameters.vAlpha0=configuration.getArray('biology','alpha0')#constant to be fitted
+
         #Cordoba
         self.parameters.location={'name':configuration.getString('location','name'),'station':configuration.getString('weather','station'),'zones':list(configuration.getString('location','zones'))}
         self.start_date=configuration.getDate('simulation','start_date')
