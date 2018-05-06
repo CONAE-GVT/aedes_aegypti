@@ -2,3 +2,6 @@
 [] Replace current evaporation by Ivanov model
 [] Make W a vectorial function.(QG-QR and then apply bounds to make it be in [0,vBS_c])
 [] Use water level instead of water volume
+
+Notes:
+EPA -> Ivanov resulted in zero negatives and diminution of calls
