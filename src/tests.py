@@ -80,6 +80,18 @@ def getLarvaeSurvivalDry(time_range,vW,L,time_window):
     print(' L<epsilon at t=%f with epsilon=%f'%(dry_time,epsilon) )
     print(' L=%s at t=%f'%(L[np.where(time_range==dry_time)],dry_time))
 
+def plotTimeWaterEggs(configuration):#from https://jakevdp.github.io/PythonDataScienceHandbook/04.12-three-dimensional-plotting.html
+    from scipy import interpolate
+    model=Model(configuration)
+    time_range,INPUT,RES=model.solveEquations(equations=diff_eqs)
+    WATER=model.parameters.WATER
+    eggs=interpolate.SmoothBivariateSpline(time_range,RES[:,WATER[0]], RES[:,0])
+    xline = time_range
+    yline = RES[:,WATER[0]]
+    zline = np.array([eggs(time_range[i],RES[i,WATER[0]]) for i,t in enumerate(time_range)]).flatten()
+    utils.plot3D(xline,yline,zline)
+    utils.showPlot()
+
 def runComparison():
     filenames=[]
     if(len(sys.argv)>2):
@@ -283,6 +295,7 @@ def runTestCases():
     })
     testModel(config,subplots=[['E','P','A1+A2',[utils.safeAdd,utils.normalize] ],{'lwE':'','O':[4],'f':[utils.replaceNegativesWithZeros,utils.safeAdd,utils.safeNormalize]}])
 
+    #plotTimeWaterEggs(config)
     utils.showPlot()
 
 if(__name__ == '__main__'):

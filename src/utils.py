@@ -306,5 +306,14 @@ def plot(model,subplots,plot_start_date):
         pl.legend(loc=0)
         pl.xticks(rotation='vertical')
 
+from mpl_toolkits import mplot3d
+def plot3D(xline,yline,zline):
+    ax = pl.axes(projection='3d')
+    pl.xlabel('time')
+    pl.ylabel('W')
+    #pl.zlabel('E')
+    ax.plot3D(xline, yline, zline, 'gray')
+
+
 def showPlot():
     return pl.show()
