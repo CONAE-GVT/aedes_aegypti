@@ -8,8 +8,8 @@ import datetime
 import sys
 
 
-WIDTH=20
-HEIGHT=20
+WIDTH=30
+HEIGHT=30
 FRAMES=10
 def getConfig(configuration,i,j):
     vBS_od=configuration.getArray('breeding_site','outside_distribution')
@@ -66,6 +66,6 @@ if(__name__ == '__main__'):
     fig, ax = pl.subplots()
     for i in range(0,len(time_range)):
         ax.cla()
-        ax.imshow(matrix[:,:,i],cmap='gray',interpolation='nearest',origin='lower')
+        ax.imshow(matrix[:,:,i],cmap='gray',interpolation='nearest')
         ax.set_title("frame {}".format(i))
         pl.pause(0.0001)
