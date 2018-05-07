@@ -91,3 +91,6 @@ Source: http://www.king-foo.com/2011/11/creating-debianubuntu-deb-packages/
 > g++ -Wall -std=c++11 -Wno-deprecated-declarations  -I /usr/local/boost_1_67_0/include/ -I/usr/include/python2.7 -fpic  src/_equationsmodule.cpp -shared  -L /usr/local/boost_1_67_0/lib/ -lboost_python27 -lboost_numpy27 -o src/_equations.so -O3
 >export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/boost_1_67_0/lib
 >python src/_equationsmodule_test.py
+
+**To create an animation**
+>ffmpeg -i out/A_%04d.png A.webm

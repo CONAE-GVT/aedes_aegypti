@@ -62,10 +62,11 @@ if(__name__ == '__main__'):
 
     raw_input('Press enter')
     #https://matplotlib.org/gallery/animation/animation_demo.html#sphx-glr-gallery-animation-animation-demo-py
-    matrix[:,:,i]=matrix[:,:,i]/matrix.max()
+    matrix=matrix/matrix.max()
     fig, ax = pl.subplots()
     for i in range(0,len(time_range)):
         ax.cla()
         ax.imshow(matrix[:,:,i],cmap='gray',interpolation='nearest')
-        ax.set_title("frame {}".format(i))
+        ax.set_title('frame {}'.format(i))
+        pl.savefig('out/A_{0:04d}'.format(i))
         pl.pause(0.0001)
