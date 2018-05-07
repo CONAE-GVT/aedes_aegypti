@@ -66,6 +66,6 @@ if(__name__ == '__main__'):
     fig, ax = pl.subplots()
     for i in range(0,len(time_range)):
         ax.cla()
-        ax.imshow(matrix[:,:,i],cmap='gray',interpolation="nearest")
+        ax.imshow(matrix[:,:,i],cmap='gray',interpolation='nearest',origin='lower')
         ax.set_title("frame {}".format(i))
         pl.pause(0.0001)
