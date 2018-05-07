@@ -92,6 +92,20 @@ def plotTimeWaterEggs(configuration):#from https://jakevdp.github.io/PythonDataS
     utils.plot3D(xline,yline,zline)
     utils.showPlot()
 
+def getEquilibriumL0(u,T_t):
+    from equations import vR_D
+    elr,lpr,par,ovr1,ovr2=vR_D(T_t)
+    egn=63.0
+    me=0.01#mortality of the egg, for T in [278,303]
+    ml=0.01 + 0.9725 * math.exp(-(T_t-278.0)/2.7035)#mortality of the larvae, for T in [278,303]
+    mp=0.01 + 0.9725 * math.exp(-(T_t-278.0)/2.7035)#death of pupae
+    ef=0.83#emergence factor
+    ma=0.09#for T in [278,303]
+    alpha0=1.5
+    BS=1.
+    alpha=alpha0/BS
+    return 1./alpha *( (elr * u * egn*(ma*ovr1+ovr2*ovr1)*par*ef*lpr)/(2*ma*(me+elr*u)*(ma+ovr1)*(mp+par) ) - (ml+lpr) )
+
 def runComparison():
     filenames=[]
     if(len(sys.argv)>2):
@@ -298,8 +312,34 @@ def runTestCases():
     #plotTimeWaterEggs(config)
     utils.showPlot()
 
+def runLab():
+    config=Configuration('resources/otero_precipitation.cfg',
+        {'breeding_site':{
+            'amount':1,
+            'outside_capacity':[],
+            'outside_surface':[],
+            'outside_distribution':[],
+            'inside_distribution':[1.],
+            'inside_capacity':[0.5]
+            },
+        'simulation':{
+            'initial_condition':[100.]*1 + [0.]*1 +[0.]*1 + [0.,0.]
+            },
+        'biology':{
+            'alpha0':[1.5]
+            }
+        })
+    #normal case
+    T=lambda t: 18.+6.7*math.cos(2*math.pi*t/365.25 + 9.2)+273.15#26.+273.15
+    testModel(config,subplots=[['E','L','A1+A2',[utils.safeAdd,utils.normalize] ],['L'], ['lwL' ]],T=None)
+    print(getEquilibriumL0(1,T(0.) ))
+    utils.showPlot()
+
+
 if(__name__ == '__main__'):
     if(len(sys.argv)>1 and sys.argv[1]=='compare'):
         runComparison()
+    elif(len(sys.argv)>1 and sys.argv[1]=='lab'):
+        runLab()
     else:
         runTestCases()

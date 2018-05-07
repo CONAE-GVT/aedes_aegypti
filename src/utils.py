@@ -252,6 +252,10 @@ def plot(model,subplots,plot_start_date):
             lwE=np.array([RES[(np.abs(time_range-t)).argmin(),EGG]-RES[(np.abs(time_range-(t-7))).argmin(),EGG] for t in time_range])
             pl.plot(date_range, applyFs(lwE,subplot), '-', label='E(t)-E(t-7)')
         pl.ylabel('')
+        if('lwL' in subplot):
+            lwL=np.array([RES[(np.abs(time_range-t)).argmin(),LARVAE]-RES[(np.abs(time_range-(t-7))).argmin(),LARVAE] for t in time_range])
+            pl.plot(date_range, applyFs(lwL,subplot), '-', label='L(t)-L(t-7)')
+        pl.ylabel('')
 
         #Complete lifecycle
         if('clc' in subplot):
