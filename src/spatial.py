@@ -31,7 +31,7 @@ if(__name__ == '__main__'):
     configuration=Configuration('resources/otero_precipitation.cfg',{
         'simulation':{
             'start_date':datetime.date(2017,10,1),
-            'end_date':datetime.date(2018,4,5)
+            'end_date':datetime.date(2018,5,7)
         }
     })
 
