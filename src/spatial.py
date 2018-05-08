@@ -28,7 +28,7 @@ def getConfig(configuration,i,j):
     return configuration
 
 if(__name__ == '__main__'):
-    config=Configuration('resources/otero_precipitation.cfg',{
+    configuration=Configuration('resources/otero_precipitation.cfg',{
         'simulation':{
             'start_date':datetime.date(2017,10,1),
             'end_date':datetime.date(2018,4,5)
@@ -38,7 +38,7 @@ if(__name__ == '__main__'):
     matrix=None
     for i in range(0,HEIGHT):
         for j in range(0,WIDTH):
-            model=Model(getConfig(config,i,j))
+            model=Model(getConfig(configuration,i,j))
             time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs,method='rk')
             if matrix is None:
                 matrix=np.zeros((WIDTH,HEIGHT,len(time_range)))
@@ -60,13 +60,14 @@ if(__name__ == '__main__'):
     pl.show()
     '''
 
-    raw_input('Press enter')
+    #raw_input('Press enter')
     #https://matplotlib.org/gallery/animation/animation_demo.html#sphx-glr-gallery-animation-animation-demo-py
     matrix=matrix/matrix.max()
+    start_date=configuration.getDate('simulation','start_date')
     fig, ax = pl.subplots()
     for i in range(0,len(time_range)):
         ax.cla()
         ax.imshow(matrix[:,:,i],cmap='gray',interpolation='nearest')
-        ax.set_title('frame {}'.format(i))
+        ax.set_title( datetime.timedelta(days=time_range[i])+start_date )
         pl.savefig('out/A_{0:04d}'.format(i))
         pl.pause(0.0001)

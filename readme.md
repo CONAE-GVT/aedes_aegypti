@@ -93,4 +93,4 @@ Source: http://www.king-foo.com/2011/11/creating-debianubuntu-deb-packages/
 >python src/_equationsmodule_test.py
 
 **To create an animation**
->ffmpeg -i out/A_%04d.png A.webm
+>ffmpeg -i out/A_%04d.png out/A.webm
