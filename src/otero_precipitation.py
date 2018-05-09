@@ -36,10 +36,20 @@ class Model:
         self.parameters.location={'name':configuration.getString('location','name'),'station':configuration.getString('weather','station'),'zones':list(configuration.getString('location','zones'))}
         self.start_date=configuration.getDate('simulation','start_date')
         self.end_date=configuration.getDate('simulation','end_date')
+        self.time_range = np.linspace(0, (self.end_date - self.start_date).days-1, (self.end_date - self.start_date).days * 20)
         self.parameters.initial_condition=configuration.getArray('simulation','initial_condition')
 
         WEATHER_STATION_DATA_FILENAME='data/public/wunderground_'+self.parameters.location['station']+'.csv'
         self.parameters.weather=Weather(WEATHER_STATION_DATA_FILENAME,self.start_date,self.end_date)
+
+        self.validate()
+
+    def validate(self):
+        mean_temperatures=np.array([self.parameters.weather.T(t) for t in self.time_range])
+        lower_bound=mean_temperatures[mean_temperatures<278.]
+        upper_bound=mean_temperatures[mean_temperatures>303.]
+        if(lower_bound.size>0 or upper_bound.size>0):
+            print('# WARNING: Temperature out of model\'s valid range:T<278:%s T>303:%s'%(lower_bound.size,upper_bound.size))
 
     def save(self):
         #save results
@@ -56,7 +66,7 @@ class Model:
 
 
     def solveEquations(self,equations=equations.diff_eqs,method='odeint'):
-        self.time_range = time_range = np.linspace(0, (self.end_date - self.start_date).days-1, (self.end_date - self.start_date).days * 20)
+        time_range=self.time_range
         initial_condition=self.parameters.initial_condition
         Y=None
 
