@@ -5,47 +5,43 @@ import datetime
 import utils
 import math
 
+def f(a,b,c,z):
+    #print(a- b*z/256.)
+    #return math.log(a- b*z/256.)+c
+    #return a*gamma.pdf(z,b) +c
+    return 1-a*math.exp(b*z)/(c+math.exp(b*z))#inspired by x'=x*(1-x/k), and equvalent to b/(b+exp(a*z)) using a=1 which makes the function positive for all z
 
+def f_error(x,domain,real_values):
+    error= real_values - [ f(x[0],x[1],x[2],z) for z in domain]
+    return np.dot(error,error)#for leastsq return just error
 
-#real_temps =utils.getAverageTemperaturesFromCsv('data/noaa_big.csv',datetime.date(2001, 07, 1),datetime.date(2017, 6, 1))#data for 2003-09-23 was missing, so min+max/2 was put in it-s place
-#real_temps =textReader.getAverageTemperaturesFromTxts('data/temperatures',datetime.date(2016, 07, 1),datetime.date(2017, 6, 1))#np.array([26.0,30.0,23.0])
+def getOptimalParameters(domain,real_values):
+    x0 = np.array([0.0,0.0,0.])#initial a,b and c
 
-def T(a,b,c,t,noise=0):#K, beginning on the first of july. Noise is just used to test the fitter. For the actual use of the function, the noise is always 0
-    #a=18.0#C
-    #b=6.7#C
-    #c=9.2
-    return a + b * math.cos( (2.0* math.pi * t)/365.25 + c) + 273.15 +noise#To Kelvin
-
-#Just to test
-#vT=np.vectorize(T)
-#real_temps = vT(20.0,10.0,15.0,np.arange(0, 365*10, 1.0),np.random.normal(0,2,365*10))#np.array([26.0,30.0,23.0])
-def T_error(x,real_temps):
-    return [ real_temps[i]-T(x[0],x[1],x[2],i) if real_temps[i] else 0 for i in range(0,len(real_temps))]
-
-def getOptimalParameters(real_temps):
-    x0 = np.array([18.0,6.7,9.2])#initial a,b and c
-    res,cov=optimize.leastsq(T_error,x0,(real_temps))
+    constraints = ({'type': 'ineq', 'fun': lambda x:  np.min(x[0]- x[1]*domain/256.)-1e-10})
+    bounds=((0,2),(-1,1),(0,1))
+    #res,cov=optimize.leastsq(f_error,x0,(domain,real_values))
+    res=optimize.minimize(f_error,x0,(domain,real_values),method='SLSQP')#,constraints=constraints
+    #res=optimize.differential_evolution(f_error,bounds=bounds,args=(domain,real_values))
     return res
 
 if(__name__ == '__main__'):
-    real_temps=utils.getAverageTemperaturesFromCsv('data/noaa_big.csv',datetime.date(2001, 7, 1),datetime.date(2017, 6, 1))
-    a,b,c=getOptimalParameters(real_temps)
-    print([a,b,c])
+    #define values to fit
+    domain=     np.array([4,8   ,16  ,32  ,64    ,128  ,256])
+    mortality=1-np.array([1,1   ,1   ,1   ,0.970 ,0.450,0.065])#mortality=1-survival in [0,1]
+    pupation=np.array([5.45,5.78,5.41,7.14,11.75 ,10.39,7.42])#pupation time in days
+    #find optimal
+    res=getOptimalParameters(domain,mortality)
+    a,b,c=res.x
+    #print([a,b,c])
+    print(res)
 
-    #Ploting
-    time_range = np.arange(0, len(real_temps), 1.0)
-    vT=np.vectorize(T)
-    pl.subplot(111)
-    pl.plot(time_range,vT(a,b,c,time_range), '-m', label='T')
-    pl.xlabel('Time(in days starting in July)')
+
+     #Ploting
+    pl.plot(range(0,domain.max()),[f(a,b,c,x) for x in range(0,domain.max())],label='f')
+    pl.plot(domain,mortality, '^y',label='')
+    pl.xlabel('')
     pl.ylabel('')
     pl.legend(loc=0)
-
-
-
-    pl.subplot(111)
-    pl.plot(time_range,real_temps, '^y', label='Real Temperatures')
-    pl.legend(loc=0)
-
 
     pl.show()
