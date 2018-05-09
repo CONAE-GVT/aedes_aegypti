@@ -15,14 +15,31 @@ def printCorrelation():
     vT=np.vectorize(model.T)
     print('(Pearson s correlation coefficient,2-tailed p-value): ' + str(stats.pearsonr(RES[:,LARVAE], vT(time_range))) )
 
-def compare(old_RES_filename,model):
-    old_RES_start_date=datetime.datetime.strptime(open(old_RES_filename,'r').readline().split(',')[0],'%Y-%m-%d').date()
-    old_RES_end_date=datetime.datetime.strptime(open(old_RES_filename,'r').readlines()[-1].split(',')[0],'%Y-%m-%d').date()
-    assert old_RES_start_date==model.start_date,'Old Result and new result must start at the same date'
-    old_RES=utils.loadResults(old_RES_filename,model.start_date)
-    time_range,INPUT,new_RES=model.solveEquations(equations=diff_eqs)
-    new_RES=utils.getDailyResults(time_range,new_RES,model.start_date,old_RES_end_date+datetime.timedelta(days=1))#the last date save is one day less than the end_date#TODO:not sure if this is correct or just a hack
-    print('||old_RES-new_RES|| = %s'% np.linalg.norm(old_RES-new_RES) )
+def getLarvaeSurvivalDry(time_range,vW,L,time_window):
+    #print(W[:,0]<1e-3)
+    #print(time_range[W<1e-3])
+    epsilon=1e-4
+    times_dry_container=[t for i,t in enumerate(time_range) if np.dot(model.vBS_od,vW[i,:])<epsilon and time_window['start']<t<time_window['end'] ]
+    times_death_larvae= [t for i,t in enumerate(time_range) if L[i]<epsilon and time_window['start']<t<time_window['end']]
+    if not times_dry_container or not times_death_larvae:
+        return
+    print('Larvae Survival to desiccation:')
+    dry_time=times_dry_container[0]
+    print(' W<epsilon at t=%f with epsilon=%f'%(dry_time,epsilon) )
+    print(' L<epsilon at t=%f with epsilon=%f'%(dry_time,epsilon) )
+    print(' L=%s at t=%f'%(L[np.where(time_range==dry_time)],dry_time))
+
+def plotTimeWaterEggs(configuration):#from https://jakevdp.github.io/PythonDataScienceHandbook/04.12-three-dimensional-plotting.html
+    from scipy import interpolate
+    model=Model(configuration)
+    time_range,INPUT,RES=model.solveEquations(equations=diff_eqs)
+    WATER=model.parameters.WATER
+    eggs=interpolate.SmoothBivariateSpline(time_range,RES[:,WATER[0]], RES[:,0])
+    xline = time_range
+    yline = RES[:,WATER[0]]
+    zline = np.array([eggs(time_range[i],RES[i,WATER[0]]) for i,t in enumerate(time_range)]).flatten()
+    utils.plot3D(xline,yline,zline)
+    utils.showPlot()
 
 
 def testSaveLoadResults(model):
@@ -66,45 +83,15 @@ def testModel(configuration, p=None,T=None,subplots=[['E','L'],['W']],plot_start
 
     utils.plot(model,subplots,plot_start_date)
 
-def getLarvaeSurvivalDry(time_range,vW,L,time_window):
-    #print(W[:,0]<1e-3)
-    #print(time_range[W<1e-3])
-    epsilon=1e-4
-    times_dry_container=[t for i,t in enumerate(time_range) if np.dot(model.vBS_od,vW[i,:])<epsilon and time_window['start']<t<time_window['end'] ]
-    times_death_larvae= [t for i,t in enumerate(time_range) if L[i]<epsilon and time_window['start']<t<time_window['end']]
-    if not times_dry_container or not times_death_larvae:
-        return
-    print('Larvae Survival to desiccation:')
-    dry_time=times_dry_container[0]
-    print(' W<epsilon at t=%f with epsilon=%f'%(dry_time,epsilon) )
-    print(' L<epsilon at t=%f with epsilon=%f'%(dry_time,epsilon) )
-    print(' L=%s at t=%f'%(L[np.where(time_range==dry_time)],dry_time))
 
-def plotTimeWaterEggs(configuration):#from https://jakevdp.github.io/PythonDataScienceHandbook/04.12-three-dimensional-plotting.html
-    from scipy import interpolate
-    model=Model(configuration)
-    time_range,INPUT,RES=model.solveEquations(equations=diff_eqs)
-    WATER=model.parameters.WATER
-    eggs=interpolate.SmoothBivariateSpline(time_range,RES[:,WATER[0]], RES[:,0])
-    xline = time_range
-    yline = RES[:,WATER[0]]
-    zline = np.array([eggs(time_range[i],RES[i,WATER[0]]) for i,t in enumerate(time_range)]).flatten()
-    utils.plot3D(xline,yline,zline)
-    utils.showPlot()
-
-def getEquilibriumL0(u,T_t):
-    from equations import vR_D
-    elr,lpr,par,ovr1,ovr2=vR_D(T_t)
-    egn=63.0
-    me=0.01#mortality of the egg, for T in [278,303]
-    ml=0.01 + 0.9725 * math.exp(-(T_t-278.0)/2.7035)#mortality of the larvae, for T in [278,303]
-    mp=0.01 + 0.9725 * math.exp(-(T_t-278.0)/2.7035)#death of pupae
-    ef=0.83#emergence factor
-    ma=0.09#for T in [278,303]
-    alpha0=1.5
-    BS=1.
-    alpha=alpha0/BS
-    return 1./alpha *( (elr * u * egn*(ma*ovr1+ovr2*ovr1)*par*ef*lpr)/(2*ma*(me+elr*u)*(ma+ovr1)*(mp+par) ) - (ml+lpr) )
+def compare(old_RES_filename,model):
+    old_RES_start_date=datetime.datetime.strptime(open(old_RES_filename,'r').readline().split(',')[0],'%Y-%m-%d').date()
+    old_RES_end_date=datetime.datetime.strptime(open(old_RES_filename,'r').readlines()[-1].split(',')[0],'%Y-%m-%d').date()
+    assert old_RES_start_date==model.start_date,'Old Result and new result must start at the same date'
+    old_RES=utils.loadResults(old_RES_filename,model.start_date)
+    time_range,INPUT,new_RES=model.solveEquations(equations=diff_eqs)
+    new_RES=utils.getDailyResults(time_range,new_RES,model.start_date,old_RES_end_date+datetime.timedelta(days=1))#the last date save is one day less than the end_date#TODO:not sure if this is correct or just a hack
+    print('||old_RES-new_RES|| = %s'% np.linalg.norm(old_RES-new_RES) )
 
 def runComparison():
     filenames=[]
@@ -312,28 +299,52 @@ def runTestCases():
     #plotTimeWaterEggs(config)
     utils.showPlot()
 
-def runLab():
-    config=Configuration('resources/otero_precipitation.cfg',
+def getEquilibriumL0(u,T_t):
+    from equations import vR_D
+    elr,lpr,par,ovr1,ovr2=vR_D(T_t)
+    egn=63.0
+    me=0.01#mortality of the egg, for T in [278,303]
+    ml=0.01 + 0.9725 * math.exp(-(T_t-278.0)/2.7035)#mortality of the larvae, for T in [278,303]
+    mp=0.01 + 0.9725 * math.exp(-(T_t-278.0)/2.7035)#death of pupae
+    ef=0.83#emergence factor
+    ma=0.09#for T in [278,303]
+    alpha0=1.5
+    BS=1.
+    alpha=alpha0/BS
+    return 1./alpha *( (elr * u * egn*(ma*ovr1+ovr2*ovr1)*par*ef*lpr)/(2*ma*(me+elr*u)*(ma+ovr1)*(mp+par) ) - (ml+lpr) )
+
+def testMacia():#MACIÁ (2009)
+    configuration=Configuration('resources/otero_precipitation.cfg',
         {'breeding_site':{
             'amount':1,
             'outside_capacity':[],
             'outside_surface':[],
             'outside_distribution':[],
             'inside_distribution':[1.],
-            'inside_capacity':[0.5]
+            'inside_capacity':[0.175]
             },
         'simulation':{
-            'initial_condition':[100.]*1 + [0.]*1 +[0.]*1 + [0.,0.]
+            'start_date':datetime.date(2017,3,1),
+            'end_date':datetime.date(2017,4,15),
+            'initial_condition':[0.]*1 + [32.]*1 +[0.]*1 + [0.,0.]
             },
         'biology':{
             'alpha0':[1.5]
             }
         })
-    #normal case
-    T=lambda t: 18.+6.7*math.cos(2*math.pi*t/365.25 + 9.2)+273.15#26.+273.15
-    testModel(config,subplots=[['E','L','A1+A2',[utils.safeAdd,utils.normalize] ],['L'], ['lwL' ]],T=None)
-    print(getEquilibriumL0(1,T(0.) ))
-    utils.showPlot()
+
+    model=Model(configuration)
+    #lab environment
+    T=lambda t: 26.+273.15#26 +/- 2
+    model.parameters.weather.T=T
+    time_range,INPUT,RES=model.solveEquations()
+    LARVAE,PUPAE,WATER=model.parameters.LARVAE,model.parameters.PUPAE,model.parameters.WATER
+    vBS_ic=model.parameters.vBS_ic
+    L_initial,P_final,D_initial=RES[0,LARVAE],RES[-1,PUPAE],RES[0,LARVAE]/np.concatenate((RES[0,WATER],vBS_ic) )
+    print('D_initial: %s, L_initial:%s, P_final:%s, survival:%s'%(D_initial,L_initial,P_final,P_final/L_initial))
+
+def runLab():
+    testMacia()
 
 
 if(__name__ == '__main__'):
