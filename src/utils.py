@@ -263,8 +263,12 @@ def plot(model,subplots,plot_start_date):
             pl.ylabel('days')
         #Water in containers(in L)
         if ('W' in subplot):
-            for i in range(0,n):
-                pl.plot(date_range,applyFs(RES[:,WATER[i] ],subplot), label='W(t) for %sL, %scm^2, %s%%'%(vBS_oc[i],vBS_os[i],vBS_od[i]*100.) )
+            for i in range(0,n+m):
+                vW=np.concatenate((RES[:,WATER], [vBS_ic]*len(time_range) ), axis=1)
+                vBS_c=np.concatenate((vBS_oc, vBS_ic) )
+                vBS_s=np.concatenate((vBS_os, [None]*m) )
+                vBS_d=np.concatenate((vBS_od, vBS_id*m) )
+                pl.plot(date_range,applyFs(vW,subplot), label='W(t) for %sL, %scm^2, %s%%'%(vBS_c[i],vBS_s[i],vBS_d[i]*100.) )
             pl.ylabel('Litres')
 
         #spaa vs cimsim
