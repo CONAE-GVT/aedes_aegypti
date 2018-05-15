@@ -7,8 +7,9 @@ import pylab as pl
 import numpy as np
 import scipy.stats as stats
 import multiprocessing as mp
-from otero_precipitation import Model
 from _equations import diff_eqs
+from config import Configuration
+from otero_precipitation import Model
 #import performance_equations as pe
 from scipy.optimize import minimize,differential_evolution
 
@@ -29,19 +30,26 @@ def calculateMetrics(time_range,mEggs,real_values):
     rho,p_value=stats.spearmanr(real_values[real_values!=[None]],lwE[real_values!=[None]])
     return lwE,error,rho,p_value
 
+def getConfiguration(x,n,m):
+    l=np.sum(x[0:n+m])
+    if(l<1e-5): return 500.
+    x[0:n+m]/=l#constraint: #Σ vBS_od[i] + vBS_id[i] = 1
+    MAX_BS_A=4550.
+    configuration=Configuration('resources/otero_precipitation.cfg',
+        {'breeding_site':{
+            'amount':MAX_BS_A*x[n+m]+50,
+            'outside_distribution':x[0:n],
+            'inside_distribution':x[n:n+m]
+            }
+        })
+    return configuration
+
 def error(x,model,real_values=None,ovitrap=None):
     #return np.dot(x,x)
     if(real_values is None):
         model,real_values,ovitrap=model#weird differential_evolution bug...
 
-    n,m=model.parameters.n,model.parameters.m
-    l=np.sum(x[0:n+m])
-    if(l<1e-5): return 500.
-    x[0:n+m]/=l#constraint: #Σ vBS_od[i] + vBS_id[i] = 1
-    model.parameters.vBS_od=x[0:n]#not sure
-    model.parameters.vBS_id=x[n:n+m]#how safe
-    MAX_BS_A=4550.
-    model.parameters.BS_a=MAX_BS_A*x[n+m]+50#this is
+    model=Model(getConfiguration(x,model.parameters.n,model.parameters.m))
     #time_range,INPUT,RES = pe.solvePopulationEquations(initial_condition = [100.0, 0.0,0.0,0.0,0.0])
     time_range,INPUT,RES=model.solveEquations(equations=diff_eqs,method='rk')
     lwE,error,rho,p_value=calculateMetrics(time_range,RES[:,model.parameters.EGG],real_values)
@@ -49,10 +57,6 @@ def error(x,model,real_values=None,ovitrap=None):
     if(ovitrap_data_len==0): ovitrap_data_len=1.
     print('ovitrap:%s pid:%i od:%s id:%s BS_a:%s Error:%s len:%s Error/len: %s'%(ovitrap,os.getpid(),model.parameters.vBS_od,model.parameters.vBS_id,model.parameters.BS_a,error,ovitrap_data_len,error/ovitrap_data_len))
     return error
-
-def earlyOut(xk,convergence):
-    print('*'*20)
-    if(convergence>0.5): return True
 
 def getOptimalParameters(args):
     model=Model()
@@ -68,7 +72,7 @@ def getOptimalParameters(args):
     if(MINIMIZE_METHOD=='SLSQP'):
         opt=minimize(error,x0,args,method='SLSQP',bounds=bounds,constraints=constraints,options={'eps': 1e-02, 'ftol': 1e-01})
     else:
-        opt=differential_evolution(error,bounds,args=args,callback=earlyOut,maxiter=1, popsize=1)
+        opt=differential_evolution(error,bounds,args=args)
 
     return opt
 
@@ -110,7 +114,7 @@ if(__name__ == '__main__'):
         model.parameters.vBS_od,model.parameters.vBS_id=x[0:n],x[n:n+m]
         time_range,INPUT,RES = model.solveEquations(equations=diff_eqs,method='rk')
         filename=model.save()
-        new_filename=filename.replace('.csv','_ovi%s.csv'%idx)
+        new_filename=filename.replace('.csv','_ovi%s.csv'%(idx+1))
         os.rename(filename,new_filename)
         os.rename(filename.replace('.csv','.cfg'),new_filename.replace('.csv','.cfg'))
         print('Ovitrap %s:'%(idx+1))
