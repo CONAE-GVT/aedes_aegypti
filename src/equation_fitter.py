@@ -65,7 +65,7 @@ def getOptimalParameters(args):
     #Σ vBS_od[i] + vBS_id[i] = 1
     constraints = ({'type': 'eq', 'fun': lambda x:  1 - sum(x[0:model.parameters.n+model.parameters.m])})
     #0<=x<=1,0<=ws_s<=1.
-    bounds=tuple((0,1) for x in x0 )#tuple((0,1) for x in range(0,len(x0)-1) ) + tuple((0,1.0) for x in range(0,1))
+    bounds=tuple((1e-8,1) for x in x0 )#tuple((0,1) for x in range(0,len(x0)-1) ) + tuple((0,1.0) for x in range(0,1))
 
     opt=None
     args=[model]+args
