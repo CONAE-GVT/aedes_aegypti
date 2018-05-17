@@ -1,4 +1,6 @@
 #coding: utf-8
+import os
+import re
 import sys
 import math
 import utils
@@ -344,6 +346,14 @@ def testMacia():#MACIÁ (2009)
     L_initial,P_final,D_initial=RES[0,LARVAE],RES[-1,PUPAE],RES[0,LARVAE]/np.concatenate((RES[0,WATER],vBS_ic) )
     print('D_initial: %s, L_initial:%s, P_final:%s, survival:%s'%(D_initial,L_initial,P_final,P_final/L_initial))
 
+def runOviShow(folder):
+    config_filenames=[filename for filename in os.listdir(folder) if filename.endswith('.cfg')]
+    for config_filename in config_filenames:
+        for ovitrap_id in re.findall(r'.*_ovi([0-9]+)\.cfg',config_filename):
+            testModel(Configuration(folder+'/'+config_filename),subplots=[ ['E','P','A1+A2',[utils.safeAdd,utils.normalize] ],{'lwE':'','O':[int(ovitrap_id)+1],'f':[utils.replaceNegativesWithZeros,utils.safeAdd,utils.safeNormalize]}])
+
+    utils.showPlot()
+
 def runLab():
     testMacia()
 
@@ -353,5 +363,7 @@ if(__name__ == '__main__'):
         runComparison()
     elif(len(sys.argv)>1 and sys.argv[1]=='lab'):
         runLab()
+    elif(len(sys.argv)>2 and sys.argv[1]=='show'):
+        runOviShow(sys.argv[2])
     else:
         runTestCases()
