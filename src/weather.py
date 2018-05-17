@@ -1,6 +1,5 @@
 import math
 import utils
-import fourier
 from scipy import interpolate
 class Weather:
     '''
