@@ -94,3 +94,10 @@ Source: http://www.king-foo.com/2011/11/creating-debianubuntu-deb-packages/
 
 **To create an animation**
 >ffmpeg -framerate 250 -i out/A_%04d.png  out/A.webm
+
+
+**Engauge**
+>pdfimages -j densityDependantlarvaeDeath.pdf /tmp/out
+
+**Notes**
+constant ml -> constant survival (independent of initial larvaes)
