@@ -9,9 +9,8 @@ import utils
 import math
 
 
-def f_error(x,domain,real_values=None):
-    #error= real_values - [ f(x[0],x[1],x[2],z) for z in domain]
-    error=real_values - [ macia(x[0],x[1],x[2],L0,0.175,44.) for L0 in domain]
+def f_error(x,f,domain,real_values):
+    error=real_values - [ f(x,v) for v in domain]
     print(np.dot(error,error))
     return np.dot(error,error)#for leastsq return just error
 
@@ -46,8 +45,10 @@ class LabEquations:
 
         return dY
 
-def macia(a,b,c,L0,W,t_final):
-    alpha0=0#a/(b+math.exp(c*L0))
+def macia(x,v):
+    a,b,c=x[0],x[1],x[2]
+    L0=v
+    W,t_final=0.175,44.
     configuration=Configuration('resources/otero_precipitation.cfg',
         {'breeding_site':{
             'amount':1,
@@ -63,7 +64,7 @@ def macia(a,b,c,L0,W,t_final):
             'initial_condition':[0.]*1 + [L0]*1 +[0.]*1 + [0.,0.]
             },
         'biology':{
-            'alpha0':[alpha0]
+            'alpha0':[0]#alpha is not used
             }
         })
 
@@ -78,34 +79,33 @@ def macia(a,b,c,L0,W,t_final):
     L_initial,P_final=RES[0,LARVAE],RES[-1,PUPAE]
     return (P_final/L_initial)[0]
 
-def getOptimalParameters(domain,real_values):
-    x0 = np.array([0.0,0.0,0.])#initial a,b and c
 
-    constraints = ({'type': 'ineq', 'fun': lambda x:  np.min(x[0]- x[1]*domain/256.)-1e-10})
-    bounds=((0,10),(54,74),(0,10))#((0,5),(0.05,5),(0,5))<- candidate
-    #res,cov=optimize.leastsq(f_error,x0,(domain,real_values))
-    res=optimize.minimize(f_error,x0,(domain,real_values),method='SLSQP',bounds=bounds)#,constraints=constraints
-    #res=optimize.differential_evolution(f_error,bounds=bounds,args=(domain,real_values))
-    return res
+def fit(x0,f,bounds,domain,real_values,method='SLSQP'):
+    #Find optimal parameters
+    res=None
+    if(method=='SLSQP'):
+        res=optimize.minimize(f_error,x0,(f,domain,real_values),method='SLSQP',bounds=bounds)#,constraints=constraints
+    else:
+        res=optimize.differential_evolution(f_error,bounds=bounds,args=(domain,real_values))
 
-if(__name__ == '__main__'):
-    #define values to fit
-    domain=     np.array([4,8   ,16  ,32  ,64    ,128  ,256])
-    survival=np.array([1,1   ,1   ,1   ,0.970 ,0.450,0.065])
-    mortality=1-survival#mortality=1-survival in [0,1]
-    pupation=np.array([5.45,5.78,5.41,7.14,11.75 ,10.39,7.42])#pupation time in days
-    #find optimal
-    res=getOptimalParameters(domain,survival)
-    a,b,c=res.x
-    #print([a,b,c])
     print(res)
-
-
-     #Ploting
-    pl.plot(range(0,domain.max()),[macia(a,b,c,L0,0.175,44.) for L0 in range(0,domain.max())],label='macia')
-    pl.plot(domain,survival, '^y',label='')
+    x=res.x
+    pl.plot(range(0,domain.max()),[f(x,v) for v in range(0,domain.max())],label=f.__name__ )
+    pl.plot(domain,real_values, '^y',label='')
     pl.xlabel('')
     pl.ylabel('')
     pl.legend(loc=0)
 
     pl.show()
+
+def fitMacia():
+    #define values to fit
+    domain=     np.array([4,8   ,16  ,32  ,64    ,128  ,256])
+    survival=np.array([1,1   ,1   ,1   ,0.970 ,0.450,0.065])
+    #find optimal
+    bounds=((0,10),(54,74),(0,10))#((0,5),(0.05,5),(0,5))<- candidate
+    x0=np.array([0,0,0])
+    fit(x0,macia,bounds,domain,survival)
+
+if(__name__ == '__main__'):
+    fitMacia()
