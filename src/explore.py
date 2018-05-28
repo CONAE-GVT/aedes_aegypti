@@ -1,0 +1,76 @@
+#https://jswhit.github.io/pygrib/docs/
+import numpy as np
+import datetime
+import pygrib
+import netCDF4 as nc
+import sys
+
+DATA_FOLDER='data/public/'
+OUT_FILENAME=DATA_FOLDER+'weather.csv'
+
+def daterange(start_date, end_date):
+    for n in range(int ((end_date - start_date).days)):
+        yield start_date + datetime.timedelta(n)
+
+#TODO: take into account the utc time. ?
+def extractDailyDataFromGPM(lat,lon,the_date):
+    folder=DATA_FOLDER+'gpm/'
+    nc_filename=folder+'3B-DAY-E.MS.MRG.3IMERG.%d%02d%02d-S000000-E235959.V05.nc4.nc'%(the_date.year,the_date.month,the_date.day)
+    grp = nc.Dataset(nc_filename)
+    #print( grp.variables['lat'])
+    lats = grp.variables['lat'][:]
+    lons = grp.variables['lon'][:]
+    precipitations=grp.variables['precipitationCal']
+    return precipitations[(abs(lats-lat)).argmin(),(abs(lons-lon)).argmin()]
+
+#TODO: take into account the utc time.
+def extractDailyDataFromReanalysis(lat,lon,the_date):
+    TIMES=['00','06','12','18']
+    FIELDS=['Minimum temperature','Maximum temperature','Relative humidity']
+    folder=DATA_FOLDER+'reanalysis/'
+    lon+=360.#not sure why it does allow lat to be negative
+    epsilon=0.1#TODO:avoid this
+    #print('%s, %s'%(lat+epsilon,lon+epsilon))
+    for a_time in TIMES:
+        #gdas1.fnl0p25.2017070106.f06.grib2.spasub.aguirre296700
+        #grib_filename=folder+'gdas1.fnl0p25.%d%02d%02d%s.f03.grib2.spasub.aguirre296700'%(the_date.year,the_date.month,the_date.day,a_time)
+        aux_date=the_date
+        #if(a_time=='18'): aux_date=the_date-datetime.timedelta(days=1)#utc hack
+
+        grib_filename=folder+'gdas1.fnl0p25.%d%02d%02d%s.f09.grib2.spasub.aguirre296700'%(aux_date.year,aux_date.month,aux_date.day,a_time)
+        grbs=pygrib.open(grib_filename)
+        fields_values= dict( (field,[]) for field in FIELDS)
+        for field in FIELDS:
+            grb = grbs.select(name=field,typeOfLevel='heightAboveGround')[0]
+            #validate lat,lon
+            lats, lons = grb.latlons()
+            assert lats.min()<=lat<=lats.max() and lons.min()<=lon<=lons.max()
+            #extract the data
+            data, lats, lons = grb.data(lat1=lat-epsilon,lat2=lat+epsilon,lon1=lon-epsilon,lon2=lon+epsilon)#TODO:use lat,lon to fabricate lat1,lat2,lon1,lon2
+            value=data[0,0]
+            if(grb['units']=='K'): value-=273.15 #Kelvin->C
+            fields_values[field]+=[ value ]#check this!
+    #day ended
+
+    min_T=np.min(fields_values[FIELDS[0]])
+    max_T=np.max(fields_values[FIELDS[1]])
+    mean_T=(min_T+max_T)/2.
+    mean_rh=(np.min(fields_values[FIELDS[2]])+np.max(fields_values[FIELDS[2]]))/2.
+    return min_T,mean_T,max_T,mean_rh
+
+
+def extractData(lat,lon,start_date,end_date):
+    file = open(OUT_FILENAME,'w')
+    output='Date,Minimum Temp (C),Mean Temperature (C),Maximum Temp (C),Rain (mm),Relative Humidity %,CloudCover,Mean Wind SpeedKm/h' + '\n'
+    for a_date in daterange(start_date,end_date):
+        min_T,mean_T,max_T,mean_rh=extractDailyDataFromReanalysis(lat,lon,a_date)
+        rain=extractDailyDataFromGPM(lat,lon,a_date)
+        output+=a_date.strftime('%Y-%m-%d')+', '+', '.join([str(min_T),str(mean_T),str(max_T),str(rain),str(mean_rh) ]) + ',,'+'\n'
+        print(output)
+    open(OUT_FILENAME,'w').write(output)
+
+if(__name__ == '__main__'):
+    FORMAT='%Y-%m-%d'
+    start_date,end_date= datetime.datetime.strptime(sys.argv[1],FORMAT).date(),datetime.datetime.strptime(sys.argv[2],FORMAT).date()
+    lat,lon=-31.420083,-64.188776
+    extractData(lat,lon,start_date,end_date)
