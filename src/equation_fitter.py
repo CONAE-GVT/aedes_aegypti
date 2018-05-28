@@ -31,9 +31,6 @@ def calculateMetrics(time_range,mEggs,real_values):
     return lwE,error,rho,p_value
 
 def getConfiguration(x,n,m):
-    l=np.sum(x[0:n+m])
-    if(l<1e-5): return 500.
-    x[0:n+m]/=l#constraint: #Σ vBS_od[i] + vBS_id[i] = 1
     MAX_BS_A=4550.
     configuration=Configuration('resources/otero_precipitation.cfg',
         {'breeding_site':{
@@ -49,7 +46,11 @@ def error(x,model,real_values=None,ovitrap=None):
     if(real_values is None):
         model,real_values,ovitrap=model#weird differential_evolution bug...
 
-    model=Model(getConfiguration(x,model.parameters.n,model.parameters.m))
+    n,m=model.parameters.n,model.parameters.m
+    l=np.sum(x[0:n+m])
+    if(l<1e-5): return 500.
+    x[0:n+m]/=l#constraint: #Σ vBS_od[i] + vBS_id[i] = 1
+    model=Model(getConfiguration(x,n,m))
     #time_range,INPUT,RES = pe.solvePopulationEquations(initial_condition = [100.0, 0.0,0.0,0.0,0.0])
     time_range,INPUT,RES=model.solveEquations(equations=diff_eqs,method='rk')
     lwE,error,rho,p_value=calculateMetrics(time_range,RES[:,model.parameters.EGG],real_values)
