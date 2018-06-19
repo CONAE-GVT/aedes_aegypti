@@ -20,8 +20,6 @@ import getpass
 import datetime
 import cookielib
 
-
-sys.tracebacklimit = 0
 base='https://rda.ucar.edu/apps/'
 username='***REMOVED***'
 password='***REMOVED***'
@@ -107,6 +105,7 @@ def download_files(filelist,directory):
                 os.makedirs(directory)
         for key, value in filelist.iteritems():
                 downloadpath,localfile=key.rsplit("/",1)
+                localfile='.'.join(localfile.split('.')[:-2])#gdas1.fnl0p25.2017090212.f03.grib2.spasub.aguirre296700-->gdas1.fnl0p25.2017090212.f03.grib2
                 outpath=directory+backslash+localfile
                 percentcomplete=(float(filecount)/float(length))
                 update_progress(percentcomplete,directory)
@@ -153,14 +152,13 @@ def waitFor(index):
         else:
             time.sleep(2**i)
 
-def download(index):
+def download(index,folder):
     # get cookie required to download data files
     file_list=json.loads( getOpenedRequest(base+'/request/'+index+'/filelist').read() )
-    directory='rda_request_'+index
 
     authdata='email='+username+'&password='+password+'&action=login'
     add_http_cookie(loginurl,authdata)#this change the opener, so it needs to be after the last getOpenedRequest (which also changes the opener)
-    download_files(file_list,directory)
+    download_files(file_list,folder)
 
 def purge(index):
     url=base+'/request/'+index
@@ -170,10 +168,11 @@ def purge(index):
     opened_request = opener.open(request)
     print(opened_request.read())
 
-
+def downloadData(start_date,end_date,folder):
+    index=submit(start_date,end_date)
+    waitFor(index)
+    download(index,folder)
+    purge(index)
 
 if __name__=='__main__':
-    index=submit(datetime.date.today()-datetime.timedelta(days=1),datetime.date.today())
-    waitFor(index)
-    download(index)
-    purge(index)
+    downloadData(datetime.date.today()-datetime.timedelta(days=1),datetime.date.today())

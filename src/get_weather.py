@@ -1,94 +1,72 @@
-from HTMLParser import HTMLParser
-from dateutil import relativedelta
 import datetime
-import httplib2
-import time
-import sys
-import os
+import imerg_lib
+import gdas_lib
+DATA_FOLDER='data/public/'
+IMERG_FOLDER=DATA_FOLDER+'/imerg/'
+GDAS_FOLDER=DATA_FOLDER+'/gdas/'
+OUT_FILENAME=DATA_FOLDER+'weather.csv'
 
+def downloadData(start_date,end_date):
+    gdas_lib.downloadData(start_date,end_date,GDAS_FOLDER)
+    imerg_lib.downloadData(start_date,end_date,IMERG_FOLDER)
 
-url="https://www.wunderground.com/history/airport/SACO/%s/%s/01/MonthlyHistory.html"
-OUT_FILENAME='wunderground.csv'
+#TODO: take into account the utc time. ?
+def extractDailyDataFromIMERG(lat,lon,the_date):
+    nc_filename=IMERG_FOLDER+'3B-DAY-E.MS.MRG.3IMERG.%d%02d%02d-S000000-E235959.V05.nc4.nc'%(the_date.year,the_date.month,the_date.day)
+    grp = nc.Dataset(nc_filename)
+    #print( grp.variables['lat'])
+    lats = grp.variables['lat'][:]
+    lons = grp.variables['lon'][:]
+    precipitations=grp.variables['precipitationCal']
+    return precipitations[(abs(lats-lat)).argmin(),(abs(lons-lon)).argmin()]
 
-class TableParser(HTMLParser):
-    def __init__(self):
-        HTMLParser.__init__(self)
-        self.inside_table = None
-        self.tag=None
-        self.csv=''
+#TODO: take into account the utc time.
+def extractDailyDataFromGDAS(lat,lon,the_date):
+    TIMES=['00','06','12','18']
+    #FIELDS=['Minimum temperature','Maximum temperature','Relative humidity']
+    FIELDS=['Temperature','Relative humidity']
+    lon+=360.#not sure why it does allow lat to be negative
+    epsilon=0.1#TODO:avoid this
+    #print('%s, %s'%(lat+epsilon,lon+epsilon))
+    for a_time in TIMES:
+        #gdas1.fnl0p25.2017070106.f06.grib2.spasub.aguirre296700
+        #grib_filename=folder+'gdas1.fnl0p25.%d%02d%02d%s.f03.grib2.spasub.aguirre296700'%(the_date.year,the_date.month,the_date.day,a_time)
+        aux_date=the_date
+        #if(a_time=='18'): aux_date=the_date-datetime.timedelta(days=1)#utc hack
+        grib_filename=GDAS_FOLDER+'gdas1.fnl0p25.%d%02d%02d%s.f09.grib2.spasub.aguirre298079'%(aux_date.year,aux_date.month,aux_date.day,a_time)
+        grbs=pygrib.open(grib_filename)
+        fields_values= dict( (field,[]) for field in FIELDS)
+        for field in FIELDS:
+            grb = grbs.select(name=field,typeOfLevel='heightAboveGround')[0]
+            #validate lat,lon
+            lats, lons = grb.latlons()
+            assert lats.min()<=lat<=lats.max() and lons.min()<=lon<=lons.max()
+            #extract the data
+            data, lats, lons = grb.data(lat1=lat-epsilon,lat2=lat+epsilon,lon1=lon-epsilon,lon2=lon+epsilon)#TODO:use lat,lon to fabricate lat1,lat2,lon1,lon2
+            value=data[0,0]
+            if(grb['units']=='K'): value-=273.15 #Kelvin->C
+            fields_values[field]+=[ value ]#check this!
+    #day ended
 
-    def handle_starttag(self, tag, attrs):
-        if('table'==tag and ('id', 'obsTable') in attrs):
-            self.inside_table=True
+    min_T=np.min(fields_values[FIELDS[0]])
+    max_T=np.max(fields_values[FIELDS[0]])
+    mean_T=(min_T+max_T)/2.
+    mean_rh=(np.min(fields_values[FIELDS[1]])+np.max(fields_values[FIELDS[1]]))/2.
+    return min_T,mean_T,max_T,mean_rh
 
-        if(self.inside_table):
-            self.tag=tag
-            for colspan in [int(pair[1]) for pair in attrs if tag in ('th','td') and pair[0]=='colspan']:
-                self.csv+=','*(colspan-1)#the -1 is because we are always printing a ',' at the end of th or td
-
-    def handle_endtag(self, tag):
-        if self.inside_table:
-            if(tag in ('th','td')):
-                self.csv+=','
-            elif(tag=='tr'):
-                self.csv+='\n'
-
-            if('table'==tag):
-                self.inside_table=False
-            self.tag=None
-
-    def handle_data(self, data):
-        if self.inside_table and self.tag in ('th','td','span','a'):
-            self.csv+=data.replace(',','/').replace('\n','')
-
-
-
-def daterange(start_date, end_date):
-    delta=relativedelta.relativedelta(end_date,start_date)
-    months= delta.years * 12 + delta.months
-    for n in range(months):
-        yield start_date + relativedelta.relativedelta(months=n)
-
-def retrieve_data(year,month):
-    data_url= url % (year,month)
-    headers = {
-        "Content-type": "text/plain",
-        "Accept": "application/xml"
-    }
-    headers, response = http.request(data_url, "GET")
-    parser = TableParser()
-    parser.feed(response)
-    content=parser.csv
-    content=('\n').join(['%i-%i-'%(year,month)+line if line.split(',')[0].isdigit() else line for line in content.split('\n')])#we add the year and month at the begining
-
-    if(not os.path.isfile(OUT_FILENAME)):
-        file = open(OUT_FILENAME,'w')
-    else:
-        file = open(OUT_FILENAME,'a')
-        content='\n'.join(content.split('\n')[2:])
-
-    file.write(content)
-    file.close()
-
-#extract just the data we need and put it in an specific order so it can be used by other script.
-def prune_data():
-    file = open(OUT_FILENAME,'r')
+def extractData(lat,lon,start_date,end_date):
+    file = open(OUT_FILENAME,'w')
     output='Date,Minimum Temp (C),Mean Temperature (C),Maximum Temp (C),Rain (mm),Relative Humidity %,CloudCover,Mean Wind SpeedKm/h' + '\n'
-    for line_number,line in enumerate(file):
-        if(line_number<2): continue#skip headers
-        fields=line.split(',')
-        output+=','.join([fields[0],fields[3],fields[2],     fields[1],         fields[19], fields[8],            '',         fields[17]]) + '\n'
+    for a_date in daterange(start_date,end_date):
+        min_T,mean_T,max_T,mean_rh=extractDailyDataFromGDAS(lat,lon,a_date)
+        rain=extractDailyDataFromGPM(lat,lon,a_date)
+        output+=a_date.strftime('%Y-%m-%d')+', '+', '.join([str(min_T),str(mean_T),str(max_T),str(rain),str(mean_rh) ]) + ',,'+'\n'
+        print(output)
+    open(OUT_FILENAME,'w').write(output)
 
-    open(OUT_FILENAME.replace('.csv','_pruned.csv'),'w').write(output)
-
-#main
-http = httplib2.Http()
 if(__name__ == '__main__'):
-    #retrieve_data('2017','03')
-    for d in daterange(datetime.date(2017, 7,01),datetime.date(2017, 8,01)):
-        #print(str(d.year) + ' '+str(d.month))
-        time.sleep(15)
-        retrieve_data(d.year,d.month)
-
-    #put just the info we need into a file, that will be ready to be used by otero_precipitation script.
-    prune_data()
+    FORMAT='%Y-%m-%d'
+    start_date,end_date= datetime.datetime.strptime(sys.argv[1],FORMAT).date(),datetime.datetime.strptime(sys.argv[2],FORMAT).date()
+    downloadData(start_date,end_date)
+    lat,lon=-31.420083,-64.188776
+    extractData(lat,lon,start_date,end_date)

@@ -15,7 +15,7 @@ def daterange(start_date, end_date):
 
 
 #https://wiki.earthdata.nasa.gov/display/EL/How+To+Access+Data+With+Python
-def downloadImerg(start_date,end_date):
+def downloadData(start_date,end_date,folder):
     passman = urllib2.HTTPPasswordMgrWithDefaultRealm()
     passman.add_password(None, 'https://urs.earthdata.nasa.gov', username, password)
     opener = urllib2.build_opener(urllib2.HTTPBasicAuthHandler(passman),urllib2.HTTPCookieProcessor(cookielib.CookieJar()))
@@ -25,8 +25,8 @@ def downloadImerg(start_date,end_date):
         url=base+'{year}/{month:02}/{filename}'.format(year=a_date.year,month=a_date.month,filename=filename)
         request = urllib2.Request(url)
         response = urllib2.urlopen(request)
-        handle = open('out/'+filename, 'w').write(response.read())
+        handle = open(folder+'/'+filename, 'w').write(response.read())
 
 
 if __name__=='__main__':
-    print(downloadImerg(datetime.date(2018,1,1),datetime.date(2018,1,5)))
+    downloadData(datetime.date.today()-datetime.timedelta(days=1),datetime.date.today())
