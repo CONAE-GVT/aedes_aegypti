@@ -168,7 +168,9 @@ def safeAdd(values):
         return np.sum(values,axis=1)
 
 def replaceNegativesWithZeros(values):
-    values[np.logical_and(values<0,values!=[None])]=0.#replace negatives with zeros, preserving Nones
+    safe_values=values.copy()
+    safe_values[values==[None]]=np.nan#this is because in python3 None is unorderable, so values<0 breaks...
+    values[safe_values<0]=0.#replace negatives with zeros, preserving Nones
     return values
 
 def applyFs(values,subplot):
