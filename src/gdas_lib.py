@@ -15,10 +15,12 @@ import re
 import sys
 import json
 import time
+import logging
 import urllib2
 import getpass
 import datetime
 import cookielib
+from utils import daterange
 
 base='https://rda.ucar.edu/apps/'
 username='***REMOVED***'
@@ -26,6 +28,9 @@ password='***REMOVED***'
 control_template_filename='resources/ds083.3_control_file.template'
 cookie_file='auth.rda_ucar_edu'
 loginurl='https://rda.ucar.edu/cgi-bin/login'
+FILENAME_FORMAT='gdas1.fnl0p25.%d%02d%02d%s.f09.grib2'
+LOG_FILENAME='logs/get_weather.log'
+logging.basicConfig(format='%(levelname)s: %(asctime)s %(message)s',filename=LOG_FILENAME,level=logging.DEBUG)
 
 def getOpenedRequest(url,data=None,data_type=None):
     opener = add_http_auth(url,username,password)
@@ -120,6 +125,9 @@ def download_files(filelist,directory):
                 percentcomplete=(float(filecount)/float(length))
         update_progress(percentcomplete,directory)
 
+def getFilename(a_date,a_time):
+    return 'gdas1.fnl0p25.%d%02d%02d%s.f09.grib2'%(a_date.year,a_date.month,a_date.day,a_time)
+
 def submit(start_date,end_date):
     control_file= open(control_template_filename).read().format(start_date=start_date.strftime('%Y%m%d'+'0000'),end_date=end_date.strftime('%Y%m%d'+'0000')).split('\n')
     control_params={}
@@ -145,11 +153,12 @@ def getStatus(index):
     return status
 
 def waitFor(index):
-    for i in range(0,12):#maximum wait is 2**i. (~ 1 hr)
+    for i in range(6,15):#maximum wait is 2**i. (~ 9 hr)
         status=getStatus(index)
         if 'Online' in status:
             break
         else:
+            logging.info('Waiting %s mins. for %s to be online.'%(2**i /60., index))
             time.sleep(2**i)
 
 def download(index,folder):
@@ -169,6 +178,10 @@ def purge(index):
     print(opened_request.read())
 
 def downloadData(start_date,end_date,folder):
+    #just download the data we don't already have
+    for a_date in daterange(start_date,end_date):
+        if(os.path.isfile(folder+getFilename(a_date,'00'))): start_date=a_date
+
     index=submit(start_date,end_date)
     waitFor(index)
     download(index,folder)

@@ -1,18 +1,29 @@
+import sys
+import logging
 import datetime
-import imerg_lib
 import gdas_lib
+import imerg_lib
+import pygrib
+import numpy as np
+import netCDF4 as nc
+from utils import daterange
+
 DATA_FOLDER='data/public/'
 IMERG_FOLDER=DATA_FOLDER+'/imerg/'
 GDAS_FOLDER=DATA_FOLDER+'/gdas/'
 OUT_FILENAME=DATA_FOLDER+'weather.csv'
+LOG_FILENAME='logs/get_weather.log'
+logging.basicConfig(format='%(levelname)s: %(asctime)s %(message)s',filename=LOG_FILENAME,level=logging.DEBUG)
 
 def downloadData(start_date,end_date):
+    logging.info('Downloading GDAS')
     gdas_lib.downloadData(start_date,end_date,GDAS_FOLDER)
+    logging.info('Downloading IMERG')
     imerg_lib.downloadData(start_date,end_date,IMERG_FOLDER)
 
 #TODO: take into account the utc time. ?
-def extractDailyDataFromIMERG(lat,lon,the_date):
-    nc_filename=IMERG_FOLDER+'3B-DAY-E.MS.MRG.3IMERG.%d%02d%02d-S000000-E235959.V05.nc4.nc'%(the_date.year,the_date.month,the_date.day)
+def extractDailyDataFromIMERG(lat,lon,a_date):
+    nc_filename=IMERG_FOLDER+imerg_lib.getFilename(a_date)
     grp = nc.Dataset(nc_filename)
     #print( grp.variables['lat'])
     lats = grp.variables['lat'][:]
@@ -21,7 +32,7 @@ def extractDailyDataFromIMERG(lat,lon,the_date):
     return precipitations[(abs(lats-lat)).argmin(),(abs(lons-lon)).argmin()]
 
 #TODO: take into account the utc time.
-def extractDailyDataFromGDAS(lat,lon,the_date):
+def extractDailyDataFromGDAS(lat,lon,a_date):
     TIMES=['00','06','12','18']
     #FIELDS=['Minimum temperature','Maximum temperature','Relative humidity']
     FIELDS=['Temperature','Relative humidity']
@@ -30,10 +41,10 @@ def extractDailyDataFromGDAS(lat,lon,the_date):
     #print('%s, %s'%(lat+epsilon,lon+epsilon))
     for a_time in TIMES:
         #gdas1.fnl0p25.2017070106.f06.grib2.spasub.aguirre296700
-        #grib_filename=folder+'gdas1.fnl0p25.%d%02d%02d%s.f03.grib2.spasub.aguirre296700'%(the_date.year,the_date.month,the_date.day,a_time)
-        aux_date=the_date
-        #if(a_time=='18'): aux_date=the_date-datetime.timedelta(days=1)#utc hack
-        grib_filename=GDAS_FOLDER+'gdas1.fnl0p25.%d%02d%02d%s.f09.grib2.spasub.aguirre298079'%(aux_date.year,aux_date.month,aux_date.day,a_time)
+        #grib_filename=folder+'gdas1.fnl0p25.%d%02d%02d%s.f03.grib2.spasub.aguirre296700'%(a_date.year,a_date.month,a_date.day,a_time)
+        aux_date=a_date
+        #if(a_time=='18'): aux_date=a_date-datetime.timedelta(days=1)#utc hack
+        grib_filename=GDAS_FOLDER+gdas_lib.getFilename(a_date,a_time)
         grbs=pygrib.open(grib_filename)
         fields_values= dict( (field,[]) for field in FIELDS)
         for field in FIELDS:
@@ -59,7 +70,7 @@ def extractData(lat,lon,start_date,end_date):
     output='Date,Minimum Temp (C),Mean Temperature (C),Maximum Temp (C),Rain (mm),Relative Humidity %,CloudCover,Mean Wind SpeedKm/h' + '\n'
     for a_date in daterange(start_date,end_date):
         min_T,mean_T,max_T,mean_rh=extractDailyDataFromGDAS(lat,lon,a_date)
-        rain=extractDailyDataFromGPM(lat,lon,a_date)
+        rain=extractDailyDataFromIMERG(lat,lon,a_date)
         output+=a_date.strftime('%Y-%m-%d')+', '+', '.join([str(min_T),str(mean_T),str(max_T),str(rain),str(mean_rh) ]) + ',,'+'\n'
         print(output)
     open(OUT_FILENAME,'w').write(output)
