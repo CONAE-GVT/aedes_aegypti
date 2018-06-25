@@ -63,7 +63,7 @@ def getValuesFromCsv(filename,start_date,end_date,value_column,verbose=True):
 
     #we build the value dict
     values={}
-    content = [x.strip() for x in content[2:]]#strip trailing \n's and remove header
+    content = [x.strip() for x in content[1:]]#strip trailing \n's and remove header
     for line in content:
         splitted_line=line.split(',')
         date=datetime.datetime.strptime(splitted_line[date_column], date_format).date()

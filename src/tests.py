@@ -357,6 +357,31 @@ def runOviShow(folder):
 def runLab():
     testMacia()
 
+import pylab as pl
+def compareWeather(weather_filename,saco_weather_filename):
+        start_date=datetime.date(2017, 7, 1)
+        end_date=datetime.date(2018, 5, 1)
+        temperatures_saco= np.array(utils.getAverageTemperaturesFromCsv(saco_weather_filename,start_date,end_date))
+        temperatures_gdas= np.array(utils.getAverageTemperaturesFromCsv(weather_filename,start_date,end_date))
+        #pl.plot(temperatures_saco,'-m', label='SACO')
+        #pl.plot(temperatures_gdas,'-r', label='gdas')
+
+        delta_temperature=temperatures_saco-temperatures_gdas
+        pl.plot(delta_temperature,'-b', label='SACO-gdas')
+        print('T: %s +/- %s'%(np.mean(delta_temperature),np.std(delta_temperature)) )
+
+        pl.figure()
+        RH_saco= np.array(utils.getRelativeHumidityFromCsv(saco_weather_filename,start_date,end_date))
+        RH_gdas= np.array(utils.getRelativeHumidityFromCsv(weather_filename,start_date,end_date))
+        #pl.plot(RH_saco,'-m', label='SACO')
+        #pl.plot(RH_gdas,'-r', label='gdas')
+
+        delta_RH=RH_saco-RH_gdas
+        pl.plot(delta_RH,'-b', label='SACO-gdas')
+        print('RH:  %s +/- %s'%(np.mean(delta_RH),np.std(delta_RH)) )
+
+        pl.legend(loc=0)
+        pl.show()
 
 if(__name__ == '__main__'):
     if(len(sys.argv)>1 and sys.argv[1]=='compare'):
@@ -365,5 +390,7 @@ if(__name__ == '__main__'):
         runLab()
     elif(len(sys.argv)>2 and sys.argv[1]=='show'):
         runOviShow(sys.argv[2])
+    elif(len(sys.argv)>1 and sys.argv[1]=='weather'):
+        compareWeather('data/public/weather.csv','data/public/wunderground_SACO.csv')
     else:
         runTestCases()
