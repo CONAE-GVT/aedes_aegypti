@@ -25,7 +25,6 @@ def downloadData(start_date,end_date):
 def extractDailyDataFromIMERG(lat,lon,a_date):
     nc_filename=IMERG_FOLDER+imerg_lib.getFilename(a_date)
     grp = nc.Dataset(nc_filename)
-    #print( grp.variables['lat'])
     lats = grp.variables['lat'][:]
     lons = grp.variables['lon'][:]
     precipitations=grp.variables['precipitationCal']
@@ -34,19 +33,15 @@ def extractDailyDataFromIMERG(lat,lon,a_date):
 #TODO: take into account the utc time.
 def extractDailyDataFromGDAS(lat,lon,a_date):
     TIMES=['00','06','12','18']
-    #FIELDS=['Minimum temperature','Maximum temperature','Relative humidity']
-    FIELDS=['Temperature','Relative humidity']
+    FIELDS=['2 metre temperature','Relative humidity']
     lon+=360.#not sure why it does allow lat to be negative
     epsilon=0.1#TODO:avoid this
-    #print('%s, %s'%(lat+epsilon,lon+epsilon))
+    fields_values= dict( (field,[]) for field in FIELDS)
     for a_time in TIMES:
-        #gdas1.fnl0p25.2017070106.f06.grib2.spasub.aguirre296700
-        #grib_filename=folder+'gdas1.fnl0p25.%d%02d%02d%s.f03.grib2.spasub.aguirre296700'%(a_date.year,a_date.month,a_date.day,a_time)
         aux_date=a_date
-        #if(a_time=='18'): aux_date=a_date-datetime.timedelta(days=1)#utc hack
-        grib_filename=GDAS_FOLDER+gdas_lib.getFilename(a_date,a_time)
+        if(a_time=='18'): aux_date=a_date-datetime.timedelta(days=1)#utc hack
+        grib_filename=GDAS_FOLDER+gdas_lib.getFilename(aux_date,a_time)
         grbs=pygrib.open(grib_filename)
-        fields_values= dict( (field,[]) for field in FIELDS)
         for field in FIELDS:
             grb = grbs.select(name=field,typeOfLevel='heightAboveGround')[0]
             #validate lat,lon
@@ -58,7 +53,6 @@ def extractDailyDataFromGDAS(lat,lon,a_date):
             if(grb['units']=='K'): value-=273.15 #Kelvin->C
             fields_values[field]+=[ value ]#check this!
     #day ended
-
     min_T=np.min(fields_values[FIELDS[0]])
     max_T=np.max(fields_values[FIELDS[0]])
     mean_T=(min_T+max_T)/2.
@@ -66,13 +60,11 @@ def extractDailyDataFromGDAS(lat,lon,a_date):
     return min_T,mean_T,max_T,mean_rh
 
 def extractData(lat,lon,start_date,end_date):
-    file = open(OUT_FILENAME,'w')
     output='Date,Minimum Temp (C),Mean Temperature (C),Maximum Temp (C),Rain (mm),Relative Humidity %,CloudCover,Mean Wind SpeedKm/h' + '\n'
     for a_date in daterange(start_date,end_date):
         min_T,mean_T,max_T,mean_rh=extractDailyDataFromGDAS(lat,lon,a_date)
         rain=extractDailyDataFromIMERG(lat,lon,a_date)
         output+=a_date.strftime('%Y-%m-%d')+', '+', '.join([str(min_T),str(mean_T),str(max_T),str(rain),str(mean_rh) ]) + ',,'+'\n'
-        print(output)
     open(OUT_FILENAME,'w').write(output)
 
 if(__name__ == '__main__'):
