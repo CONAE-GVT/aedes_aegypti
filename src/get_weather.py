@@ -1,3 +1,4 @@
+import os
 import sys
 import logging
 import datetime
@@ -60,16 +61,23 @@ def extractDailyDataFromGDAS(lat,lon,a_date):
     return min_T,mean_T,max_T,mean_rh
 
 def extractData(lat,lon,start_date,end_date):
-    output='Date,Minimum Temp (C),Mean Temperature (C),Maximum Temp (C),Rain (mm),Relative Humidity %,CloudCover,Mean Wind SpeedKm/h' + '\n'
+    output=''
+    if(not os.path.isfile(OUT_FILENAME)): output='Date,Minimum Temp (C),Mean Temperature (C),Maximum Temp (C),Rain (mm),Relative Humidity %,CloudCover,Mean Wind SpeedKm/h' + '\n'
     for a_date in daterange(start_date,end_date):
         min_T,mean_T,max_T,mean_rh=extractDailyDataFromGDAS(lat,lon,a_date)
         rain=extractDailyDataFromIMERG(lat,lon,a_date)
         output+=a_date.strftime('%Y-%m-%d')+', '+', '.join([str(min_T),str(mean_T),str(max_T),str(rain),str(mean_rh) ]) + ',,'+'\n'
-    open(OUT_FILENAME,'w').write(output)
+    open(OUT_FILENAME,'a').write(output)
 
 if(__name__ == '__main__'):
     FORMAT='%Y-%m-%d'
-    start_date,end_date= datetime.datetime.strptime(sys.argv[1],FORMAT).date(),datetime.datetime.strptime(sys.argv[2],FORMAT).date()
+    start_date,end_date=None,None
+    if(len(sys.argv)>2):
+        start_date,end_date= datetime.datetime.strptime(sys.argv[1],FORMAT).date(),datetime.datetime.strptime(sys.argv[2],FORMAT).date()
+    elif(len(sys.argv)==1):
+        yesterday=datetime.date.today()-datetime.timedelta(1)
+        beforeYesterday=yesterday-datetime.timedelta(1)
+        start_date,end_date= beforeYesterday,yesterday
     downloadData(start_date,end_date)
     lat,lon=-31.420083,-64.188776
     extractData(lat,lon,start_date,end_date)

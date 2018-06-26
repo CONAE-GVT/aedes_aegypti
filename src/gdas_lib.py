@@ -96,11 +96,6 @@ def getFilename(a_date,a_time):
     return FILENAME_FORMAT%(a_date.year,a_date.month,a_date.day,a_time)
 
 def downloadData(start_date,end_date,folder):
-    #just download the data we don't already have
-    for a_date in daterange(start_date,end_date):
-        if(os.path.isfile(folder+getFilename(a_date,'00'))): start_date=a_date
-
-    logging.info('Last date found: %s'% start_date)
     init()
     index=submit(start_date,end_date)
     waitFor(index)
