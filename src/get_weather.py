@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import logging
 import datetime
@@ -12,15 +13,43 @@ from utils import daterange
 DATA_FOLDER='data/public/'
 IMERG_FOLDER=DATA_FOLDER+'/imerg/'
 GDAS_FOLDER=DATA_FOLDER+'/gdas/'
+FORECAST_FOLDER=DATA_FOLDER+'/forecast/'
+FORECAST_TRH_FOLDER=FORECAST_FOLDER+'/T_RH/'
+FORECAST_P_FOLDER=FORECAST_FOLDER+'/P/'
 OUT_FILENAME=DATA_FOLDER+'weather.csv'
 LOG_FILENAME='logs/get_weather.log'
 logging.basicConfig(format='%(levelname)s: %(asctime)s %(message)s',filename=LOG_FILENAME,level=logging.DEBUG)
+
+def renameAll(dsts):
+    for dst in dsts:
+        for filename in os.listdir(dst):
+            if(not os.path.isfile(dst+'/'+filename) or filename.startswith('gdas1')): continue
+            date_str,hours_str=re.findall(r'GFS_([0-9]{8})00\+([0-9]{3}).grib2',filename)[0]#TODO:we are overwriting nacc and acc!!!
+            a_date_time=datetime.datetime.strptime(date_str,'%Y%m%d') + datetime.timedelta(hours=int(hours_str))
+            new_filename=gdas_lib.getFilename(a_date_time.date(),'%02d'%a_date_time.hour)
+            os.rename(dst+'/'+filename,dst+'/'+new_filename)
+
+def downloadForecast():
+    #download
+    today=datetime.date.today()
+    src_T_RH = '/home/andres/GFS_Project/GFS_025/DATA/%d%02d%02d00_NACC2M/*.grib2_NACC_2m'%(today.year,today.month,today.day)
+    src_P='/home/andres/GFS_Project/GFS_025/DATA/%d%02d%02d00_ACC/*.grib2_ACC'%(today.year,today.month,today.day)
+    os.system('rm '+FORECAST_FOLDER+'* -Rf')
+    os.mkdir( FORECAST_TRH_FOLDER)
+    os.mkdir( FORECAST_P_FOLDER)
+    os.system('sshpass -p c121rt2AL14 scp -r andres@10.77.172.112:' + src_T_RH + ' ' + FORECAST_TRH_FOLDER)#Temperature and rh
+    os.system('sshpass -p c121rt2AL14 scp -r andres@10.77.172.112:' + src_P + ' ' + FORECAST_P_FOLDER)#precipitation
+    renameAll([FORECAST_TRH_FOLDER,FORECAST_P_FOLDER])
+
 
 def downloadData(start_date,end_date):
     logging.info('Downloading GDAS')
     gdas_lib.downloadData(start_date,end_date,GDAS_FOLDER)
     logging.info('Downloading IMERG')
     imerg_lib.downloadData(start_date,end_date,IMERG_FOLDER)
+    logging.info('Downloading forecast')
+    downloadForecast()
+
 
 #TODO: take into account the utc time. ?
 def extractDailyDataFromIMERG(lat,lon,a_date):
@@ -32,19 +61,20 @@ def extractDailyDataFromIMERG(lat,lon,a_date):
     return precipitations[(abs(lats-lat)).argmin(),(abs(lons-lon)).argmin()]
 
 #TODO: take into account the utc time.
-def extractDailyDataFromGDAS(lat,lon,a_date):
+def extractDailyDataFromGDAS(lat,lon,a_date,folder,FIELDS,typeOfLevel):
     TIMES=['00','06','12','18']
-    FIELDS=['2 metre temperature','Relative humidity']
-    lon+=360.#not sure why it does allow lat to be negative
     epsilon=0.1#TODO:avoid this
     fields_values= dict( (field,[]) for field in FIELDS)
     for a_time in TIMES:
         aux_date=a_date
         if(a_time=='18'): aux_date=a_date-datetime.timedelta(days=1)#utc hack
-        grib_filename=GDAS_FOLDER+gdas_lib.getFilename(aux_date,a_time)
+        grib_filename=folder+gdas_lib.getFilename(aux_date,a_time)
+        if(not os.path.isfile(grib_filename)):
+            logging.warning('%s not found, but keep going anyways'%grib_filename)
+            continue
         grbs=pygrib.open(grib_filename)
         for field in FIELDS:
-            grb = grbs.select(name=field,typeOfLevel='heightAboveGround')[0]
+            grb = grbs.select(name=field,typeOfLevel=typeOfLevel)[0]
             #validate lat,lon
             lats, lons = grb.latlons()
             assert lats.min()<=lat<=lats.max() and lons.min()<=lon<=lons.max()
@@ -54,20 +84,41 @@ def extractDailyDataFromGDAS(lat,lon,a_date):
             if(grb['units']=='K'): value-=273.15 #Kelvin->C
             fields_values[field]+=[ value ]#check this!
     #day ended
-    min_T=np.min(fields_values[FIELDS[0]])
-    max_T=np.max(fields_values[FIELDS[0]])
-    mean_T=(min_T+max_T)/2.
-    mean_rh=(np.min(fields_values[FIELDS[1]])+np.max(fields_values[FIELDS[1]]))/2.
-    return min_T,mean_T,max_T,mean_rh
+    return fields_values
 
-def extractData(lat,lon,start_date,end_date):
+def extractPresentData(lat,lon,start_date,end_date):
     output=''
     if(not os.path.isfile(OUT_FILENAME)): output='Date,Minimum Temp (C),Mean Temperature (C),Maximum Temp (C),Rain (mm),Relative Humidity %,CloudCover,Mean Wind SpeedKm/h' + '\n'
     for a_date in daterange(start_date,end_date):
-        min_T,mean_T,max_T,mean_rh=extractDailyDataFromGDAS(lat,lon,a_date)
-        rain=extractDailyDataFromIMERG(lat,lon,a_date)
-        output+=a_date.strftime('%Y-%m-%d')+', '+', '.join([str(min_T),str(mean_T),str(max_T),str(rain),str(mean_rh) ]) + ',,'+'\n'
+        FIELDS=['2 metre temperature','Relative humidity']
+        fields_values=extractDailyDataFromGDAS(lat,lon+360.,a_date,GDAS_FOLDER,FIELDS,typeOfLevel='heightAboveGround')#not sure why it does allow lat to be negative but not lon
+        min_T,max_T=np.min(fields_values[FIELDS[0]]),np.max(fields_values[FIELDS[0]])
+        mean_T=(min_T+max_T)/2.
+        mean_rh=(np.min(fields_values[FIELDS[1]])+np.max(fields_values[FIELDS[1]]))/2.
+
+        precipitation=extractDailyDataFromIMERG(lat,lon,a_date)
+        output+=a_date.strftime('%Y-%m-%d')+', '+', '.join([str(min_T),str(mean_T),str(max_T),str(precipitation),str(mean_rh) ]) + ',,'+'\n'
     open(OUT_FILENAME,'a').write(output)
+
+def extractForecastData(lat,lon):
+    output='Date,Minimum Temp (C),Mean Temperature (C),Maximum Temp (C),Rain (mm),Relative Humidity %,CloudCover,Mean Wind SpeedKm/h' + '\n'
+    today=datetime.date.today()
+    for a_date in daterange(today,today+datetime.timedelta(hours=168)):
+        FIELDS=['2 metre temperature','Relative humidity']
+        fields_values=extractDailyDataFromGDAS(lat,lon,a_date,FORECAST_TRH_FOLDER,FIELDS,typeOfLevel='heightAboveGround')#not sure why it does allow lat to be negative but not lon)
+        min_T,max_T=np.min(fields_values[FIELDS[0]]),np.max(fields_values[FIELDS[0]])
+        mean_T=(min_T+max_T)/2.
+        mean_rh=(np.min(fields_values[FIELDS[1]])+np.max(fields_values[FIELDS[1]]))/2.
+
+        fields_values=extractDailyDataFromGDAS(lat,lon,a_date,FORECAST_P_FOLDER,['Total Precipitation'],typeOfLevel='surface')
+        precipitation=fields_values['Total Precipitation']
+        output+=a_date.strftime('%Y-%m-%d')+', '+', '.join([str(min_T),str(mean_T),str(max_T),str(np.sum(precipitation)),str(mean_rh) ]) + ',,'+'\n'
+        print(output)
+    open(OUT_FILENAME.replace('.csv','_forecast.csv'),'w').write(output)
+
+def extractData(lat,lon,start_date,end_date):
+    extractPresentData(lat,lon,start_date,end_date)
+    extractForecastData(lat,lon)
 
 if(__name__ == '__main__'):
     FORMAT='%Y-%m-%d'
