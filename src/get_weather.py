@@ -9,6 +9,7 @@ import pygrib
 import numpy as np
 import netCDF4 as nc
 from utils import daterange
+from configparser import ConfigParser
 
 DATA_FOLDER='data/public/'
 IMERG_FOLDER=DATA_FOLDER+'/imerg/'
@@ -16,7 +17,6 @@ GDAS_FOLDER=DATA_FOLDER+'/gdas/'
 FORECAST_FOLDER=DATA_FOLDER+'/forecast/'
 FORECAST_TRH_FOLDER=FORECAST_FOLDER+'/T_RH/'
 FORECAST_P_FOLDER=FORECAST_FOLDER+'/P/'
-OUT_FILENAME=DATA_FOLDER+'weather.csv'
 LOG_FILENAME='logs/get_weather.log'
 logging.basicConfig(format='%(levelname)s: %(asctime)s %(message)s',filename=LOG_FILENAME,level=logging.DEBUG)
 
@@ -86,9 +86,9 @@ def extractDailyDataFromGDAS(lat,lon,a_date,folder,FIELDS,typeOfLevel):
     #day ended
     return fields_values
 
-def extractPresentData(lat,lon,start_date,end_date):
+def extractPresentData(lat,lon,start_date,end_date,out_filename):
     output=''
-    if(not os.path.isfile(OUT_FILENAME)): output='Date,Minimum Temp (C),Mean Temperature (C),Maximum Temp (C),Rain (mm),Relative Humidity %,CloudCover,Mean Wind SpeedKm/h' + '\n'
+    if(not os.path.isfile(out_filename)): output='Date,Minimum Temp (C),Mean Temperature (C),Maximum Temp (C),Rain (mm),Relative Humidity %,CloudCover,Mean Wind SpeedKm/h' + '\n'
     for a_date in daterange(start_date,end_date):
         FIELDS=['2 metre temperature','Relative humidity']
         fields_values=extractDailyDataFromGDAS(lat,lon+360.,a_date,GDAS_FOLDER,FIELDS,typeOfLevel='heightAboveGround')#not sure why it does allow lat to be negative but not lon
@@ -98,9 +98,9 @@ def extractPresentData(lat,lon,start_date,end_date):
 
         precipitation=extractDailyDataFromIMERG(lat,lon,a_date)
         output+=a_date.strftime('%Y-%m-%d')+', '+', '.join([str(min_T),str(mean_T),str(max_T),str(precipitation),str(mean_rh) ]) + ',,'+'\n'
-    open(OUT_FILENAME,'a').write(output)
+    open(out_filename,'a').write(output)
 
-def extractForecastData(lat,lon):
+def extractForecastData(lat,lon,out_filename):
     output='Date,Minimum Temp (C),Mean Temperature (C),Maximum Temp (C),Rain (mm),Relative Humidity %,CloudCover,Mean Wind SpeedKm/h' + '\n'
     today=datetime.date.today()
     for a_date in daterange(today,today+datetime.timedelta(hours=168)):
@@ -114,11 +114,11 @@ def extractForecastData(lat,lon):
         precipitation=fields_values['Total Precipitation']
         output+=a_date.strftime('%Y-%m-%d')+', '+', '.join([str(min_T),str(mean_T),str(max_T),str(np.sum(precipitation)),str(mean_rh) ]) + ',,'+'\n'
         print(output)
-    open(OUT_FILENAME.replace('.csv','_forecast.csv'),'w').write(output)
+    open(out_filename.replace('.csv','_forecast.csv'),'w').write(output)
 
-def extractData(lat,lon,start_date,end_date):
-    extractPresentData(lat,lon,start_date,end_date)
-    extractForecastData(lat,lon)
+def extractData(lat,lon,start_date,end_date,out_filename):
+    extractPresentData(lat,lon,start_date,end_date,out_filename)
+    extractForecastData(lat,lon,out_filename)
 
 if(__name__ == '__main__'):
     FORMAT='%Y-%m-%d'
@@ -129,6 +129,12 @@ if(__name__ == '__main__'):
         yesterday=datetime.date.today()-datetime.timedelta(1)
         beforeYesterday=yesterday-datetime.timedelta(1)
         start_date,end_date= beforeYesterday,yesterday
+
     downloadData(start_date,end_date)
-    lat,lon=-31.420083,-64.188776
-    extractData(lat,lon,start_date,end_date)
+    config_parser = ConfigParser()
+    config_parser.read('resources/get_weather.cfg')
+    for location in config_parser.sections():
+        logging.info('Extracting data for %s'%location)
+        lat=float(config_parser.get(location,'lat'))
+        lon=float(config_parser.get(location,'lon'))
+        extractData(lat,lon,start_date,end_date,DATA_FOLDER+location+'_weather.csv')
