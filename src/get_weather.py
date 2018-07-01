@@ -137,4 +137,4 @@ if(__name__ == '__main__'):
         logging.info('Extracting data for %s'%location)
         lat=float(config_parser.get(location,'lat'))
         lon=float(config_parser.get(location,'lon'))
-        extractData(lat,lon,start_date,end_date,DATA_FOLDER+location+'_weather.csv')
+        extractData(lat,lon,start_date,end_date,DATA_FOLDER+location+'.csv')

@@ -33,14 +33,14 @@ class Model:
         self.parameters.vAlpha0=configuration.getArray('biology','alpha0')#constant to be fitted
 
         #Cordoba
-        self.parameters.location={'name':configuration.getString('location','name'),'station':configuration.getString('weather','station'),'zones':list(configuration.getString('location','zones'))}
+        self.parameters.location={'name':configuration.getString('location','name')}
         self.start_date=configuration.getDate('simulation','start_date')
         self.end_date=configuration.getDate('simulation','end_date')
         self.time_range = np.linspace(0, (self.end_date - self.start_date).days-1, (self.end_date - self.start_date).days * 20)
         self.parameters.initial_condition=configuration.getArray('simulation','initial_condition')
 
-        WEATHER_STATION_DATA_FILENAME='data/public/wunderground_'+self.parameters.location['station']+'.csv'
-        self.parameters.weather=Weather(WEATHER_STATION_DATA_FILENAME,self.start_date,self.end_date)
+        WEATHER_DATA_FILENAME='data/public/'+self.parameters.location['name']+'.csv'
+        self.parameters.weather=Weather(WEATHER_DATA_FILENAME,self.start_date,self.end_date)
 
         self.validate()
 
