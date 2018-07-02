@@ -3,6 +3,7 @@ import re
 import sys
 import logging
 import datetime
+import urllib2
 import gdas_lib
 import imerg_lib
 import pygrib
@@ -33,7 +34,8 @@ def downloadAll(url,folder):
     html_list=urllib2.urlopen(url).read()
     filenames=re.findall(r'.*\<a href=\"([A-Za-z0-9\+\._]+)\"\>.*',html_list)
     for filename in filenames:
-        open(folder+'/'+filename, 'w').write(urllib2.urlopen(url+'/'+filename).read())
+        if(filename.endswith('.grib2_NACC_2m') or filename.endswith('.grib2_ACC')):
+            open(folder+'/'+filename, 'w').write(urllib2.urlopen(url+'/'+filename).read())
 
 def downloadForecast():
     #download
