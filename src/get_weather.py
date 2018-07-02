@@ -24,21 +24,27 @@ def renameAll(dsts):
     for dst in dsts:
         for filename in os.listdir(dst):
             if(not os.path.isfile(dst+'/'+filename) or filename.startswith('gdas1')): continue
-            date_str,hours_str=re.findall(r'GFS_([0-9]{8})00\+([0-9]{3}).grib2',filename)[0]#TODO:we are overwriting nacc and acc!!!
+            date_str,hours_str=re.findall(r'GFS_([0-9]{8})00\+([0-9]{3}).grib2',filename)[0]
             a_date_time=datetime.datetime.strptime(date_str,'%Y%m%d') + datetime.timedelta(hours=int(hours_str))
             new_filename=gdas_lib.getFilename(a_date_time.date(),'%02d'%a_date_time.hour)
             os.rename(dst+'/'+filename,dst+'/'+new_filename)
 
+def downloadAll(url,folder):
+    html_list=urllib2.urlopen(url).read()
+    filenames=re.findall(r'.*\<a href=\"([A-Za-z0-9\+\._]+)\"\>.*',html_list)
+    for filename in filenames:
+        open(folder+'/'+filename, 'w').write(urllib2.urlopen(url+'/'+filename).read())
+
 def downloadForecast():
     #download
     today=datetime.date.today()
-    src_T_RH = '/home/andres/GFS_Project/GFS_025/DATA/%d%02d%02d00_NACC2M/*.grib2_NACC_2m'%(today.year,today.month,today.day)
-    src_P='/home/andres/GFS_Project/GFS_025/DATA/%d%02d%02d00_ACC/*.grib2_ACC'%(today.year,today.month,today.day)
+    src_T_RH = 'http://meteo.caearte.conae.gov.ar/GFS_025/DATA/%d%02d%02d00_NACC2M/'%(today.year,today.month,today.day)
+    src_P='http://meteo.caearte.conae.gov.ar/GFS_025/DATA/%d%02d%02d00_ACC/'%(today.year,today.month,today.day)
     os.system('rm '+FORECAST_FOLDER+'* -Rf')
     os.mkdir( FORECAST_TRH_FOLDER)
     os.mkdir( FORECAST_P_FOLDER)
-    os.system('sshpass -p c121rt2AL14 scp -r andres@10.77.172.112:' + src_T_RH + ' ' + FORECAST_TRH_FOLDER)#Temperature and rh
-    os.system('sshpass -p c121rt2AL14 scp -r andres@10.77.172.112:' + src_P + ' ' + FORECAST_P_FOLDER)#precipitation
+    downloadAll(src_T_RH,FORECAST_TRH_FOLDER)#Temperature and rh
+    downloadAll(src_P,FORECAST_P_FOLDER)#precipitation
     renameAll([FORECAST_TRH_FOLDER,FORECAST_P_FOLDER])
 
 
@@ -63,7 +69,7 @@ def extractDailyDataFromIMERG(lat,lon,a_date):
 #TODO: take into account the utc time.
 def extractDailyDataFromGDAS(lat,lon,a_date,folder,FIELDS,typeOfLevel):
     TIMES=['00','06','12','18']
-    epsilon=0.1#TODO:avoid this
+    epsilon=0.2#TODO:avoid this
     fields_values= dict( (field,[]) for field in FIELDS)
     for a_time in TIMES:
         aux_date=a_date
@@ -114,7 +120,7 @@ def extractForecastData(lat,lon,out_filename):
         precipitation=fields_values['Total Precipitation']
         output+=a_date.strftime('%Y-%m-%d')+', '+', '.join([str(min_T),str(mean_T),str(max_T),str(np.sum(precipitation)),str(mean_rh) ]) + ',,'+'\n'
         print(output)
-    open(out_filename.replace('.csv','_forecast.csv'),'w').write(output)
+    open(out_filename.replace('.csv','.forecast.csv'),'w').write(output)
 
 def extractData(lat,lon,start_date,end_date,out_filename):
     extractPresentData(lat,lon,start_date,end_date,out_filename)
