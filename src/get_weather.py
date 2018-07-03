@@ -11,6 +11,7 @@ import numpy as np
 import netCDF4 as nc
 from utils import daterange
 from configparser import ConfigParser
+import multiprocessing as mp
 
 DATA_FOLDER='data/public/'
 IMERG_FOLDER=DATA_FOLDER+'/imerg/'
@@ -124,7 +125,9 @@ def extractForecastData(lat,lon,out_filename):
         print(output)
     open(out_filename.replace('.csv','.forecast.csv'),'w').write(output)
 
-def extractData(lat,lon,start_date,end_date,out_filename):
+def extractData(params):
+    lat,lon,start_date,end_date,out_filename=params
+    logging.info('Extracting data to %s'%out_filename)
     extractPresentData(lat,lon,start_date,end_date,out_filename)
     extractForecastData(lat,lon,out_filename)
 
@@ -141,8 +144,11 @@ if(__name__ == '__main__'):
     downloadData(start_date,end_date)
     config_parser = ConfigParser()
     config_parser.read('resources/get_weather.cfg')
+    params=[]
     for location in config_parser.sections():
-        logging.info('Extracting data for %s'%location)
         lat=float(config_parser.get(location,'lat'))
         lon=float(config_parser.get(location,'lon'))
-        extractData(lat,lon,start_date,end_date,DATA_FOLDER+location+'.csv')
+        params=params+[[lat,lon,start_date,end_date,DATA_FOLDER+location+'.csv']]
+
+    p = mp.Pool(mp.cpu_count() -1)
+    vOpt=p.map(extractData, params)
