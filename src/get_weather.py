@@ -9,7 +9,7 @@ import imerg_lib
 import pygrib
 import numpy as np
 import netCDF4 as nc
-from utils import daterange
+from utils import daterange,getLocations
 from configparser import ConfigParser
 import multiprocessing as mp
 
