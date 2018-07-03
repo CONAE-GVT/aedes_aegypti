@@ -1,3 +1,4 @@
+from configparser import ConfigParser
 from equations import f,diff_eqs
 import matplotlib.dates
 import collections
@@ -136,6 +137,10 @@ def loadResults(filename,start_date):
     RES=np.loadtxt(filename,delimiter=',',converters=converters)
     return RES[:,1:]# 1: is to discard the date column
 
+def getLocations():
+    config_parser = ConfigParser()
+    config_parser.read('resources/get_weather.cfg')
+    return config_parser.sections()
 ###############################################################Misc.###############################################################
 def getSurface(x=None,y=None,r=None):#surface in cm2. x,y,r must be in cm
     if(r):

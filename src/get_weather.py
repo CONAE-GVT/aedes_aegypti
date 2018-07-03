@@ -131,6 +131,16 @@ def extractData(params):
     extractPresentData(lat,lon,start_date,end_date,out_filename)
     extractForecastData(lat,lon,out_filename)
 
+def joinFullWeather():
+    FORMAT='%Y-%m-%d'
+    yesterday=datetime.date.today()-datetime.timedelta(1)
+    for location in getLocations():
+        present_data=open(DATA_FOLDER+location+'.csv','r').read()
+        forecast_data=open(DATA_FOLDER+location+'.forecast.csv','r').read()
+        last_line=','.join(present_data.split('\n')[-2].split(',')[1:])#this is because we
+        no_data=yesterday.strftime(FORMAT)+','+last_line + '\n'        #have no data for yesterday.TODO:fix this
+        open(DATA_FOLDER+location+'.full.csv','w').write(present_data+ no_data +'\n'.join(forecast_data.split('\n')[1:]))#remove the header of forecast data
+
 if(__name__ == '__main__'):
     FORMAT='%Y-%m-%d'
     start_date,end_date=None,None
@@ -152,3 +162,5 @@ if(__name__ == '__main__'):
 
     p = mp.Pool(mp.cpu_count() -1)
     vOpt=p.map(extractData, params)
+
+    joinFullWeather()

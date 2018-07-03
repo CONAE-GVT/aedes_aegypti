@@ -383,6 +383,20 @@ def compareWeather(weather_filename,saco_weather_filename):
         pl.legend(loc=0)
         pl.show()
 
+
+def runProject():
+    config=Configuration('resources/otero_precipitation.cfg',
+        {'simulation':{
+            'start_date':datetime.date(2017,7,1),
+            'end_date':datetime.date.today()+datetime.timedelta(6),
+        }
+        })
+    for location in utils.getLocations():
+        config.config_parser.set('location','name',location+'.full')
+        testModel(config,subplots=[['E','A1+A2',[utils.safeAdd,utils.normalize] ]])
+
+    utils.showPlot()
+
 if(__name__ == '__main__'):
     if(len(sys.argv)>1 and sys.argv[1]=='compare'):
         runComparison()
@@ -392,5 +406,7 @@ if(__name__ == '__main__'):
         runOviShow(sys.argv[2])
     elif(len(sys.argv)>1 and sys.argv[1]=='weather'):
         compareWeather('data/public/weather.csv','data/public/wunderground_SACO.csv')
+    elif(len(sys.argv)>1 and sys.argv[1]=='project'):
+        runProject()
     else:
         runTestCases()
