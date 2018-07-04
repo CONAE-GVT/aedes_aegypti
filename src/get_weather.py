@@ -124,12 +124,15 @@ def extractForecastData(lat,lon,out_filename):
         fields_values=extractDailyDataFromGDAS(lat,lon,a_date,FORECAST_P_FOLDER,['Total Precipitation'],typeOfLevel='surface')
         precipitation=fields_values['Total Precipitation']
         output+=a_date.strftime('%Y-%m-%d')+', '+', '.join([str(min_T),str(mean_T),str(max_T),str(np.sum(precipitation)),str(mean_rh) ]) + ',,'+'\n'
-        print(output)
     open(out_filename.replace('.csv','.forecast.csv'),'w').write(output)
+
+def removeLastLine(out_filename):#for the day before yesterday we have fnl now. So we replace the anl info we've got yesterday, with fnl info we have today.
+    open(out_filename,'w').writelines(open(out_filename,'r').readlines()[:-1])
 
 def extractData(params):
     lat,lon,start_date,end_date,out_filename=params
     logging.info('Extracting data to %s'%out_filename)
+    removeLastLine(out_filename)
     extractPresentData(lat,lon,start_date,end_date,out_filename)
     extractForecastData(lat,lon,out_filename)
 
@@ -146,8 +149,9 @@ if(__name__ == '__main__'):
         start_date,end_date= datetime.datetime.strptime(sys.argv[1],FORMAT).date(),datetime.datetime.strptime(sys.argv[2],FORMAT).date()
     elif(len(sys.argv)==1):
         today=datetime.date.today()
-        yesterday=today-datetime.timedelta(1)
-        start_date,end_date= yesterday,today
+        yesterday=today-datetime.timedelta(1)#anl
+        before_yesterday=yesterday-datetime.timedelta(1)#fnl
+        start_date,end_date= before_yesterday,today
 
     downloadData(start_date,end_date)
     config_parser = ConfigParser()
