@@ -102,5 +102,12 @@ def downloadData(start_date,end_date,folder):
     download(index,folder)
     purge(index)
 
+def downloadYesterdayAnlData(folder):
+    yesterday=datetime.date.today()-datetime.timedelta(1)
+    for a_time in ['00','06','12','18']:
+        url='http://nomads.ncep.noaa.gov/cgi-bin/filter_fnl.pl?file=gdas.t%sz.pgrb2.1p00.f009&lev_2_m_above_ground=on&var_RH=on&var_TMP=on&subregion=&leftlon=-68&rightlon=-60&toplat=-28&bottomlat=-36&dir=%%2Fgdas.%d%02d%02d'%(a_time,yesterday.year,yesterday.month,yesterday.day)
+        filename=getFilename(yesterday,a_time)
+        open(folder+'/'+filename, 'w').write(urllib2.urlopen(url).read())
+
 if __name__=='__main__':
     downloadData(datetime.date.today()-datetime.timedelta(days=1),datetime.date.today())

@@ -52,8 +52,10 @@ def downloadForecast():
 
 
 def downloadData(start_date,end_date):
-    logging.info('Downloading GDAS')
+    logging.info('Downloading GDAS(fnl)')
     gdas_lib.downloadData(start_date,end_date,GDAS_FOLDER)
+    logging.info('Downloading GDAS(anl)')
+    gdas_lib.downloadYesterdayAnlData(GDAS_FOLDER)
     logging.info('Downloading IMERG')
     imerg_lib.downloadData(start_date,end_date,IMERG_FOLDER)
     logging.info('Downloading forecast')
@@ -132,14 +134,10 @@ def extractData(params):
     extractForecastData(lat,lon,out_filename)
 
 def joinFullWeather():
-    FORMAT='%Y-%m-%d'
-    yesterday=datetime.date.today()-datetime.timedelta(1)
     for location in getLocations():
         present_data=open(DATA_FOLDER+location+'.csv','r').read()
         forecast_data=open(DATA_FOLDER+location+'.forecast.csv','r').read()
-        last_line=','.join(present_data.split('\n')[-2].split(',')[1:])#this is because we
-        no_data=yesterday.strftime(FORMAT)+','+last_line + '\n'        #have no data for yesterday.TODO:fix this
-        open(DATA_FOLDER+location+'.full.csv','w').write(present_data+ no_data +'\n'.join(forecast_data.split('\n')[1:]))#remove the header of forecast data
+        open(DATA_FOLDER+location+'.full.csv','w').write(present_data+ '\n'.join(forecast_data.split('\n')[1:]))#remove the header of forecast data
 
 if(__name__ == '__main__'):
     FORMAT='%Y-%m-%d'
@@ -147,9 +145,9 @@ if(__name__ == '__main__'):
     if(len(sys.argv)>2):
         start_date,end_date= datetime.datetime.strptime(sys.argv[1],FORMAT).date(),datetime.datetime.strptime(sys.argv[2],FORMAT).date()
     elif(len(sys.argv)==1):
-        yesterday=datetime.date.today()-datetime.timedelta(1)
-        beforeYesterday=yesterday-datetime.timedelta(1)
-        start_date,end_date= beforeYesterday,yesterday
+        today=datetime.date.today()
+        yesterday=today-datetime.timedelta(1)
+        start_date,end_date= yesterday,today
 
     downloadData(start_date,end_date)
     config_parser = ConfigParser()
