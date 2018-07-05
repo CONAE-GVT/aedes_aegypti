@@ -133,7 +133,7 @@ def removeLastLine(out_filename):#for the day before yesterday we have fnl now. 
 def extractData(params):
     lat,lon,start_date,end_date,out_filename=params
     logging.info('Extracting data to %s'%out_filename)
-    removeLastLine(out_filename)
+    if(os.path.isfile(out_filename)): removeLastLine(out_filename)
     extractPresentData(lat,lon,start_date,end_date,out_filename)
     extractForecastData(lat,lon,out_filename)
 
