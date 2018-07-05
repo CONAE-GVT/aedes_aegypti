@@ -74,7 +74,7 @@ def extractDailyDataFromIMERG(lat,lon,a_date):
 #TODO: take into account the utc time.
 def extractDailyDataFromGDAS(lat,lon,a_date,folder,FIELDS,typeOfLevel):
     TIMES=['00','06','12','18']
-    epsilon=0.2#TODO:avoid this
+    epsilon=0.5#TODO:avoid this
     fields_values= dict( (field,[]) for field in FIELDS)
     for a_time in TIMES:
         aux_date=a_date
@@ -127,7 +127,8 @@ def extractForecastData(lat,lon,out_filename):
     open(out_filename.replace('.csv','.forecast.csv'),'w').write(output)
 
 def removeLastLine(out_filename):#for the day before yesterday we have fnl now. So we replace the anl info we've got yesterday, with fnl info we have today.
-    open(out_filename,'w').writelines(open(out_filename,'r').readlines()[:-1])
+    lines=open(out_filename,'r').readlines()
+    open(out_filename,'w').writelines(lines[:-1])
 
 def extractData(params):
     lat,lon,start_date,end_date,out_filename=params
