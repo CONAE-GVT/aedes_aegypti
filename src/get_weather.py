@@ -83,7 +83,7 @@ def extractDailyDataFromGDAS(lat,lon,a_date,folder,FIELDS,typeOfLevel):
         if(not os.path.isfile(grib_filename)):
             logging.warning('%s not found, but keep going anyways'%grib_filename)
             continue
-        grbs=pygrib.open(grib_filename)
+        grbs=pygrib.index(grib_filename,'name','typeOfLevel')
         for field in FIELDS:
             grb = grbs.select(name=field,typeOfLevel=typeOfLevel)[0]
             #validate lat,lon
