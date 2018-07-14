@@ -10,7 +10,7 @@ import getpass
 import datetime
 import cookielib
 from utils import daterange
-
+#TODO:put this in a config file
 base='https://rda.ucar.edu/apps/'
 username='***REMOVED***'
 password='***REMOVED***'

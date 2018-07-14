@@ -3,7 +3,7 @@ import urllib2
 import datetime
 import cookielib
 from utils import daterange
-
+#TODO:put this in a config file
 base='https://gpm1.gesdisc.eosdis.nasa.gov/data/GPM_L3/GPM_3IMERGDE.05/'
 username='***REMOVED***'
 password='***REMOVED***'
