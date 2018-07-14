@@ -195,7 +195,7 @@ def subData(time_range,Y,date_range,an_start_date):
             break#conserve the first one.
     return time_range[index:],Y[index:,:],date_range[index:]
 
-def plot(model,subplots,plot_start_date):
+def plot(model,subplots,plot_start_date,title=''):
     time_range=model.time_range
     RES=model.Y
     parameters=model.parameters
@@ -320,6 +320,7 @@ def plot(model,subplots,plot_start_date):
         pl.xlabel('Time(in days starting in July)')
         pl.legend(loc=0)
         pl.xticks(rotation='vertical')
+        pl.title(title)
 
 from mpl_toolkits import mplot3d
 def plot3D(xline,yline,zline):

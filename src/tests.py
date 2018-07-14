@@ -84,7 +84,7 @@ def testModel(configuration, p=None,T=None,subplots=[['E','L'],['W']],plot_start
     if(len(sys.argv)>1 and sys.argv[1]=='save' and p==None and T==None):#if asked save, but not with tampered p or T functions
         model.save()
 
-    utils.plot(model,subplots,plot_start_date)
+    utils.plot(model,subplots,plot_start_date,title=configuration.getString('location','name'))
 
 
 def compare(old_RES_filename,model):
@@ -363,6 +363,7 @@ def compareWeather(weather_filename,saco_weather_filename):
         end_date=datetime.date(2018, 5, 1)
         temperatures_saco= np.array(utils.getAverageTemperaturesFromCsv(saco_weather_filename,start_date,end_date))
         temperatures_gdas= np.array(utils.getAverageTemperaturesFromCsv(weather_filename,start_date,end_date))
+        print(weather_filename.split('/')[-1].replace('.csv','') + ':')
         #pl.plot(temperatures_saco,'-m', label='SACO')
         #pl.plot(temperatures_gdas,'-r', label='gdas')
 
@@ -405,7 +406,8 @@ if(__name__ == '__main__'):
     elif(len(sys.argv)>2 and sys.argv[1]=='show'):
         runOviShow(sys.argv[2])
     elif(len(sys.argv)>1 and sys.argv[1]=='weather'):
-        compareWeather('data/public/weather.csv','data/public/wunderground_SACO.csv')
+        compareWeather('data/public/rio_cuarto.csv','/home/exequiel/Desktop/models/programs/aedes_aegypti/data/test/rio_cuarto_wunderground.csv')
+        compareWeather('data/public/marcos_juarez.csv','/home/exequiel/Desktop/models/programs/aedes_aegypti/data/test/marcos_juarez_wunderground.csv')
     elif(len(sys.argv)>1 and sys.argv[1]=='project'):
         runProject()
     else:

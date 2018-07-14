@@ -16,7 +16,7 @@ username='***REMOVED***'
 password='***REMOVED***'
 control_template_filename='resources/ds083.3_control_file.template'
 loginurl='https://rda.ucar.edu/cgi-bin/login'
-FILENAME_FORMAT='gdas1.fnl0p25.%d%02d%02d%s.f09.grib2'
+FILENAME_FORMAT='gdas1.fnl0p25.%d%02d%02d%s.f00.grib2'
 LOG_FILENAME='logs/get_weather.log'
 logging.basicConfig(format='%(levelname)s: %(asctime)s %(message)s',filename=LOG_FILENAME,level=logging.DEBUG)
 
@@ -105,7 +105,7 @@ def downloadData(start_date,end_date,folder):
 def downloadYesterdayAnlData(folder):
     yesterday=datetime.date.today()-datetime.timedelta(1)
     for a_time in ['00','06','12','18']:
-        url='http://nomads.ncep.noaa.gov/cgi-bin/filter_fnl.pl?file=gdas.t%sz.pgrb2.1p00.f009&lev_2_m_above_ground=on&var_RH=on&var_TMP=on&subregion=&leftlon=-68&rightlon=-60&toplat=-28&bottomlat=-36&dir=%%2Fgdas.%d%02d%02d'%(a_time,yesterday.year,yesterday.month,yesterday.day)
+        url='http://nomads.ncep.noaa.gov/cgi-bin/filter_fnl.pl?file=gdas.t%sz.pgrb2.1p00.f000&lev_2_m_above_ground=on&var_RH=on&var_TMP=on&subregion=&leftlon=-68&rightlon=-60&toplat=-28&bottomlat=-36&dir=%%2Fgdas.%d%02d%02d'%(a_time,yesterday.year,yesterday.month,yesterday.day)
         filename=getFilename(yesterday,a_time)
         open(folder+'/'+filename, 'w').write(urllib2.urlopen(url).read())
 
