@@ -85,8 +85,7 @@ def extractDailyDataFromGDAS(lat,lon,a_date,folder,FIELDS,typeOfLevel,f):
         grbs=pygrib.index(grib_filename,'name','typeOfLevel')
         for field in FIELDS:
             grb = grbs.select(name=field,typeOfLevel=typeOfLevel)[0]
-            #assert (grb.validDate - datetime.timedelta(hours=float(3))).date() == a_date,'%s vs %s for %s'%( (grb.analDate - datetime.timedelta(hours=3)).date(),a_date,grib_filename)
-            if (not (grb.validDate - datetime.timedelta(hours=float(3))).date() == a_date): logging.warning('%s vs %s for %s'%( (grb.analDate - datetime.timedelta(hours=3)).date(),a_date,grib_filename) )
+            assert (grb.validDate - datetime.timedelta(hours=3,seconds=1)).date() == a_date, '%s vs %s for %s'%( (grb.validDate - datetime.timedelta(hours=3,seconds=1)).date(),a_date,grib_filename) #the second is because I want to take into account the 00 of the next day
             #validate lat,lon
             lats, lons = grb.latlons()
             assert lats.min()<=lat<=lats.max() and lons.min()<=lon<=lons.max()
