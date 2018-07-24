@@ -8,13 +8,15 @@ class Configuration:
         self.config_parser.readfp(open(filename))
     if(dict_config):
         for section in dict_config:
-            #self.config_parser.add_section(section)
             for option in dict_config[section]:
                 values=dict_config[section][option]
-                try:#it's iterable
-                    string_value=','.join([str(value) for value in values ])
-                except TypeError:
-                    string_value=str(values)
+                if(isinstance(values,str)):
+                    string_value=values
+                else:#not string, try to convert it
+                    try:#it's iterable
+                        string_value=','.join([str(value) for value in values ])
+                    except TypeError:
+                        string_value=str(values)
                 self.config_parser.set(section,option,string_value)
 
     self.validate()
