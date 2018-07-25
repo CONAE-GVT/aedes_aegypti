@@ -51,7 +51,7 @@ def getStatus(index):
     return status
 
 def waitFor(index):
-    for i in range(6,15):#maximum wait is 2**i. (~ 9 hr)
+    for i in range(6,16):#maximum wait is 2**i. (~ 18 hr)
         status=getStatus(index)
         if 'Online' in status:
             break
