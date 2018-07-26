@@ -51,13 +51,14 @@ def getStatus(index):
     return status
 
 def waitFor(index):
-    for i in range(6,16):#maximum wait is 2**i. (~ 18 hr)
+    for i in range(6,14):#maximum wait is 2**i. (~ 4.5 hr)
         status=getStatus(index)
         if 'Online' in status:
-            break
+            return
         else:
             logging.info('Waiting %s mins. for %s to be online.'%(2**i /60., index))
             time.sleep(2**i)
+    raise GDASError()
 
 def login():
     authdata='email='+username+'&password='+password+'&action=login'
@@ -95,6 +96,15 @@ def purge(index):
 def getFilename(a_date,a_time,f):
     return FILENAME_FORMAT%(a_date.year,a_date.month,a_date.day,a_time,f)
 
+def downloadDataSafeMode(start_date,end_date,folder):
+    for a_date in daterange(start_date,end_date):
+        for a_time in ['00','06','12','18']:
+            for a_forecast in ['00','03','06','09']:#a forcast time
+                url='http://nomads.ncep.noaa.gov/cgi-bin/filter_gdas_0p25.pl?file=gdas.t%sz.pgrb2.0p25.f0%s&lev_2_m_above_ground=on&var_GUST=on&var_RH=on&var_TCDC=on&var_TMAX=on&var_TMIN=on&var_TMP=on&subregion=&leftlon=-68&rightlon=-60&toplat=-28&bottomlat=-36&dir=%%2Fgdas.%d%02d%02d'%(a_time,a_forecast,a_date.year,a_date.month,a_date.day)
+                filename=getFilename(a_date,a_time,f=a_forecast)
+                logging.info('Download: %s'% filename)
+                open(folder+'/'+filename, 'w').write(urllib2.urlopen(url).read())
+
 def downloadData(start_date,end_date,folder):
     init()
     index=submit(start_date,end_date)
@@ -109,5 +119,8 @@ def downloadYesterdayAnlData(folder):
         filename=getFilename(yesterday,a_time,f='00')
         open(folder+'/'+filename, 'w').write(urllib2.urlopen(url).read())
 
+class GDASError(Exception):
+    pass
+
 if __name__=='__main__':
-    downloadData(datetime.date.today()-datetime.timedelta(days=1),datetime.date.today())
+    downloadData(datetime.date.today()-datetime.timedelta(days=1),datetime.date.today(),'data/public/gdas')

@@ -12,6 +12,7 @@ import netCDF4 as nc
 from utils import daterange,getLocations
 from configparser import ConfigParser
 import multiprocessing as mp
+from urllib2 import HTTPError
 
 DATA_FOLDER='data/public/'
 IMERG_FOLDER=DATA_FOLDER+'/imerg/'
@@ -52,8 +53,14 @@ def downloadForecast():
 
 
 def downloadData(start_date,end_date):
-    logging.info('Downloading GDAS(fnl)')
-    gdas_lib.downloadData(start_date,end_date,GDAS_FOLDER)
+    #this one is tricky...
+    try:
+        logging.info('Downloading GDAS(fnl)')
+        gdas_lib.downloadData(start_date,end_date,GDAS_FOLDER)
+    except gdas_lib.GDASError, HTTPError :
+        logging.info('GDAS regular service failed, trying nomads...')
+        gdas_lib.downloadDataSafeMode(start_date,end_date,GDAS_FOLDER)
+
     logging.info('Downloading GDAS(anl)')
     gdas_lib.downloadYesterdayAnlData(GDAS_FOLDER)
     logging.info('Downloading IMERG')
