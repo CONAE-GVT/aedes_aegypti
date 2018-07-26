@@ -61,8 +61,8 @@ def downloadData(start_date,end_date):
         logging.info('GDAS regular service failed, trying nomads... Error:%s'%e)
         gdas_lib.downloadDataSafeMode(start_date,end_date,GDAS_FOLDER)
 
-    logging.info('Downloading GDAS(anl)')
-    gdas_lib.downloadYesterdayAnlData(GDAS_FOLDER)
+    logging.info('Downloading yesterday GDAS(fnl)')
+    gdas_lib.downloadYesterdayFnlData(GDAS_FOLDER)
     logging.info('Downloading IMERG')
     imerg_lib.downloadData(start_date,end_date,IMERG_FOLDER)
     logging.info('Downloading forecast')
