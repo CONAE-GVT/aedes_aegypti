@@ -57,8 +57,8 @@ def downloadData(start_date,end_date):
     try:
         logging.info('Downloading GDAS(fnl)')
         gdas_lib.downloadData(start_date,end_date,GDAS_FOLDER)
-    except gdas_lib.GDASError, HTTPError :
-        logging.info('GDAS regular service failed, trying nomads...')
+    except (gdas_lib.GDASError, HTTPError) as e:
+        logging.info('GDAS regular service failed, trying nomads... Error:%s'%e)
         gdas_lib.downloadDataSafeMode(start_date,end_date,GDAS_FOLDER)
 
     logging.info('Downloading GDAS(anl)')
