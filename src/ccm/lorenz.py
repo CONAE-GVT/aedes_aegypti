@@ -43,7 +43,7 @@ mode='3D'
 XYZ,time_range=solve()
 #Animation code based on https://matplotlib.org/examples/animation/simple_anim.html
 tau=5
-M_X=np.array([ [XYZ[i-2*tau,0],XYZ[i,0],XYZ[i-tau,0]] for i in range(0,len(time_range)) ])
+M_X=np.array([ [XYZ[i-2*tau,0],XYZ[i,0],XYZ[i-tau,0]] for i in range(2*tau,len(time_range)) ])
 fig = plt.figure()
 if(mode=='2D'):
     getCurves=getCurves2D
