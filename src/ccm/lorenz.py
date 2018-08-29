@@ -34,8 +34,8 @@ def getCurves3D(fig,XYZ,M_X):
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
-    curve_M, = ax.plot(XYZ[:,0], XYZ[:,1],XYZ[:,2])
-    curve_M_X, = ax.plot(M_X[:,0], M_X[:,1],M_X[:,2])
+    curve_M, = ax.plot(XYZ[:,0], XYZ[:,1],XYZ[:,2],'-o',markevery=[0,-1])
+    curve_M_X, = ax.plot(M_X[:,0], M_X[:,1],M_X[:,2],'-o',markevery=[0,-1])
     return curve_M,curve_M_X
 
 mode='3D'
