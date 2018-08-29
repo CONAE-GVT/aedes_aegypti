@@ -34,8 +34,8 @@ def getCurves3D(fig,XYZ,M_X):
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
-    curve_M, = ax.plot(XYZ[:,0], XYZ[:,1],XYZ[:,2],'-o',markevery=[0,-1])
-    curve_M_X, = ax.plot(M_X[:,0], M_X[:,1],M_X[:,2],'-o',markevery=[0,-1])
+    curve_M, = ax.plot(XYZ[:,0], XYZ[:,1],XYZ[:,2],'-o',markevery=[-1])
+    curve_M_X, = ax.plot(M_X[:,0], M_X[:,1],M_X[:,2],'-o',markevery=[-1])
     return curve_M,curve_M_X
 
 mode='3D'
@@ -66,6 +66,6 @@ if(mode=='2D'):
 else:
     animate=animate3D
 
-ani = animation.FuncAnimation(fig, animate, len(time_range), interval=1)
+ani = animation.FuncAnimation(fig, animate, range(3000,len(time_range)), interval=1)
 
 plt.show()
