@@ -33,8 +33,8 @@ def getCurves3D(fig,XYZ,M_X):
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
-    curve_M, = ax.plot(XYZ[:,0], XYZ[:,1],XYZ[:,2],'-o',markevery=[-1])
-    curve_M_X, = ax.plot(M_X[:,0], M_X[:,1],M_X[:,2],'-o',markevery=[-1])
+    curve_M, = ax.plot(XYZ[:,0], XYZ[:,1],XYZ[:,2],'-o',markevery=[-1],label='= (X(t), Y(t), Z(t))')
+    curve_M_X, = ax.plot(M_X[:,0], M_X[:,1],M_X[:,2],'-o',markevery=[-1],label=r'= (X(t-2$\tau$), X(t), X(t-$\tau$))')
     return curve_M,curve_M_X
 
 def animate2D(i,curve_M,curve_M_X):
@@ -63,5 +63,8 @@ if(__name__ == '__main__'):
     M_X=np.array([ [XYZ[i-2*tau,0],XYZ[i,0],XYZ[i-tau,0]] for i in range(2*tau,len(time_range)) ])
     curve_M,curve_M_X=getCurves(fig,XYZ,M_X)
     ani = animation.FuncAnimation(fig, animate, range(3000,len(time_range)), interval=1,fargs=(curve_M,curve_M_X))
-    if(len(sys.argv)>1 and  sys.argv[1]=='1'): curve_M_X.set_visible(False)
+    if(len(sys.argv)>1 and  sys.argv[1]=='1'):
+        curve_M_X.set_visible(False)
+        curve_M_X.set_label(None)
+    plt.legend(loc=0)
     plt.show()
