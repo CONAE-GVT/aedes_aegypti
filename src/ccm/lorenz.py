@@ -38,34 +38,31 @@ def getCurves3D(fig,XYZ,M_X):
     curve_M_X, = ax.plot(M_X[:,0], M_X[:,1],M_X[:,2],'-o',markevery=[-1])
     return curve_M,curve_M_X
 
-mode='3D'
-
-XYZ,time_range=solve()
-#Animation code based on https://matplotlib.org/examples/animation/simple_anim.html
-tau=5
-M_X=np.array([ [XYZ[i-2*tau,0],XYZ[i,0],XYZ[i-tau,0]] for i in range(2*tau,len(time_range)) ])
-fig = plt.figure()
-if(mode=='2D'):
-    getCurves=getCurves2D
-else:
-    getCurves=getCurves3D
-
-curve_M,curve_M_X=getCurves(fig,XYZ,M_X)
-
-def animate2D(i):
+def animate2D(i,curve_M,curve_M_X):
     curve_M.set_data(XYZ[:i,0],XYZ[:i,1])  # update the data
     curve_M_X.set_data(M_X[:i,0],M_X[:i,1])  # update the data
 
-def animate3D(i):
-    animate2D(i)
+def animate3D(i,curve_M,curve_M_X):
+    animate2D(i,curve_M,curve_M_X)
     curve_M.set_3d_properties(XYZ[:i,2])
     curve_M_X.set_3d_properties(M_X[:i,2])
 
-if(mode=='2D'):
-    animate=animate2D
-else:
-    animate=animate3D
 
-ani = animation.FuncAnimation(fig, animate, range(3000,len(time_range)), interval=1)
+if(__name__ == '__main__'):
+    mode='3D'
+    if(mode=='2D'):
+        getCurves=getCurves2D
+        animate=animate2D
+    else:
+        getCurves=getCurves3D
+        animate=animate3D
 
-plt.show()
+    fig = plt.figure()
+    XYZ,time_range=solve()
+    #Animation code based on https://matplotlib.org/examples/animation/simple_anim.html
+    tau=5
+    M_X=np.array([ [XYZ[i-2*tau,0],XYZ[i,0],XYZ[i-tau,0]] for i in range(2*tau,len(time_range)) ])
+    curve_M,curve_M_X=getCurves(fig,XYZ,M_X)
+    ani = animation.FuncAnimation(fig, animate, range(3000,len(time_range)), interval=1,fargs=(curve_M,curve_M_X))
+
+    plt.show()
