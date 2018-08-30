@@ -1,11 +1,10 @@
 #coding: utf-8
+import sys
 import numpy as np
 import scipy.integrate as spi
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.animation as animation
-
-
 
 def diff_eqs(V,t):
     '''The main set of equations'''
@@ -64,5 +63,5 @@ if(__name__ == '__main__'):
     M_X=np.array([ [XYZ[i-2*tau,0],XYZ[i,0],XYZ[i-tau,0]] for i in range(2*tau,len(time_range)) ])
     curve_M,curve_M_X=getCurves(fig,XYZ,M_X)
     ani = animation.FuncAnimation(fig, animate, range(3000,len(time_range)), interval=1,fargs=(curve_M,curve_M_X))
-
+    if(len(sys.argv)>1 and  sys.argv[1]=='1'): curve_M_X.set_visible(False)
     plt.show()
