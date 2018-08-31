@@ -20,30 +20,30 @@ def solve():
     return spi.odeint(diff_eqs,initial_condition,time_range),time_range
 
 
-def getCurves2D(fig,XYZ,M_X):
+def getCurves2D(fig,M,M_X):
     ax = plt.axes()
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
-    curve_M, = ax.plot(XYZ[:,0], XYZ[:,1])
+    curve_M, = ax.plot(M[:,0], M[:,1])
     curve_M_X, = ax.plot(M_X[:,0], M_X[:,1])
     return curve_M,curve_M_X
 
-def getCurves3D(fig,XYZ,M_X):
+def getCurves3D(fig,M,M_X):
     ax=Axes3D(fig)
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
-    curve_M, = ax.plot(XYZ[:,0], XYZ[:,1],XYZ[:,2],'-o',markevery=[-1],label='= (X(t), Y(t), Z(t))')
+    curve_M, = ax.plot(M[:,0], M[:,1],M[:,2],'-o',markevery=[-1],label='= (X(t), Y(t), Z(t))')
     curve_M_X, = ax.plot(M_X[:,0], M_X[:,1],M_X[:,2],'-o',markevery=[-1],label=r'= (X(t-2$\tau$), X(t), X(t-$\tau$))')
     return curve_M,curve_M_X
 
-def animate2D(i,curve_M,curve_M_X):
-    curve_M.set_data(XYZ[:i,0],XYZ[:i,1])  # update the data
+def animate2D(i,M,M_X,curve_M,curve_M_X):
+    curve_M.set_data(M[:i,0],M[:i,1])  # update the data
     curve_M_X.set_data(M_X[:i,0],M_X[:i,1])  # update the data
 
-def animate3D(i,curve_M,curve_M_X):
-    animate2D(i,curve_M,curve_M_X)
-    curve_M.set_3d_properties(XYZ[:i,2])
+def animate3D(i,M,M_X,curve_M,curve_M_X):
+    animate2D(i,M,M_X,curve_M,curve_M_X)
+    curve_M.set_3d_properties(M[:i,2])
     curve_M_X.set_3d_properties(M_X[:i,2])
 
 
@@ -57,12 +57,12 @@ if(__name__ == '__main__'):
         animate=animate3D
 
     fig = plt.figure()
-    XYZ,time_range=solve()
+    M,time_range=solve()
     #Animation code based on https://matplotlib.org/examples/animation/simple_anim.html
     tau=5
-    M_X=np.array([ [XYZ[i-2*tau,0],XYZ[i,0],XYZ[i-tau,0]] for i in range(2*tau,len(time_range)) ])
-    curve_M,curve_M_X=getCurves(fig,XYZ,M_X)
-    ani = animation.FuncAnimation(fig, animate, range(3000,len(time_range)), interval=1,fargs=(curve_M,curve_M_X))
+    M_X=np.array([ [M[i-2*tau,0],M[i,0],M[i-tau,0]] for i in range(2*tau,len(time_range)) ])
+    curve_M,curve_M_X=getCurves(fig,M,M_X)
+    ani = animation.FuncAnimation(fig, animate, range(3000,len(time_range)), interval=1,fargs=(M,M_X,curve_M,curve_M_X))
     if(len(sys.argv)>1 and  sys.argv[1]=='1'):
         curve_M_X.set_visible(False)
         curve_M_X.set_label(None)
