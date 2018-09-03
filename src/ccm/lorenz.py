@@ -34,7 +34,7 @@ def getCurves3D(fig,M,M_X):
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
     curve_M, = ax.plot(M[:,0], M[:,1],M[:,2],'-o',markevery=[-1],label='= (X(t), Y(t), Z(t))')
-    curve_M_X, = ax.plot(M_X[:,0], M_X[:,1],M_X[:,2],'-o',markevery=[-1],label=r'= (X(t-2$\tau$), X(t), X(t-$\tau$))')
+    curve_M_X, = ax.plot(M_X[:,0], M_X[:,1],M_X[:,2],'-o',markevery=[-1],label=r'= (X(t), X(t-$\tau$),X(t-2$\tau$))')
     return curve_M,curve_M_X
 
 def animate2D(i,M,M_X,curve_M,curve_M_X):
@@ -59,8 +59,8 @@ if(__name__ == '__main__'):
     fig = plt.figure()
     M,time_range=solve()
     #Animation code based on https://matplotlib.org/examples/animation/simple_anim.html
-    tau=5
-    M_X=np.array([ [M[i-2*tau,0],M[i,0],M[i-tau,0]] for i in range(2*tau,len(time_range)) ])
+    tau=2
+    M_X=np.array([ [M[i,0],M[i-tau,0],M[i-2*tau,0]] for i in range(2*tau,len(time_range)) ])
     curve_M,curve_M_X=getCurves(fig,M,M_X)
     ani = animation.FuncAnimation(fig, animate, range(3000,len(time_range)), interval=1,fargs=(M,M_X,curve_M,curve_M_X))
     if(len(sys.argv)>1 and  sys.argv[1]=='1'):
