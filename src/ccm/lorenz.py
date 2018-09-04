@@ -35,16 +35,19 @@ def getCurves3D(fig,M,M_X):
     ax.set_zlabel('Z')
     curve_M, = ax.plot(M[:,0], M[:,1],M[:,2],'-o',markevery=[-1],label='= (X(t), Y(t), Z(t))')
     curve_M_X, = ax.plot(M_X[:,0], M_X[:,1],M_X[:,2],'-o',markevery=[-1],label=r'= (X(t), X(t-$\tau$),X(t-2$\tau$))')
-    return curve_M,curve_M_X
+    line,=ax.plot([],[])
+    return curve_M,curve_M_X,line
 
-def animate2D(i,M,M_X,curve_M,curve_M_X):
+def animate2D(i,M,M_X,curve_M,curve_M_X,line):
     curve_M.set_data(M[:i,0],M[:i,1])  # update the data
     curve_M_X.set_data(M_X[:i,0],M_X[:i,1])  # update the data
+    line.set_data([ M[i-1,0],M_X[i-1,0] ],[ M[i-1,1],M_X[i-1,1] ])
 
-def animate3D(i,M,M_X,curve_M,curve_M_X):
-    animate2D(i,M,M_X,curve_M,curve_M_X)
+def animate3D(i,M,M_X,curve_M,curve_M_X,line):
+    animate2D(i,M,M_X,curve_M,curve_M_X,line)
     curve_M.set_3d_properties(M[:i,2])
     curve_M_X.set_3d_properties(M_X[:i,2])
+    line.set_3d_properties([ M[i-1,2],M_X[i-1,2] ])
 
 
 if(__name__ == '__main__'):
@@ -61,10 +64,11 @@ if(__name__ == '__main__'):
     #Animation code based on https://matplotlib.org/examples/animation/simple_anim.html
     tau=2
     M_X=np.array([ [M[i,0],M[i-tau,0],M[i-2*tau,0]] for i in range(2*tau,len(time_range)) ])
-    curve_M,curve_M_X=getCurves(fig,M,M_X)
-    ani = animation.FuncAnimation(fig, animate, range(3000,len(time_range)), interval=1,fargs=(M,M_X,curve_M,curve_M_X))
+    curve_M,curve_M_X,line=getCurves(fig,M,M_X)
+    ani = animation.FuncAnimation(fig, animate, range(3000,len(time_range)), interval=100,fargs=(M,M_X,curve_M,curve_M_X,line))
     if(len(sys.argv)>1 and  sys.argv[1]=='1'):
         curve_M_X.set_visible(False)
         curve_M_X.set_label(None)
+        line.set_visible(False)
     plt.legend(loc=0)
     plt.show()
