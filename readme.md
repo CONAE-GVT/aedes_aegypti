@@ -1,3 +1,7 @@
+**Dependencies**
+>sudo apt install python3-scipy python3-grib python3-netcdf4 python3-matplotlib python3-gdal
+
+
 **Run**
 >python src/otero_precipitation.py
 >python src/tests.py
