@@ -1,6 +1,6 @@
 {
     "cmd": "pdflatex",
-    "args":["{FILE_ACTIVE}"],
+    "args":["-output-directory={FILE_ACTIVE_PATH}/.tmp","{FILE_ACTIVE}"],
     "sh": false,
     "cwd":"{FILE_ACTIVE_PATH}",
     "keymap":"ctrl-b"
