@@ -398,6 +398,21 @@ def runProject():
 
     utils.showPlot()
 
+def createMaps():
+    start_date=datetime.date(2017,7,1)
+    end_date=datetime.date.today()+datetime.timedelta(6)
+    config=Configuration('resources/otero_precipitation.cfg',
+        {'simulation':{
+            'start_date':start_date,
+            'end_date':end_date,
+        }
+        })
+    for location in utils.getLocations():
+        config.config_parser.set('location','name',location+'.full')
+        model=Model(config)
+        dates=[datetime.date(2017,12,1),datetime.date(2018,3,1),datetime.date.today()]
+        utils.createMap(model,dates)
+
 if(__name__ == '__main__'):
     if(len(sys.argv)>1 and sys.argv[1]=='compare'):
         runComparison()
@@ -410,5 +425,8 @@ if(__name__ == '__main__'):
         compareWeather('data/public/marcos_juarez.csv','/home/exequiel/Desktop/models/programs/aedes_aegypti/data/test/marcos_juarez_wunderground.csv')
     elif(len(sys.argv)>1 and sys.argv[1]=='project'):
         runProject()
+    elif(len(sys.argv)>1 and sys.argv[1]=='map'):
+        createMaps()
+
     else:
         runTestCases()

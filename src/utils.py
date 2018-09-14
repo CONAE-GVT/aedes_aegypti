@@ -158,7 +158,56 @@ def getCapacity(x=None,y=None,r=None,z=None):#capacity in litres. x,y,z,r must b
     else:
         assert(False)
 
-###############################################################Plot###############################################################
+###############################################################Map###############################################################
+import gdal
+import os
+def createOutputImage(out_filename, in_dataset):
+    driver = gdal.GetDriverByName( "GTiff" )
+    # Create an output file of the same size as the inputted image but with only 1 output image band.
+    newDataset = driver.Create(out_filename, in_dataset.RasterXSize,in_dataset.RasterYSize, 1, gdal.GDT_Float32)
+    # Define the spatial information for the new image.
+    newDataset.SetGeoTransform(in_dataset.GetGeoTransform())
+    newDataset.SetProjection(in_dataset.GetProjection())
+    return newDataset
+
+def createColorMap():
+    cdict = {
+            'red':   (  (0.0, 0.0, 0.0),
+                        (0.5, 1.0, 1.0),
+                        (1.0, 1.0, 1.0)),
+
+            'green': (  (0.0, 1.0, 1.0),
+                        (0.5, 1.0, 1.0),
+                        (1.0, 0.0, 0.0)),
+
+            'blue': (  (0.0, 0.0, 0.0),
+                        (1.0, 0.0, 0.0))
+        }
+    pl.register_cmap(name='GreenRed', data=cdict)
+
+MAX_ADULTS=20.#based on the relation between last summer and biggest population of Cordoba in the last 10 years
+def createMap(model,dates):
+    time_range,initial_condition,Y= model.solveEquations(method='rk')
+    EGG,LARVAE,ADULT1,ADULT2,BS_a,location=model.parameters.EGG,model.parameters.LARVAE,model.parameters.ADULT1,model.parameters.ADULT2,model.parameters.BS_a,model.parameters.location
+    daily_Y=getDailyResults(time_range,Y,model.start_date,model.end_date)
+    daily_A=(daily_Y[:,ADULT1]+daily_Y[:,ADULT2])/BS_a
+    location_name=location['name'].replace('.full','')
+    in_dataset = gdal.Open( 'data/public/ndvi/'+location_name+'.tif', gdal.GA_ReadOnly )
+    NDVI=in_dataset.GetRasterBand(1).ReadAsArray()
+    createColorMap()
+    out_filenames=[]
+    for date in dates:
+        a=daily_A[(date-model.start_date).days]
+        out_filename='out/%s_%d%02d%02d.tif'%(location_name,date.year,date.month,date.day)
+        out_dataset = createOutputImage(out_filename, in_dataset)
+        M= ((NDVI+1.)/2.) * a/MAX_ADULTS#[-1,1] -> [0,2] -> [0,1]
+        out_dataset.GetRasterBand(1).WriteArray(M)
+        pl.imshow(M,cmap='GreenRed',interpolation='nearest',norm=matplotlib.colors.Normalize(vmin=0.,vmax=1.))#https://stackoverflow.com/questions/32769706/how-to-define-colormap-with-absolute-values-with-matplotlib
+        pl.savefig(out_filename.replace('.tif','.png'))
+        out_filenames.append(out_filename)
+    return out_filenames
+
+###############################################################Plot################################################################
 def normalize(values):#TODO:change name.
     return (values-values.min())/(values.max()-values.min())
 
