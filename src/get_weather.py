@@ -1,9 +1,9 @@
 import os
 import re
 import sys
+import urllib
 import logging
 import datetime
-import urllib2
 import gdas_lib
 import imerg_lib
 import pygrib
@@ -12,7 +12,6 @@ import netCDF4 as nc
 from utils import daterange,getLocations
 from configparser import ConfigParser
 import multiprocessing as mp
-from urllib2 import HTTPError
 
 DATA_FOLDER='data/public/'
 IMERG_FOLDER=DATA_FOLDER+'/imerg/'
@@ -33,11 +32,11 @@ def renameAll(dsts):
             os.rename(dst+'/'+filename,dst+'/'+new_filename)
 
 def downloadAll(url,folder):
-    html_list=urllib2.urlopen(url).read()
+    html_list=urllib.request.urlopen(url).read().decode('ISO-8859-1')
     filenames=re.findall(r'.*\<a href=\"([A-Za-z0-9\+\._]+)\"\>.*',html_list)
     for filename in filenames:
         if(filename.endswith('.grib2_NACC_2m') or filename.endswith('.grib2_ACC')):
-            open(folder+'/'+filename, 'w').write(urllib2.urlopen(url+'/'+filename).read())
+            open(folder+'/'+filename, 'wb').write(urllib.request.urlopen(url+'/'+filename).read())
 
 def downloadForecast():
     #download
@@ -100,7 +99,7 @@ def extractPresentData(lat,lon,start_date,end_date,out_filename):
     output=''
     if(not os.path.isfile(out_filename)): output='Date,Minimum Temp (C),Mean Temperature (C),Maximum Temp (C),Rain (mm),Relative Humidity %,CloudCover,Mean Wind SpeedKm/h' + '\n'
     for a_date in daterange(start_date,end_date):
-        FIELDS=['Minimum temperature','Maximum temperature','Relative humidity']
+        FIELDS=['Minimum temperature','Maximum temperature','2 metre relative humidity']#'2 metre relative humidity' -->'Relative humidity' in the python3 migration
         #to validate that the +360 was ok: 1) gdal_translate a grib to a tif and open qgis with google map as background. 2) use https://www.latlong.net/Show-Latitude-Longitude.html 3)explore.py
         fields_values=extractDailyDataFromGDAS(lat,lon+360.,a_date,GDAS_FOLDER,FIELDS,typeOfLevel='heightAboveGround',f='03')
         min_T,max_T=np.min(fields_values[FIELDS[0]]),np.max(fields_values[FIELDS[1]])
@@ -115,7 +114,7 @@ def extractForecastData(lat,lon,out_filename):
     output='Date,Minimum Temp (C),Mean Temperature (C),Maximum Temp (C),Rain (mm),Relative Humidity %,CloudCover,Mean Wind SpeedKm/h' + '\n'
     today=datetime.date.today()
     for a_date in daterange(today,today+datetime.timedelta(hours=168)):
-        FIELDS=['2 metre temperature','Relative humidity']
+        FIELDS=['2 metre temperature','2 metre relative humidity']#'2 metre relative humidity' -->'Relative humidity' in the python3 migration
         fields_values=extractDailyDataFromGDAS(lat,lon,a_date,FORECAST_TRH_FOLDER,FIELDS,typeOfLevel='heightAboveGround',f='00')#not sure why it does allow lat to be negative but not lon)
         min_T,max_T=np.min(fields_values[FIELDS[0]]),np.max(fields_values[FIELDS[0]])
         mean_T=(min_T+max_T)/2.

@@ -4,11 +4,11 @@ import re
 import sys
 import json
 import time
+import urllib
 import logging
-import urllib2
 import getpass
 import datetime
-import cookielib
+import http.cookiejar
 from utils import daterange
 #TODO:put this in a config file
 base='https://rda.ucar.edu/apps/'
@@ -21,10 +21,10 @@ LOG_FILENAME='logs/get_weather.log'
 logging.basicConfig(format='%(levelname)s: %(asctime)s %(message)s',filename=LOG_FILENAME,level=logging.DEBUG)
 
 def init():
-    passman = urllib2.HTTPPasswordMgrWithDefaultRealm()
+    passman = urllib.request.HTTPPasswordMgrWithDefaultRealm()
     passman.add_password(None,'https://rda.ucar.edu', username, password)
-    opener = urllib2.build_opener(urllib2.HTTPBasicAuthHandler(passman),urllib2.HTTPCookieProcessor(cookielib.CookieJar()))
-    urllib2.install_opener(opener)
+    opener = urllib.request.build_opener(urllib.request.HTTPBasicAuthHandler(passman),urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+    urllib.request.install_opener(opener)
 
 def submit(start_date,end_date):
     control_file= open(control_template_filename).read().format(start_date=start_date.strftime('%Y%m%d'+'0000'),end_date=end_date.strftime('%Y%m%d'+'0000')).split('\n')
@@ -41,12 +41,12 @@ def submit(start_date,end_date):
     jsondata = jsondata[:-1]
     jsondata+='}'
 
-    response=urllib2.urlopen(urllib2.Request(base+'request',jsondata,{'Content-type': 'application/json'}) ).read()
+    response=urllib.request.urlopen(urllib.request.Request(base+'request',jsondata,{'Content-type': 'application/json'}) ).read()
     index=re.findall(r'Index[\ ]+:[\ ]+([0-9]+)',response.replace('\n',';'))[0]
     return index
 
 def getStatus(index):
-    response = urllib2.urlopen(base+'/request/'+index).read()
+    response = urllib.request.urlopen(base+'/request/'+index).read()
     status=re.findall(r'RequestStatus:[\ ]+([^;]+)',response.replace('\n',';'))[0]
     return status
 
@@ -62,7 +62,7 @@ def waitFor(index):
 
 def login():
     authdata='email='+username+'&password='+password+'&action=login'
-    return urllib2.urlopen(loginurl,authdata).read()
+    return urllib.request.urlopen(loginurl,authdata).read()
 
 
 def download_files(filelist,directory):
@@ -79,18 +79,18 @@ def download_files(filelist,directory):
                 is_file_inexistant_or_incomplete=not os.path.isfile(outpath) or (os.path.isfile(outpath) and str(os.path.getsize(outpath)) !=remote_filesize)
                 if is_file_inexistant_or_incomplete:
                     #downloadthe file
-                    open(outpath, 'w').write( urllib2.urlopen(remote_filename).read() )
+                    open(outpath, 'wb').write( urllib.request.urlopen(remote_filename).read() )
                     logging.info('Download: %s'% remote_filename)
 
 def download(index,folder):
-    file_list=json.loads( urllib2.urlopen(base+'/request/'+index+'/filelist').read() )
+    file_list=json.loads( urllib.request.urlopen(base+'/request/'+index+'/filelist').read() )
     download_files(file_list,folder)
 
 def purge(index):
     init()#hack. find a way to avoid this
-    request = urllib2.Request(base+'/request/'+index)
+    request = urllib.request.Request(base+'/request/'+index)
     request.get_method = lambda: 'DELETE'
-    logging.info('Purge: %s'% urllib2.urlopen(request).read())
+    logging.info('Purge: %s'% urllib.request.urlopen(request).read())
 
 
 def getFilename(a_date,a_time,f):
@@ -103,7 +103,7 @@ def downloadDataSafeMode(start_date,end_date,folder):
                 url='http://nomads.ncep.noaa.gov/cgi-bin/filter_gdas_0p25.pl?file=gdas.t%sz.pgrb2.0p25.f0%s&lev_2_m_above_ground=on&var_GUST=on&var_RH=on&var_TCDC=on&var_TMAX=on&var_TMIN=on&var_TMP=on&subregion=&leftlon=-68&rightlon=-60&toplat=-28&bottomlat=-36&dir=%%2Fgdas.%d%02d%02d'%(a_time,a_forecast,a_date.year,a_date.month,a_date.day)
                 filename=getFilename(a_date,a_time,f=a_forecast)
                 logging.info('Download: %s'% filename)
-                open(folder+'/'+filename, 'w').write(urllib2.urlopen(url).read())
+                open(folder+'/'+filename, 'wb').write(urllib.request.urlopen(url).read())
 
 def downloadData(start_date,end_date,folder):
     init()
