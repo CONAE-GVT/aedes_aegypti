@@ -4,11 +4,11 @@ import sys
 import urllib
 import logging
 import datetime
-import gdas_lib
-import imerg_lib
 import pygrib
 import numpy as np
+from os import path
 import netCDF4 as nc
+import http.cookiejar
 from utils import daterange,getLocations
 from configparser import ConfigParser
 import multiprocessing as mp
@@ -20,6 +20,7 @@ FORECAST_FOLDER=DATA_FOLDER+'/forecast/'
 FORECAST_TRH_FOLDER=FORECAST_FOLDER+'/T_RH/'
 FORECAST_P_FOLDER=FORECAST_FOLDER+'/P/'
 LOG_FILENAME='logs/get_weather.log'
+
 logging.basicConfig(format='%(levelname)s: %(asctime)s %(message)s',filename=LOG_FILENAME,level=logging.DEBUG)
 
 def renameAll(dsts):
@@ -28,7 +29,7 @@ def renameAll(dsts):
             if(not os.path.isfile(dst+'/'+filename) or filename.startswith('gdas1')): continue
             date_str,hours_str=re.findall(r'GFS_([0-9]{8})00\+([0-9]{3}).grib2',filename)[0]
             a_date_time=datetime.datetime.strptime(date_str,'%Y%m%d') + datetime.timedelta(hours=int(hours_str))
-            new_filename=gdas_lib.getFilename(a_date_time.date(),'%02d'%a_date_time.hour,f='00')
+            new_filename=getFilenameForGDAS(a_date_time.date(),'%02d'%a_date_time.hour,f='00')
             os.rename(dst+'/'+filename,dst+'/'+new_filename)
 
 def downloadAll(url,folder):
@@ -52,31 +53,63 @@ def downloadForecast():
 
 
 def downloadData(start_date,end_date):
-    logging.info('Downloading GDAS(fnl)(safemode)')
-    gdas_lib.downloadDataSafeMode(start_date,end_date,GDAS_FOLDER)
+    logging.info('Downloading GDAS(fnl)')
+    downloadDataFromGDAS(start_date,end_date,GDAS_FOLDER)
     logging.info('Downloading IMERG')
-    imerg_lib.downloadData(start_date,end_date,IMERG_FOLDER)
+    downloadDataFromIMERG(start_date,end_date,IMERG_FOLDER)
     logging.info('Downloading forecast')
     downloadForecast()
 
-
+#IMERG#
 #TODO: take into account the utc time. ?
+def getFilenameForIMERG(a_date):
+    return '3B-DAY-E.MS.MRG.3IMERG.{year}{month:02}{day:02}-S000000-E235959.V05.nc4'.format(year=a_date.year,month=a_date.month,day=a_date.day)
+
+#https://wiki.earthdata.nasa.gov/display/EL/How+To+Access+Data+With+Python
+def downloadDataFromIMERG(start_date,end_date,folder):
+    config_parser = ConfigParser()
+    config_parser.read('resources/passwords.cfg')
+    passman = urllib.request.HTTPPasswordMgrWithDefaultRealm()
+    passman.add_password(None, 'https://urs.earthdata.nasa.gov',config_parser.get('IMERG','username'), config_parser.get('IMERG','password'))
+    opener = urllib.request.build_opener(urllib.request.HTTPBasicAuthHandler(passman),urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+    urllib.request.install_opener(opener)
+    for a_date in daterange(start_date,end_date):
+        filename=getFilenameForIMERG(a_date)
+        if(path.isfile(folder+'/'+filename)): continue#TODO: Also check filesize
+        url='https://gpm1.gesdisc.eosdis.nasa.gov/data/GPM_L3/GPM_3IMERGDE.05/{year}/{month:02}/{filename}'.format(year=a_date.year,month=a_date.month,filename=filename)
+        request = urllib.request.Request(url)
+        response = urllib.request.urlopen(request)
+        handle = open(folder+'/'+filename, 'wb').write(response.read())
+
 def extractDailyDataFromIMERG(lat,lon,a_date):
-    nc_filename=IMERG_FOLDER+imerg_lib.getFilename(a_date)
+    nc_filename=IMERG_FOLDER+getFilenameForIMERG(a_date)
     grp = nc.Dataset(nc_filename)
     lats = grp.variables['lat'][:]
     lons = grp.variables['lon'][:]
     precipitations=grp.variables['precipitationCal']
     return precipitations[(abs(lats-lat)).argmin(),(abs(lons-lon)).argmin()]
 
+#GDAS#
 #TODO: take into account the utc time.
+def getFilenameForGDAS(a_date,a_time,f):
+    return 'gdas1.fnl0p25.{year}{month:02}{day:02}{time}.f{forecast}.grib2'.format(year=a_date.year,month=a_date.month,day=a_date.day,time=a_time,forecast=f)
+
+def downloadDataFromGDAS(start_date,end_date,folder):
+    for a_date in daterange(start_date,end_date):
+        for a_time in ['00','06','12','18']:
+            for a_forecast in ['00','03','06','09']:#a forcast time
+                url='http://nomads.ncep.noaa.gov/cgi-bin/filter_gdas_0p25.pl?file=gdas.t%sz.pgrb2.0p25.f0%s&lev_2_m_above_ground=on&var_GUST=on&var_RH=on&var_TCDC=on&var_TMAX=on&var_TMIN=on&var_TMP=on&subregion=&leftlon=-68&rightlon=-60&toplat=-28&bottomlat=-36&dir=%%2Fgdas.%d%02d%02d'%(a_time,a_forecast,a_date.year,a_date.month,a_date.day)
+                filename=getFilenameForGDAS(a_date,a_time,f=a_forecast)
+                logging.info('Download: %s'% filename)
+                open(folder+'/'+filename, 'wb').write(urllib.request.urlopen(url).read())
+
 def extractDailyDataFromGDAS(lat,lon,a_date,folder,FIELDS,typeOfLevel,f):
     TIMES=['00','06','12','18']
     epsilon=0.5#TODO:avoid this
     fields_values= dict( (field,[]) for field in FIELDS)
     for a_time in TIMES:
-        grib_filename=folder+gdas_lib.getFilename(a_date,a_time,f)
-        if(a_time=='00'): grib_filename=folder+gdas_lib.getFilename(a_date + datetime.timedelta(days=1),a_time,f)#utc hack
+        grib_filename=folder+getFilenameForGDAS(a_date,a_time,f)
+        if(a_time=='00'): grib_filename=folder+getFilenameForGDAS(a_date + datetime.timedelta(days=1),a_time,f)#utc hack
         if(not os.path.isfile(grib_filename)):
             logging.warning('%s not found, but keep going anyways'%grib_filename)
             continue
