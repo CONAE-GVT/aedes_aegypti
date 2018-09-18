@@ -1,5 +1,5 @@
 **Dependencies**
->sudo apt install python3-scipy python3-grib python3-netcdf4 python3-matplotlib python3-gdal
+>sudo apt install python3-scipy python3-grib python3-netcdf4 python3-matplotlib python3-gdal python3-xlrd
 
 
 **Run**
