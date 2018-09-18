@@ -100,7 +100,6 @@ def downloadDataFromGDAS(start_date,end_date,folder):
             for a_forecast in ['00','03','06','09']:#a forcast time
                 url='http://nomads.ncep.noaa.gov/cgi-bin/filter_gdas_0p25.pl?file=gdas.t%sz.pgrb2.0p25.f0%s&lev_2_m_above_ground=on&var_GUST=on&var_RH=on&var_TCDC=on&var_TMAX=on&var_TMIN=on&var_TMP=on&subregion=&leftlon=-68&rightlon=-60&toplat=-28&bottomlat=-36&dir=%%2Fgdas.%d%02d%02d'%(a_time,a_forecast,a_date.year,a_date.month,a_date.day)
                 filename=getFilenameForGDAS(a_date,a_time,f=a_forecast)
-                logging.info('Download: %s'% filename)
                 open(folder+'/'+filename, 'wb').write(urllib.request.urlopen(url).read())
 
 def extractDailyDataFromGDAS(lat,lon,a_date,folder,FIELDS,typeOfLevel,f):
@@ -128,7 +127,7 @@ def extractDailyDataFromGDAS(lat,lon,a_date,folder,FIELDS,typeOfLevel,f):
     #day ended
     return fields_values
 
-def extractPresentData(lat,lon,start_date,end_date,out_filename):
+def extractHistoricData(lat,lon,start_date,end_date,out_filename):
     output=''
     if(not os.path.isfile(out_filename)): output='Date,Minimum Temp (C),Mean Temperature (C),Maximum Temp (C),Rain (mm),Relative Humidity %,CloudCover,Mean Wind SpeedKm/h' + '\n'
     for a_date in daterange(start_date,end_date):
@@ -158,22 +157,18 @@ def extractForecastData(lat,lon,out_filename):
         output+=a_date.strftime('%Y-%m-%d')+', '+', '.join([str(min_T),str(mean_T),str(max_T),str(np.sum(precipitation)),str(mean_rh) ]) + ',,'+'\n'
     open(out_filename.replace('.csv','.forecast.csv'),'w').write(output)
 
-def removeLastLine(out_filename):#for the day before yesterday we have fnl now. So we replace the anl info we've got yesterday, with fnl info we have today.
-    lines=open(out_filename,'r').readlines()
-    open(out_filename,'w').writelines(lines[:-1])
-
 def extractData(params):
     lat,lon,start_date,end_date,out_filename=params
     logging.info('Extracting data to %s'%out_filename)
-    if(os.path.isfile(out_filename)): removeLastLine(out_filename)
-    extractPresentData(lat,lon,start_date,end_date,out_filename)
+    #if(os.path.isfile(out_filename)): removeLastLine(out_filename)
+    extractHistoricData(lat,lon,start_date,end_date,out_filename)
     extractForecastData(lat,lon,out_filename)
 
 def joinFullWeather():
     for location in getLocations():
-        present_data=open(DATA_FOLDER+location+'.csv','r').read()
+        historic_data=open(DATA_FOLDER+location+'.csv','r').read()
         forecast_data=open(DATA_FOLDER+location+'.forecast.csv','r').read()
-        open(DATA_FOLDER+location+'.full.csv','w').write(present_data+ '\n'.join(forecast_data.split('\n')[1:]))#remove the header of forecast data
+        open(DATA_FOLDER+location+'.full.csv','w').write(historic_data+ '\n'.join(forecast_data.split('\n')[1:]))#remove the header of forecast data
 
 if(__name__ == '__main__'):
     FORMAT='%Y-%m-%d'
@@ -182,9 +177,8 @@ if(__name__ == '__main__'):
         start_date,end_date= datetime.datetime.strptime(sys.argv[1],FORMAT).date(),datetime.datetime.strptime(sys.argv[2],FORMAT).date()
     elif(len(sys.argv)==1):
         today=datetime.date.today()
-        yesterday=today-datetime.timedelta(1)#anl
-        before_yesterday=yesterday-datetime.timedelta(1)#fnl
-        start_date,end_date= before_yesterday,today
+        yesterday=today-datetime.timedelta(1)
+        start_date,end_date= yesterday,today
 
     downloadData(start_date,end_date)
     config_parser = ConfigParser()
