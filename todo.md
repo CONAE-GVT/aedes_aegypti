@@ -7,3 +7,6 @@
 get_weather
 [] Missing yesterday's data.
 [] Why we have to add 360 for dataset but not forecast
+
+ccm
+[] Use ccm with T,RH,P, and egg oviposition.

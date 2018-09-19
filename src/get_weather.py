@@ -112,9 +112,9 @@ def extractDailyDataFromGDAS(lat,lon,a_date,folder,FIELDS,typeOfLevel,f):
         if(not os.path.isfile(grib_filename)):
             logging.warning('%s not found, but keep going anyways'%grib_filename)
             continue
-        grbs=pygrib.index(grib_filename,'name','typeOfLevel')
+        grbs=pygrib.open(grib_filename)
         for field in FIELDS:
-            grb = grbs.select(name=field,typeOfLevel=typeOfLevel)[0]
+            grb = grbs.select(parameterName=field,typeOfLevel=typeOfLevel)[0]
             assert (grb.validDate - datetime.timedelta(hours=3,seconds=1)).date() == a_date, '%s vs %s for %s'%( (grb.validDate - datetime.timedelta(hours=3,seconds=1)).date(),a_date,grib_filename) #the second is because I want to take into account the 00 of the next day
             #validate lat,lon
             lats, lons = grb.latlons()
@@ -131,7 +131,7 @@ def extractHistoricData(lat,lon,start_date,end_date,out_filename):
     output=''
     if(not os.path.isfile(out_filename)): output='Date,Minimum Temp (C),Mean Temperature (C),Maximum Temp (C),Rain (mm),Relative Humidity %,CloudCover,Mean Wind SpeedKm/h' + '\n'
     for a_date in daterange(start_date,end_date):
-        FIELDS=['Minimum temperature','Maximum temperature','2 metre relative humidity']#'2 metre relative humidity' -->'Relative humidity' in the python3 migration
+        FIELDS=['Minimum temperature','Maximum temperature','Relative humidity']
         #to validate that the +360 was ok: 1) gdal_translate a grib to a tif and open qgis with google map as background. 2) use https://www.latlong.net/Show-Latitude-Longitude.html 3)explore.py
         fields_values=extractDailyDataFromGDAS(lat,lon+360.,a_date,GDAS_FOLDER,FIELDS,typeOfLevel='heightAboveGround',f='03')
         min_T,max_T=np.min(fields_values[FIELDS[0]]),np.max(fields_values[FIELDS[1]])
@@ -146,21 +146,20 @@ def extractForecastData(lat,lon,out_filename):
     output='Date,Minimum Temp (C),Mean Temperature (C),Maximum Temp (C),Rain (mm),Relative Humidity %,CloudCover,Mean Wind SpeedKm/h' + '\n'
     today=datetime.date.today()
     for a_date in daterange(today,today+datetime.timedelta(hours=168)):
-        FIELDS=['2 metre temperature','2 metre relative humidity']#'2 metre relative humidity' -->'Relative humidity' in the python3 migration
+        FIELDS=['Temperature','Relative humidity']
         fields_values=extractDailyDataFromGDAS(lat,lon,a_date,FORECAST_TRH_FOLDER,FIELDS,typeOfLevel='heightAboveGround',f='00')#not sure why it does allow lat to be negative but not lon)
         min_T,max_T=np.min(fields_values[FIELDS[0]]),np.max(fields_values[FIELDS[0]])
         mean_T=(min_T+max_T)/2.
         mean_rh=(np.min(fields_values[FIELDS[1]])+np.max(fields_values[FIELDS[1]]))/2.
 
-        fields_values=extractDailyDataFromGDAS(lat,lon,a_date,FORECAST_P_FOLDER,['Total Precipitation'],typeOfLevel='surface',f='00')
-        precipitation=fields_values['Total Precipitation']
+        fields_values=extractDailyDataFromGDAS(lat,lon,a_date,FORECAST_P_FOLDER,['Total precipitation'],typeOfLevel='surface',f='00')
+        precipitation=fields_values['Total precipitation']
         output+=a_date.strftime('%Y-%m-%d')+', '+', '.join([str(min_T),str(mean_T),str(max_T),str(np.sum(precipitation)),str(mean_rh) ]) + ',,'+'\n'
     open(out_filename.replace('.csv','.forecast.csv'),'w').write(output)
 
 def extractData(params):
     lat,lon,start_date,end_date,out_filename=params
     logging.info('Extracting data to %s'%out_filename)
-    #if(os.path.isfile(out_filename)): removeLastLine(out_filename)
     extractHistoricData(lat,lon,start_date,end_date,out_filename)
     extractForecastData(lat,lon,out_filename)
 
