@@ -69,7 +69,7 @@ def download_files(filelist,directory):
         localsize=''
         if not os.path.exists(directory):
             os.makedirs(directory)
-        for remote_filename, remote_filesize in filelist.iteritems():
+        for remote_filename, remote_filesize in filelist.items():
                 downloadpath,local_filename=remote_filename.rsplit("/",1)
                 #gdas1.fnl0p25.2017090212.f03.grib2.spasub.aguirre296700-->gdas1.fnl0p25.2017090212.f03.grib2
                 local_filename='.'.join(local_filename.split('.')[:-2])
