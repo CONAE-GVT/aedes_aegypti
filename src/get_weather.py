@@ -87,7 +87,9 @@ def extractDailyDataFromIMERG(lat,lon,a_date):
     lats = grp.variables['lat'][:]
     lons = grp.variables['lon'][:]
     precipitations=grp.variables['precipitationCal']
-    return precipitations[(abs(lats-lat)).argmin(),(abs(lons-lon)).argmin()]
+    p=precipitations[(abs(lats-lat)).argmin(),(abs(lons-lon)).argmin()]
+    grp.close()
+    return p
 
 #GDAS#
 #TODO: take into account the utc time.
@@ -124,6 +126,7 @@ def extractDailyDataFromGDAS(lat,lon,a_date,folder,FIELDS,typeOfLevel,f):
             value=data[0,0]
             if(grb['units']=='K'): value-=273.15 #Kelvin->C
             fields_values[field]+=[ value ]#check this!
+        grbs.close()
     #day ended
     return fields_values
 
