@@ -14,61 +14,47 @@ def diff_eqs(V,t):
     x,y,z=V
     return [delta*(y-x),x*(rho-z)-y,x*y-beta*z]
 
-def solve():
-    initial_condition=[1.,0,0]
+def solve():#parameters taken from http://node99.org/tutorials/ar/
+    initial_condition=[-8,8,27]
     time_range=np.linspace(0,100,100**2)
     return spi.odeint(diff_eqs,initial_condition,time_range),time_range
 
 
-def getCurves2D(fig,M,M_X):
-    ax = plt.axes()
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    curve_M, = ax.plot(M[:,0], M[:,1])
-    curve_M_X, = ax.plot(M_X[:,0], M_X[:,1])
-    return curve_M,curve_M_X
-
-def getCurves3D(fig,M,M_X):
+def getCurves(fig,M,M_X,M_Y):
     ax=Axes3D(fig)
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
     curve_M, = ax.plot(M[:,0], M[:,1],M[:,2],'-o',markevery=[-1],label='= (X(t), Y(t), Z(t))')
     curve_M_X, = ax.plot(M_X[:,0], M_X[:,1],M_X[:,2],'-o',markevery=[-1],label=r'= (X(t), X(t-$\tau$),X(t-2$\tau$))')
+    curve_M_Y, = ax.plot(M_Y[:,0], M_Y[:,1],M_Y[:,2],'-o',markevery=[-1],label=r'= (Y(t), Y(t-$\tau$),Y(t-2$\tau$))')
     line,=ax.plot([],[])
-    return curve_M,curve_M_X,line
+    return curve_M,curve_M_X,curve_M_Y,line
 
-def animate2D(i,M,M_X,curve_M,curve_M_X,line):
+def animate(i,M,M_X,M_Y,curve_M,curve_M_X,curve_M_Y,line):
     curve_M.set_data(M[:i,0],M[:i,1])  # update the data
-    curve_M_X.set_data(M_X[:i,0],M_X[:i,1])  # update the data
-    line.set_data([ M[i-1,0],M_X[i-1,0] ],[ M[i-1,1],M_X[i-1,1] ])
-
-def animate3D(i,M,M_X,curve_M,curve_M_X,line):
-    animate2D(i,M,M_X,curve_M,curve_M_X,line)
     curve_M.set_3d_properties(M[:i,2])
+    curve_M_X.set_data(M_X[:i,0],M_X[:i,1])  # update the data
     curve_M_X.set_3d_properties(M_X[:i,2])
-    line.set_3d_properties([ M[i-1,2],M_X[i-1,2] ])
+    curve_M_Y.set_data(M_Y[:i,0],M_Y[:i,1])  # update the data
+    curve_M_Y.set_3d_properties(M_Y[:i,2])
+    line.set_data([ M_X[i-1,0],M_Y[i-1,0] ],[ M_X[i-1,1],M_Y[i-1,1] ])
+    line.set_3d_properties([ M_X[i-1,2],M_Y[i-1,2] ])
 
 
 if(__name__ == '__main__'):
-    mode='3D'
-    if(mode=='2D'):
-        getCurves=getCurves2D
-        animate=animate2D
-    else:
-        getCurves=getCurves3D
-        animate=animate3D
-
     fig = plt.figure()
     M,time_range=solve()
     #Animation code based on https://matplotlib.org/examples/animation/simple_anim.html
     tau=2
-    M_X=np.array([ [M[i,0],M[i-tau,0],M[i-2*tau,0]] for i in range(2*tau,len(time_range)) ])
-    curve_M,curve_M_X,line=getCurves(fig,M,M_X)
-    ani = animation.FuncAnimation(fig, animate, range(3000,len(time_range)), interval=100,fargs=(M,M_X,curve_M,curve_M_X,line))
+    M_X=np.array([ [M[i,0],M[i-tau,0],M[i-2*tau,0]] for i in range(2*tau,len(time_range)) ])#+ np.array([20,0,0])
+    M_Y=np.array([ [M[i,1],M[i-tau,1],M[i-2*tau,1]] for i in range(2*tau,len(time_range)) ])#+ np.array([-20,0,0])
+    curve_M,curve_M_X,curve_M_Y,line=getCurves(fig,M,M_X,M_Y)
+    ani = animation.FuncAnimation(fig, animate, range(0,len(time_range)), interval=100,fargs=(M,M_X,M_Y,curve_M,curve_M_X,curve_M_Y,line))
     if(len(sys.argv)>1 and  sys.argv[1]=='1'):
-        curve_M_X.set_visible(False)
-        curve_M_X.set_label(None)
+        for curve_M_ in [curve_M_X,curve_M_Y]:
+            curve_M_.set_visible(False)
+            curve_M_.set_label(None)
         line.set_visible(False)
     plt.legend(loc=0)
     plt.show()
