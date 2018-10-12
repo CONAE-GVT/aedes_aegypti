@@ -5,18 +5,25 @@ import scipy.integrate as spi
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.animation as animation
-
-def diff_eqs(V,t):
-    '''The main set of equations'''
+def lorenz(V,t):#parameters taken from http://node99.org/tutorials/ar/
     delta=10.
     beta=8/3.
     rho=28.
     x,y,z=V
     return [delta*(y-x),x*(rho-z)-y,x*y-beta*z]
 
-def solve():#parameters taken from http://node99.org/tutorials/ar/
+def halvorsen(V,t):
+    a=1.89
+    x,y,z=V
+    return [-a*x -4*y -4*z - y**2, -a*y - 4*z - 4*x -z**2,-a*z - 4*x - 4*y - x**2]
+
+def diff_eqs(V,t):
+    '''The main set of equations'''
+    return lorenz(V,t)
+
+def solve(L=100):
     initial_condition=[-8,8,27]
-    time_range=np.linspace(0,100,100**2)
+    time_range=np.linspace(0,L,L*100)
     return spi.odeint(diff_eqs,initial_condition,time_range),time_range
 
 
