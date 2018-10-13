@@ -1,6 +1,6 @@
 import pylab as pl
 import numpy as np
-from lorenz import solve
+from attractor import solve
 from scipy.stats import pearsonr
 
 def exportToCsv(M,time_range):
