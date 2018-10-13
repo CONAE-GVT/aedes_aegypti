@@ -14,8 +14,8 @@ def nearestNeighbors(M_U,time_range,E,tau):
     idx=np.zeros( (len(time_range)- (E-1)*tau,E+1),dtype=int )
     for i in range(0,len(time_range)-(E-1)*tau):
         distances_i=np.linalg.norm(M_U-M_U[i],axis=1)
-        d[i,:]=np.sort(distances_i)[1:E+1 + 1]                        #[:E+1] -> [1: E+1 +1] to exclude distance to itself
         idx[i,:]=distances_i.argsort()[1:E+1 +1]#[:E+1] -> [1: E+1 +1] to exclude distance to itself
+        d[i,:]=distances_i[idx[i,:]]
 
     return d,idx
 
