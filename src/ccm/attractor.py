@@ -1,6 +1,7 @@
 #coding: utf-8
 import sys
 import numpy as np
+from math import sin
 import scipy.integrate as spi
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
@@ -16,6 +17,11 @@ def halvorsen(V,t):
     a=1.89
     x,y,z=V
     return [-a*x -4*y -4*z - y**2, -a*y - 4*z - 4*x -z**2,-a*z - 4*x - 4*y - x**2]
+
+def thomas(V,t):
+    b=0.208186
+    x,y,z=V
+    return [sin(y)-b*x,sin(z)-b*y,sin(x)-b*z]
 
 def diff_eqs(V,t):
     '''The main set of equations'''
