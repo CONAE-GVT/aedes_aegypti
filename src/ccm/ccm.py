@@ -1,3 +1,4 @@
+import sys
 import pylab as pl
 import numpy as np
 from attractor import solve
@@ -29,7 +30,7 @@ def createWeights(d):
 
     return w
 
-def estimate(V,M_U,time_range,E,tau):
+def estimate(M_U,V,time_range,E,tau):
     d,idx=nearestNeighbors(M_U,time_range,E,tau)
     w=createWeights(d)
     e=np.zeros( (len(time_range)- (E-1)*tau) )
@@ -38,8 +39,8 @@ def estimate(V,M_U,time_range,E,tau):
 
     return e#print(e-Y[(E-1)*tau:])
 
-def C(V,M_U,time_range,E,tau):
-    e=estimate(V,M_U,time_range,E,tau)
+def C(M_U,V,time_range,E,tau):
+    e=estimate(M_U,V,time_range,E,tau)
     rho,tail=pearsonr(V[(E-1)*tau:],e)
     return rho**2
 
@@ -48,8 +49,8 @@ def C(V,M_U,time_range,E,tau):
 if(__name__ == '__main__'):
     L_range=range(20,800,20)
     full_M,full_time_range=solve(L_range[-1])
-    Z_crossmap_X=[]
-    X_crossmap_Z=[]
+    U_crossmap_V=[]
+    V_crossmap_U=[]
     for L in L_range:
         idx=np.abs(full_time_range-L).argmin()
         M,time_range=full_M[:idx],full_time_range[:idx]
@@ -62,12 +63,17 @@ if(__name__ == '__main__'):
         #nearestNeighbors(M_X,time_range,E,tau)
         #createWeights(M_X,time_range,E,tau)
         #estimate(M[:,1],M_X,time_range,E,tau)
-        X,Y,Z=M[:,0],M[:,1],M[:,2]
-        Z_crossmap_X.append(C(X,M_Z,time_range,E,tau))
-        X_crossmap_Z.append(C(Z,M_X,time_range,E,tau))
+        XYZ={'X':M[:,0],'Y':M[:,1],'Z':M[:,2]}
+        M_XYZ={'X':M_X,'Y':M_Y,'Z':M_Z}
+        U=XYZ[sys.argv[1].upper()]
+        M_U=M_XYZ[sys.argv[1].upper()]
+        V=XYZ[sys.argv[2].upper()]
+        M_V=M_XYZ[sys.argv[2].upper()]
+        U_crossmap_V.append(C(M_U,V,time_range,E,tau))
+        V_crossmap_U.append(C(M_V,U,time_range,E,tau))
         print('.', end='', flush=True)
 
-    pl.plot(L_range,Z_crossmap_X,label='Z xmap X')
-    pl.plot(L_range,X_crossmap_Z,label='X xmap Z')
+    pl.plot(L_range,U_crossmap_V,label='%s xmap %s'%(sys.argv[1],sys.argv[2]))
+    pl.plot(L_range,V_crossmap_U,label='%s xmap %s'%(sys.argv[2],sys.argv[1]))
     pl.legend(loc=0)
     pl.show()
