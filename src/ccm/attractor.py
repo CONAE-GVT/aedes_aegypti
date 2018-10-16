@@ -21,9 +21,9 @@ def diff_eqs(V,t):
     '''The main set of equations'''
     return lorenz(V,t)
 
-def solve(L=100):
+def solve(L=100,num=100**2):
     initial_condition=[-8,8,27]
-    time_range=np.linspace(0,L,L*100)
+    time_range=np.linspace(0,L,num)
     return spi.odeint(diff_eqs,initial_condition,time_range),time_range
 
 

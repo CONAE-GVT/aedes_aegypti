@@ -48,7 +48,7 @@ def C(M_U,V,time_range,E,tau):
 #implementation follows: McCracken, James (2014). "Convergent cross-mapping and pairwise asymmetric inference".
 if(__name__ == '__main__'):
     L_range=range(20,800,20)
-    full_M,full_time_range=solve(L_range[-1])
+    full_M,full_time_range=solve(L_range[-1],L_range[-1]*5)
     U_crossmap_V=[]
     V_crossmap_U=[]
     for L in L_range:
