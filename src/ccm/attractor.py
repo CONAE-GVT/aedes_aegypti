@@ -72,11 +72,10 @@ if(__name__ == '__main__'):
     #deal with parameters
     curves={'M_X':curve_M_X,'M_Y':curve_M_Y,'M_Z':curve_M_Z}
 
-    if(len(sys.argv)>1):
-        for curve_name in curves.keys():
-            if(curve_name not in ['M_'+variable_name.upper() for variable_name in sys.argv[1:] ] ):
-                curves[curve_name].set_visible(False)
-                curves[curve_name].set_label(None)
+    for curve_name in curves.keys():
+        if(curve_name not in ['M_'+variable_name.upper() for variable_name in sys.argv[1:] ] ):
+            curves[curve_name].set_visible(False)
+            curves[curve_name].set_label(None)
 
     if('M_X' not in ['M_'+variable_name.upper() for variable_name in sys.argv[1:] ]): line.set_visible(False)#TODO:check how to make this configurable by input
     plt.legend(loc=0)
