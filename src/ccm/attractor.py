@@ -6,22 +6,26 @@ import scipy.integrate as spi
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.animation as animation
-def lorenz(V,t):#parameters taken from http://node99.org/tutorials/ar/
+def lorenz(V,t):#[-8,8,27] parameters taken from http://node99.org/tutorials/ar/
     delta=10.
     beta=8/3.
     rho=28.
     x,y,z=V
     return [delta*(y-x),x*(rho-z)-y,x*y-beta*z]
 
-def halvorsen(V,t):
+def halvorsen(V,t):#[0,1,0]
     a=1.89
     x,y,z=V
     return [-a*x -4*y -4*z - y**2, -a*y - 4*z - 4*x -z**2,-a*z - 4*x - 4*y - x**2]
 
-def thomas(V,t):
+def thomas(V,t):#[0,0,0.5]
     b=0.208186
     x,y,z=V
     return [sin(y)-b*x,sin(z)-b*y,sin(x)-b*z]
+
+def logistic(V,t):#[0.2,0.4,0]
+    x,y,z=V
+    return [x * (3.8-3.8*x-0.02*y), y * (3.5-3.5*y-0.1*x),0]
 
 def diff_eqs(V,t):
     '''The main set of equations'''
