@@ -413,6 +413,21 @@ def createMaps():
         dates=[datetime.date(2017,12,1),datetime.date(2018,3,1),datetime.date.today()]
         utils.createMap(model,dates)
 
+def generateCSV(start_date,end_date):
+    filename='data/public/cordoba.csv'
+    temperatures=np.array(utils.getAverageTemperaturesFromCsv(filename,start_date,end_date))
+    relative_humiditys=np.array(utils.getRelativeHumidityFromCsv(filename,start_date,end_date))
+    precipitations = np.array(utils.getPrecipitationsFromCsv(filename,start_date,end_date))
+
+    temperatures=np.mean(temperatures.reshape(-1,7),axis=1)
+    relative_humiditys=np.mean(relative_humiditys.reshape(-1,7),axis=1)
+    precipitations=np.sum(precipitations.reshape(-1,7),axis=1)#should be accumulated?
+
+    print('Temperatura, Humedad Relativa, Precipitacion')
+    for i in range(len(precipitations)):
+        print('%s, %s, %s'%(temperatures[i],relative_humiditys[i],precipitations[i]))
+
+
 if(__name__ == '__main__'):
     if(len(sys.argv)>1 and sys.argv[1]=='compare'):
         runComparison()
@@ -427,6 +442,10 @@ if(__name__ == '__main__'):
         runProject()
     elif(len(sys.argv)>1 and sys.argv[1]=='map'):
         createMaps()
-
+    elif(len(sys.argv)>1 and sys.argv[1]=='csv'):
+        FORMAT='%Y-%m-%d'
+        start_date,end_date= datetime.datetime.strptime(sys.argv[2],FORMAT).date(),datetime.datetime.strptime(sys.argv[3],FORMAT).date()
+        assert (end_date-start_date).days%7==0,(end_date-start_date).days%7
+        generateCSV(start_date,end_date)
     else:
         runTestCases()
