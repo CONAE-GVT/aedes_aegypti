@@ -17,40 +17,29 @@ DATA_FOLDER='data/public/'
 IMERG_FOLDER=DATA_FOLDER+'/imerg/'
 GDAS_FOLDER=DATA_FOLDER+'/gdas/'
 FORECAST_FOLDER=DATA_FOLDER+'/forecast/'
-FORECAST_TRH_FOLDER=FORECAST_FOLDER+'/T_RH/'
-FORECAST_P_FOLDER=FORECAST_FOLDER+'/P/'
+FORECAST_PGB_FOLDER=FORECAST_FOLDER+'/pgb/'
+FORECAST_FLX_FOLDER=FORECAST_FOLDER+'/flx/'
+FORECAST_RANGE=30#in days
 LOG_FILENAME='logs/get_weather.log'
 
 logging.basicConfig(format='%(levelname)s: %(asctime)s %(message)s',filename=LOG_FILENAME,level=logging.DEBUG)
 
-def renameAll(dsts):
-    for dst in dsts:
-        for filename in os.listdir(dst):
-            if(not os.path.isfile(dst+'/'+filename) or filename.startswith('gdas1')): continue
-            date_str,hours_str=re.findall(r'GFS_([0-9]{8})00\+([0-9]{3}).grib2',filename)[0]
-            a_date_time=datetime.datetime.strptime(date_str,'%Y%m%d') + datetime.timedelta(hours=int(hours_str))
-            new_filename=getFilenameForGDAS(a_date_time.date(),'%02d'%a_date_time.hour,f='00')
-            os.rename(dst+'/'+filename,dst+'/'+new_filename)
-
-def downloadAll(url,folder):
-    html_list=urllib.request.urlopen(url).read().decode('ISO-8859-1')
-    filenames=re.findall(r'.*\<a href=\"([A-Za-z0-9\+\._]+)\"\>.*',html_list)
-    for filename in filenames:
-        if(filename.endswith('.grib2_NACC_2m') or filename.endswith('.grib2_ACC')):
-            open(folder+'/'+filename, 'wb').write(urllib.request.urlopen(url+'/'+filename).read())
-
 def downloadForecast():
     #download
-    today=datetime.date.today()
-    src_T_RH = 'http://meteo.caearte.conae.gov.ar/GFS_025/DATA/%d%02d%02d00_NACC2M/'%(today.year,today.month,today.day)
-    src_P='http://meteo.caearte.conae.gov.ar/GFS_025/DATA/%d%02d%02d00_ACC/'%(today.year,today.month,today.day)
-    os.system('rm '+FORECAST_FOLDER+'* -Rf')
-    os.mkdir( FORECAST_TRH_FOLDER)
-    os.mkdir( FORECAST_P_FOLDER)
-    downloadAll(src_T_RH,FORECAST_TRH_FOLDER)#Temperature and rh
-    downloadAll(src_P,FORECAST_P_FOLDER)#precipitation
-    renameAll([FORECAST_TRH_FOLDER,FORECAST_P_FOLDER])
-
+    start_date=datetime.date.today()
+    end_date=start_date+datetime.timedelta(days=FORECAST_RANGE)
+    f='00'
+    forecast_types={
+    FORECAST_FLX_FOLDER:'http://nomads.ncep.noaa.gov/cgi-bin/filter_cfs_flx.pl?file=flxf{f_year}{f_month:02}{f_day:02}{time}.01.{year}{month:02}{day:02}{f}.grb2&lev_2_m_above_ground=on&lev_surface=on&var_PRATE=on&var_TMAX=on&var_TMIN=on&var_TMP=on&subregion=&leftlon=-68&rightlon=-60&toplat=-28&bottomlat=-36&dir=%%2Fcfs.{year}{month:02}{day:02}%%2F{f}%%2F6hrly_grib_01',
+    FORECAST_PGB_FOLDER:'http://nomads.ncep.noaa.gov/cgi-bin/filter_cfs_pgb.pl?file=pgbf{f_year}{f_month:02}{f_day:02}{time}.01.{year}{month:02}{day:02}{f}.grb2&lev_2_m_above_ground=on&lev_surface=on&var_APCP=on&var_RH=on&subregion=&leftlon=-68&rightlon=-60&toplat=-28&bottomlat=-36&dir=%%2Fcfs.{year}{month:02}{day:02}%%2F{f}%%2F6hrly_grib_01'
+    }
+    for key in forecast_types.keys():
+        for a_date in daterange(start_date,end_date):
+            for a_time in ['00','06','12','18']:
+                url=forecast_types[key].format(year=start_date.year,month=start_date.month,day=start_date.day, f_year=a_date.year,f_month=a_date.month,f_day=a_date.day,time=a_time,f=f)
+                folder=key
+                filename=getFilenameForGDAS(a_date,a_time,f=f)
+                open(folder+'/'+filename, 'wb').write(urllib.request.urlopen(url).read())
 
 def downloadData(start_date,end_date):
     logging.info('Downloading GDAS(fnl)')
@@ -148,16 +137,17 @@ def extractHistoricData(lat,lon,start_date,end_date,out_filename):
 def extractForecastData(lat,lon,out_filename):
     output='Date,Minimum Temp (C),Mean Temperature (C),Maximum Temp (C),Rain (mm),Relative Humidity %,CloudCover,Mean Wind SpeedKm/h' + '\n'
     today=datetime.date.today()
-    for a_date in daterange(today,today+datetime.timedelta(hours=168)):
-        FIELDS=['Temperature','Relative humidity']
-        fields_values=extractDailyDataFromGDAS(lat,lon,a_date,FORECAST_TRH_FOLDER,FIELDS,typeOfLevel='heightAboveGround',f='00')#not sure why it does allow lat to be negative but not lon)
-        min_T,max_T=np.min(fields_values[FIELDS[0]]),np.max(fields_values[FIELDS[0]])
-        mean_T=(min_T+max_T)/2.
-        mean_rh=(np.min(fields_values[FIELDS[1]])+np.max(fields_values[FIELDS[1]]))/2.
+    for a_date in daterange(today,today+datetime.timedelta(hours=FORECAST_RANGE*24)):
+        FIELDS=['Relative humidity']
+        fields_values=extractDailyDataFromGDAS(lat,lon+360.,a_date,FORECAST_PGB_FOLDER,FIELDS,typeOfLevel='heightAboveGround',f='00')
+        mean_rh=(np.min(fields_values[FIELDS[0]])+np.max(fields_values[FIELDS[0]]))/2.
 
-        fields_values=extractDailyDataFromGDAS(lat,lon,a_date,FORECAST_P_FOLDER,['Total precipitation'],typeOfLevel='surface',f='00')
-        precipitation=fields_values['Total precipitation']
-        output+=a_date.strftime('%Y-%m-%d')+', '+', '.join([str(min_T),str(mean_T),str(max_T),str(np.sum(precipitation)),str(mean_rh) ]) + ',,'+'\n'
+        FIELDS=['Minimum temperature','Maximum temperature','Precipitation rate']
+        fields_values=extractDailyDataFromGDAS(lat,lon+360.,a_date,FORECAST_FLX_FOLDER,FIELDS,typeOfLevel=['heightAboveGround','surface'],f='00')
+        min_T,max_T=np.min(fields_values[FIELDS[0]]),np.max(fields_values[FIELDS[1]])
+        mean_T=(min_T+max_T)/2.
+        precipitation=np.sum(np.array(fields_values[FIELDS[2]])*60*60*6)
+        output+=a_date.strftime('%Y-%m-%d')+', '+', '.join([str(min_T),str(mean_T),str(max_T),str(precipitation),str(mean_rh) ]) + ',,'+'\n'
     open(out_filename.replace('.csv','.forecast.csv'),'w').write(output)
 
 def extractData(params):
