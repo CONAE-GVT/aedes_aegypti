@@ -358,31 +358,22 @@ def runLab():
     testMacia()
 
 import pylab as pl
-def compareWeather(weather_filename,saco_weather_filename):
-        start_date=datetime.date(2017, 7, 1)
-        end_date=datetime.date(2018, 5, 1)
-        temperatures_saco= np.array(utils.getAverageTemperaturesFromCsv(saco_weather_filename,start_date,end_date))
-        temperatures_gdas= np.array(utils.getAverageTemperaturesFromCsv(weather_filename,start_date,end_date))
-        print(weather_filename.split('/')[-1].replace('.csv','') + ':')
-        #pl.plot(temperatures_saco,'-m', label='SACO')
-        #pl.plot(temperatures_gdas,'-r', label='gdas')
+def compareWeather(gfs_weather_filename,cfs_weather_filename):
+        start_date=datetime.date.today()
+        end_date=datetime.date.today()+datetime.timedelta(7)
+        temperatures_gfs= np.array(utils.getAverageTemperaturesFromCsv(gfs_weather_filename,start_date,end_date))
+        temperatures_cfs= np.array(utils.getAverageTemperaturesFromCsv(cfs_weather_filename,start_date,end_date))
+        print(gfs_weather_filename.split('/')[-1].replace('.csv','') + ':')
 
-        delta_temperature=temperatures_saco-temperatures_gdas
-        pl.plot(delta_temperature,'-b', label='SACO-gdas')
+        delta_temperature=temperatures_gfs-temperatures_cfs
         print('T: %s +/- %s'%(np.mean(delta_temperature),np.std(delta_temperature)) )
 
-        pl.figure()
-        RH_saco= np.array(utils.getRelativeHumidityFromCsv(saco_weather_filename,start_date,end_date))
-        RH_gdas= np.array(utils.getRelativeHumidityFromCsv(weather_filename,start_date,end_date))
-        #pl.plot(RH_saco,'-m', label='SACO')
-        #pl.plot(RH_gdas,'-r', label='gdas')
+        #pl.figure()
+        RH_gfs= np.array(utils.getRelativeHumidityFromCsv(gfs_weather_filename,start_date,end_date))
+        RH_cfs= np.array(utils.getRelativeHumidityFromCsv(cfs_weather_filename,start_date,end_date))
 
-        delta_RH=RH_saco-RH_gdas
-        pl.plot(delta_RH,'-b', label='SACO-gdas')
+        delta_RH=RH_gfs-RH_cfs
         print('RH:  %s +/- %s'%(np.mean(delta_RH),np.std(delta_RH)) )
-
-        pl.legend(loc=0)
-        pl.show()
 
 
 def runProject():
@@ -436,8 +427,9 @@ if(__name__ == '__main__'):
     elif(len(sys.argv)>2 and sys.argv[1]=='show'):
         runOviShow(sys.argv[2])
     elif(len(sys.argv)>1 and sys.argv[1]=='weather'):
-        compareWeather('data/public/rio_cuarto.csv','/home/exequiel/Desktop/models/programs/aedes_aegypti/data/test/rio_cuarto_wunderground.csv')
-        compareWeather('data/public/marcos_juarez.csv','/home/exequiel/Desktop/models/programs/aedes_aegypti/data/test/marcos_juarez_wunderground.csv')
+        gfs_folder,cfs_folder=sys.argv[2:4]
+        for location in utils.getLocations():
+            compareWeather(gfs_folder+'/'+location+'.forecast.csv',cfs_folder+'/'+location+'.forecast.csv')
     elif(len(sys.argv)>1 and sys.argv[1]=='project'):
         runProject()
     elif(len(sys.argv)>1 and sys.argv[1]=='map'):
