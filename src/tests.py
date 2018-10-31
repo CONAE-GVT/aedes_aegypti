@@ -80,7 +80,7 @@ def testModel(configuration, p=None,T=None,subplots=[['E','L'],['W']],plot_start
 
     model.parameters.calls=None
     model.parameters.negatives=None
-    time_range,INPUT,RES=model.solveEquations(equations=DecoratedEquations(model,diff_eqs),method='rk' )
+    time_range,INPUT,RES=model.solveEquations(equations=DecoratedEquations(model,diff_eqs) )
     if(len(sys.argv)>1 and sys.argv[1]=='save' and p==None and T==None):#if asked save, but not with tampered p or T functions
         model.save()
 
