@@ -85,6 +85,7 @@ def getValuesFromCsv(filename,start_date,end_date,value_column,verbose=True):
     return values_list
 
 def getIndexesForPlot(filename,initial_date,date_column,value_column,filter_value=None,filter_column=None):
+    if(not os.path.isfile(filename)): return [0.0],[0]
     indexes_data=getValuesFromXls(filename,initial_date,date_column,value_column,filter_value,filter_column)
     lists = sorted(indexes_data.items()) # sorted by key, return a list of tuples
     days, indexes = zip(*lists) # unpack a list of pairs into two tuples
@@ -251,7 +252,7 @@ def plot(model,subplots,plot_start_date,title=''):
     T=parameters.weather.T
     p=parameters.weather.p
     RH=parameters.weather.RH
-    BS_a,vBS_oc,vBS_ic,vBS_od,vBS_id,vBS_os,n,m=parameters.BS_a,parameters.vBS_oc,parameters.vBS_ic,parameters.vBS_od,parameters.vBS_id,parameters.vBS_os,parameters.n,parameters.m
+    BS_a,vBS_h,vBS_s,vBS_d,n=parameters.BS_a,parameters.vBS_h,parameters.vBS_s,parameters.vBS_d,parameters.n
     EGG,LARVAE,PUPAE,ADULT1,ADULT2,WATER=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.ADULT2,parameters.WATER
     AEDIC_INDICES_FILENAME='data/private/Indices aedicos Historicos '+parameters.location['name']+'.xlsx'
 
@@ -265,7 +266,7 @@ def plot(model,subplots,plot_start_date,title=''):
             date_range=[datetime.timedelta(days=d)+datetime.datetime.combine(model.start_date,datetime.time()) for d in time_range]
             ax1.xaxis.set_major_locator( matplotlib.dates.MonthLocator() )
             ax1.xaxis.set_major_formatter( matplotlib.dates.DateFormatter('%Y-%m-%d') )
-            ax1.xaxis.set_minor_locator( matplotlib.dates.DayLocator() )
+            ax1.xaxis.set_minor_locator( matplotlib.dates.WeekdayLocator(byweekday=matplotlib.dates.MO) )
         else:
             pl.subplot(subplot_id,sharex=ax1)#sharex to zoom all subplots if one is zoomed
 
@@ -319,18 +320,14 @@ def plot(model,subplots,plot_start_date,title=''):
             pl.ylabel('days')
         #Water in containers(in L)
         if ('W' in subplot):
-            for i in range(0,n+m):
-                vW=np.concatenate((RES[:,WATER], [vBS_ic]*len(time_range) ), axis=1)
-                vBS_c=np.concatenate((vBS_oc, vBS_ic) )
-                vBS_s=np.concatenate((vBS_os, [None]*m) )
-                vBS_d=np.concatenate((vBS_od, vBS_id*m) )
-                pl.plot(date_range,applyFs(vW,subplot), label='W(t) for %sL, %scm^2, %s%%'%(vBS_c[i],vBS_s[i],vBS_d[i]*100.) )
-            pl.ylabel('Litres')
+            vW=RES[:,WATER]
+            pl.plot(date_range,applyFs(vW,subplot), label='W(t)')
+            pl.ylabel('cm.')
 
         #spaa vs cimsim
         if ('spaavscimsim' in subplot):
             for i in range(0,n):
-                pl.plot(time_range,RES[:,WATER[i] ]*1000.0/vBS_os[i], label='W(t) for %sL, %scm^2, %s%%'%(vBS_oc[i],vBS_os[i],vBS_od[i]*100.) )#L->ml->mm->cm
+                pl.plot(time_range,RES[:,WATER[i] ], label='W(t) for %scm, %scm^2, %s%%'%(vBS_h[i],vBS_s[i],vBS_d[i]*100.) )#L->ml->mm->cm
             pl.plot(getValuesFromCsv('data/test/cimsim_containers_2015_se09.csv',model.start_date,model.end_date,1,verbose=False),label='CIMSiM')
 
         #Temperature in K
@@ -350,7 +347,7 @@ def plot(model,subplots,plot_start_date,title=''):
 
         #f
         if ('b' in subplot):
-            pl.plot(date_range,[f( np.concatenate((RES[(np.abs(time_range-t)).argmin(),WATER],vBS_ic)), np.concatenate((vBS_od,vBS_id)) ) for t in time_range], label='f(vW,vBS_d)')
+            pl.plot(date_range,[f( RES[(np.abs(time_range-t)).argmin(),WATER] , vBS_d ) for t in time_range], label='f(vW,vBS_d)')
             pl.ylabel('')
 
         #debugging plots

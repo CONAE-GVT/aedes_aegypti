@@ -80,7 +80,7 @@ def testModel(configuration, p=None,T=None,subplots=[['E','L'],['W']],plot_start
 
     model.parameters.calls=None
     model.parameters.negatives=None
-    time_range,INPUT,RES=model.solveEquations(equations=DecoratedEquations(model,diff_eqs) )
+    time_range,INPUT,RES=model.solveEquations(equations=DecoratedEquations(model,diff_eqs),method='rk' )
     if(len(sys.argv)>1 and sys.argv[1]=='save' and p==None and T==None):#if asked save, but not with tampered p or T functions
         model.save()
 
@@ -114,14 +114,12 @@ def runTestCases():
 
     config=Configuration('resources/otero_precipitation.cfg',
         {'breeding_site':{
-            'outside_capacity':[1.2],
-            'outside_surface':math.pi*np.array([5.25**2]),
-            'outside_distribution':[1.],
-            'inside_distribution':[],
-            'inside_capacity':[]
+            'height':[13.86],
+            'surface':math.pi*np.array([5.25**2]),
+            'distribution':[1.]
             },
         'simulation':{
-            'initial_condition':[100.]*1 + [0.]*1 +[0.]*1 + [0.,0.]+ [0]
+            'initial_condition':[100.]*1 + [0.]*1 +[0.]*1 + [0.,0.]+ [9]
             },
         'biology':{
             'alpha0':[1.5]
@@ -144,13 +142,13 @@ def runTestCases():
     #cimsim vs spaa
     config=Configuration('resources/otero_precipitation.cfg',
         {'breeding_site':{
-            'outside_capacity':[0.41],
-            'outside_surface':math.pi*np.array([4.75**2]),
-            'outside_distribution':[1.0],
-            'inside_distribution':[],
-            'inside_capacity':[]
+            'height':[5.8],
+            'surface':math.pi*np.array([4.75**2]),
+            'distribution':[1.0],
             },
         'simulation':{
+            'start_date':datetime.date(2015,7,15),
+            'end_date': datetime.date(2015,12,31),
             'initial_condition':[100.]*1 + [0.]*1 +[0.]*1 + [0.,0.]+ [0]
             },
         'biology':{
@@ -162,16 +160,15 @@ def runTestCases():
     testModel(config,subplots=[['spaavscimsim']])
 
     #against Indices
-    vBS_os=math.pi*np.array([42.,52.,62.])
+    vBS_s=math.pi*np.array([50, 42.,52.,62.])
     config=Configuration('resources/otero_precipitation.cfg',
         {'breeding_site':{
-            'outside_capacity':[8.3],
-            'outside_surface':vBS_os[0:1],
-            'outside_distribution':[0.1],
-            'inside_distribution':[0.9]
+            'height':[10,9.1],
+            'surface':vBS_s[0:2],
+            'distribution':[0.9,0.1]
             },
         'simulation':{
-            'initial_condition':[100.]*2 + [0.]*2 +[0.]*2 + [0.,0.]+ [0 for x in vBS_os[0:1]]
+            'initial_condition':[100.]*2 + [0.]*2 +[0.]*2 + [0.,0.]+ [0 for x in vBS_s[0:2]]
             },
         'biology':{
             'alpha0':[1.5]*2
@@ -181,13 +178,12 @@ def runTestCases():
 
     config=Configuration('resources/otero_precipitation.cfg',
         {'breeding_site':{
-            'outside_capacity':[],
-            'outside_surface':[],
-            'outside_distribution':[],
-            'inside_distribution':[1.0]
+            'height':[10],
+            'surface':[50],
+            'distribution':[1.0]
             },
         'simulation':{
-            'initial_condition':[100.]*1 + [0.]*1 +[0.]*1 + [0.,0.]
+            'initial_condition':[100.]*1 + [0.]*1 +[0.]*1 + [0.,0.] + [9.]
             },
         'biology':{
             'alpha0':[1.5]*1
@@ -202,19 +198,17 @@ def runTestCases():
     #with a various of types of containers
 
                       #Plant plate                  #2-l bottle in half               #dog plate                  #water tank               #'pelopincho'                  #Piscine
-    vBS_os=np.array([getSurface(r=24.5/2.)        ,getSurface(r=10.15/2.)           ,getSurface(r=14./2.)       ,getSurface(r=55.)        ,getSurface(x=155.,y=107.)     ,getSurface(x=700.,y=345.)         ])
-    vBS_oc=np.array([getCapacity(r=24.5/2.,z=3.084),getCapacity(r=10.15/2.,z=33.6/2.),getCapacity(r=14./2.,z=5.),getCapacity(r=55.,z=145.),getCapacity(x=155.,y=107.,z=30.),getCapacity(x=700.,y=345.,z=135.) ])
+    vBS_s=np.array([50, getSurface(r=24.5/2.)        ,getSurface(r=10.15/2.)           ,getSurface(r=14./2.)       ,getSurface(r=55.)        ,getSurface(x=155.,y=107.)     ,getSurface(x=700.,y=345.)         ])
+    vBS_h=np.array([10, 3.084                        ,33.6/2.                          ,5.                         ,145                      ,30                            ,135.])
 
     config=Configuration('resources/otero_precipitation.cfg',{
         'breeding_site':{
-            'outside_capacity':vBS_oc[0:2],
-            'outside_surface':vBS_os[0:2],
-            'outside_distribution':[0.5,0.5],
-            'inside_distribution':[],
-            'inside_capacity':[]
+            'height':vBS_h[1:3],
+            'surface':vBS_s[1:3],
+            'distribution':[0.5,0.5]
             },
         'simulation':{
-            'initial_condition':[100.]*2 + [0.]*2 +[0.]*2 + [0.,0.]+ [0 for x in vBS_os[0:2]]
+            'initial_condition':[100.]*2 + [0.]*2 +[0.]*2 + [0.,0.]+ [0]*len(vBS_s[0:2])
         },
         'biology':{
             'alpha0':[1.5]*2
@@ -224,74 +218,70 @@ def runTestCases():
 
     #*****9*****
     #ovitrap:9 pid:2382 od:[ 0.03088072  0.20904943  0.23383199  0.16713309  0.17310652  0.11768087] id:[ 0.06831738] ws_s:0.031265688907 Error:0.0765284863715 len:11.0 Error/len: 0.00695713512468
-    vBS_od=np.array([0.03088072,0.20904943,0.23383199,0.16713309,0.17310652,0.11768087])
+    vBS_d=np.array([0.06831738, 0.03088072,0.20904943,0.23383199,0.16713309,0.17310652,0.11768087])
     config=Configuration('resources/otero_precipitation.cfg',{
         'breeding_site':{
-            'outside_capacity':vBS_oc,
-            'outside_surface':vBS_os,
-            'outside_distribution':vBS_od,
-            'inside_distribution':[0.06831738]
+            'height':vBS_h,
+            'surface':vBS_s,
+            'distribution':vBS_d
             },
         'simulation':{
             'start_date':datetime.date(2017,7,1),
             'end_date':datetime.date(2018,4,5),
-            'initial_condition':[100.]*7 + [0.]*7 +[0.]*7 + [0.,0.]+ [0 for x in vBS_os]
+            'initial_condition':[100.]*7 + [0.]*7 +[0.]*7 + [0.,0.]+ [0]*len(vBS_s)
         }
     })
     testModel(config,subplots=[['E','P','A1+A2',[utils.safeAdd,utils.normalize] ],['dE','dL','dP','dA1','dA2',[utils.safeAdd]],{'lwE':'','O':[9],'f' :[utils.replaceNegativesWithZeros,utils.safeAdd,utils.safeNormalize]}])
 
     #*****4*****
     #ovitrap:4 pid:18743 od:[ 0.18299322  0.20899391  0.07332913  0.15454651  0.14291156  0.0308964 ] id:[ 0.20632926] ws_s:0.491606121558 BS_a:2594.27715109 Error:34425.9670772 len:18.0 Error/len: 1912.553
-    vBS_od=np.array([0.18299322,0.20899391,0.07332913,0.15454651,0.14291156,0.0308964])
+    vBS_d=np.array([0.20632927, 0.18299322,0.20899391,0.07332913,0.15454651,0.14291156,0.0308964])
     config=Configuration('resources/otero_precipitation.cfg',{
         'breeding_site':{
             'amount':2595,
-            'outside_capacity':vBS_oc,
-            'outside_surface':vBS_os,
-            'outside_distribution':vBS_od,
-            'inside_distribution':[0.20632927]
+            'height':vBS_h,
+            'surface':vBS_s,
+            'distribution':vBS_d
             },
         'simulation':{
             'start_date':datetime.date(2017,7,1),
             'end_date':datetime.date(2018,4,5),
-            'initial_condition':[100.]*7 + [0.]*7 +[0.]*7 + [0.,0.]+ [0 for x in vBS_os]
+            'initial_condition':[100.]*7 + [0.]*7 +[0.]*7 + [0.,0.]+ [0]*len(vBS_s)
         }
     })
     testModel(config,subplots=[['E','P','A1+A2',[utils.safeAdd,utils.normalize] ],{'lwE':'','O':[4],'f':[utils.replaceNegativesWithZeros,utils.safeAdd,utils.safeNormalize]}])
 
     #*****3*****
     #ovitrap:3 pid:18743 od:[ 0.07533379  0.35492456  0.0164825   0.04007676  0.08755963  0.0680057 ] id:[ 0.35761705] ws_s:0.895738915951 BS_a:3132.19610422 Error:5057.73452148 len:20.0 Error/len: 252.886726074
-    vBS_od=np.array([0.07533379 , 0.35492456 , 0.0164825   ,0.04007676 , 0.08755963 , 0.0680057])
+    vBS_d=np.array([0.35761706, 0.07533379 , 0.35492456 , 0.0164825   ,0.04007676 , 0.08755963 , 0.0680057])
     config=Configuration('resources/otero_precipitation.cfg',{
         'breeding_site':{
             'amount':3132,
-            'outside_capacity':vBS_oc,
-            'outside_surface':vBS_os,
-            'outside_distribution':vBS_od,
-            'inside_distribution':[0.35761706]
+            'height':vBS_h,
+            'surface':vBS_s,
+            'distribution':vBS_d
             },
         'simulation':{
             'start_date':datetime.date(2017,7,1),
             'end_date':datetime.date(2018,4,5),
-            'initial_condition':[100.]*7 + [0.]*7 +[0.]*7 + [0.,0.]+ [0 for x in vBS_os]
+            'initial_condition':[100.]*7 + [0.]*7 +[0.]*7 + [0.,0.]+ [0]*len(vBS_s)
         }
     })
     testModel(config,subplots=[['E','P','A1+A2',[utils.safeAdd,utils.normalize] ],{'lwE':'','O':[3],'f':[utils.replaceNegativesWithZeros,utils.safeAdd,utils.safeNormalize]}])
 
     #*****4 but just to compare with something*****
-    vBS_od=np.array([ 0.01])
+    vBS_d=np.array([0.99, 0.01])
     config=Configuration('resources/otero_precipitation.cfg',{
         'breeding_site':{
             'amount':2595,
-            'outside_capacity':vBS_oc[0:1],
-            'outside_surface':vBS_os[0:1],
-            'outside_distribution':vBS_od[0:1],
-            'inside_distribution':[0.99]
+            'height':vBS_h[0:2],
+            'surface':vBS_s[0:2],
+            'distribution':vBS_d[0:2]
             },
         'simulation':{
             'start_date':datetime.date(2017,7,1),
             'end_date':datetime.date(2018,4,5),
-            'initial_condition':[100.]*2 + [0.]*2 +[0.]*2 + [0.,0.]+ [0 for x in vBS_os[0:1]]
+            'initial_condition':[100.]*2 + [0.]*2 +[0.]*2 + [0.,0.]+ [0]*len(vBS_s[0:2])
         },
         'biology':{
             'alpha0':[1.5]*2

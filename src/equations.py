@@ -12,27 +12,27 @@ vT_1_2H=np.array([14184.0,304.6,148.0,447.2,447.2])
 #<precipitation related functionality v>
 
 #Ivanov
-def QR(RH_t,BS_s,T_t):#in l/day
-    return 6e-5*(25 + T_t-273.15)**2 * (100.-RH_t) * 0.1*BS_s*1./1000.#mm->cm->cm^3=ml->l
+def QR(RH_t,T_t):#in cm/day
+    return 6e-5*(25 + T_t-273.15)**2 * (100.-RH_t) * 0.1#cm
 
-def QG(BS_s,p_t,t):#Quantity gathered#in litres
-    return (BS_s * p_t*0.1) * 1.0 * 1./1000.#*1cm^3=1ml -> l
+def QG(p_t):#Quantity gathered#in cm
+    return p_t*0.1#cm
 
 '''
-    { QG(BS_s,t)-QR(BS_s,T(t))    if 0 < W < BS_c
+    { QG(BS_s,t)-QR(BS_s,T(t))    if 0 < W < BS_h
 dW= { QG(BS_s,t)                  if W <= 0.0
-    { -QR(BS_s,T(t))               if W >= BS_c
+    { -QR(BS_s,T(t))               if W >= BS_h
 Note: in the implementation we needed to add functions to make function continuous, otherwise odeint breaks
 '''
 
-def dW(W,BS_c,BS_s,T_t,p_t,RH_t,t):#in l/day
+def dW(W,BS_h,T_t,p_t,RH_t):#in cm/day
     epsilon=1e-3
-    if(0+epsilon < W < BS_c-epsilon):
-        return QG(BS_s,p_t,t)-QR(RH_t,BS_s,T_t)
+    if(0+epsilon < W < BS_h-epsilon):
+        return QG(p_t)-QR(RH_t,T_t)
     elif(W <= 0.0+epsilon):
-        return QG(BS_s,p_t,t) - QR(RH_t,BS_s,T_t)*(W/epsilon)
-    elif( W >= BS_c-epsilon):
-        return QG(BS_s,p_t,t)*((BS_c-W)/epsilon) - QR(RH_t,BS_s,T_t)
+        return QG(p_t) - QR(RH_t,T_t)*(W/epsilon)
+    elif( W >= BS_h-epsilon):
+        return QG(p_t)*((BS_h-W)/epsilon) - QR(RH_t,T_t)
 
 def a0(W):
     return 70.0* W
@@ -101,18 +101,17 @@ def diff_eqs(Y,t,parameters):
     p_t=parameters.weather.p(t)
     RH_t=parameters.weather.RH(t)
     elr,lpr,par,ovr1,ovr2=vR_D(T_t)
-    BS_a,vBS_oc,vBS_ic,vBS_d,vBS_os,vAlpha0,n,m=parameters.BS_a,parameters.vBS_oc,parameters.vBS_ic,parameters.vBS_d,parameters.vBS_os,parameters.vAlpha0,parameters.n,parameters.m
+    BS_a,vBS_h,vBS_s,vBS_d,vAlpha0,n=parameters.BS_a,parameters.vBS_h,parameters.vBS_s,parameters.vBS_d,parameters.vAlpha0,parameters.n
     EGG,LARVAE,PUPAE,ADULT1,ADULT2,WATER=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.ADULT2,parameters.WATER
 
     vE,vL,vP,A1,A2,vW=Y[EGG],Y[LARVAE],Y[PUPAE],Y[ADULT1],Y[ADULT2],Y[WATER]
-    vW=np.concatenate((vW,vBS_ic))#constant water for inside BS
 
-    dY=np.zeros((3*(n+m)+2+n))
+    dY=np.zeros((3*n + 2 + n ))
     dY[EGG]    = dvE(vE,vL,A1,A2,vW,T_t,BS_a,vBS_d,elr,ovr1,ovr2)
     dY[LARVAE] = dvL(vE,vL,vW,T_t,      BS_a,vBS_d,elr,lpr,vAlpha0)
     dY[PUPAE]  = dvP(vL,vP,T_t,lpr,par)
     dY[ADULT1] = dA1(vP,A1,T_t,par,ovr1)
     dY[ADULT2] = dA2(A1,A2,T_t,ovr1)
-    dY[WATER] = [dW(vW[i],vBS_oc[i],vBS_os[i],T_t,p_t,RH_t,t) for i in range(0,n)]#note that this goes till n.
+    dY[WATER] = np.array([dW(vW[i],vBS_h[i],T_t,p_t,RH_t) for i in range(0,n)])
 
     return dY   # For odeint

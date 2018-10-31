@@ -15,21 +15,18 @@ class Model:
 
         self.parameters=Bunch()
         self.parameters.BS_a=configuration.getFloat('breeding_site','amount')
-        self.parameters.vBS_oc=configuration.getArray('breeding_site','outside_capacity')#in litres
-        self.parameters.vBS_ic=configuration.getArray('breeding_site','inside_capacity')#in litres
-        self.parameters.vBS_od=configuration.getArray('breeding_site','outside_distribution')#distribution of BS outside # the sum of ouside and in-
-        self.parameters.vBS_id=configuration.getArray('breeding_site','inside_distribution')#distribution of BS inside   #  side must be equal to 1
-        self.parameters.vBS_d=np.concatenate((self.parameters.vBS_od,self.parameters.vBS_id))
-        self.parameters.vBS_os=configuration.getArray('breeding_site','outside_surface')#in cm^2
-        self.parameters.n,self.parameters.m=len(self.parameters.vBS_od),len(self.parameters.vBS_id)
+        self.parameters.vBS_h=configuration.getArray('breeding_site','height')#in cm
+        self.parameters.vBS_s=configuration.getArray('breeding_site','surface')#in cm^2
+        self.parameters.vBS_d=configuration.getArray('breeding_site','distribution')#distribution of BS. Sum must be equals to 1
+        self.parameters.n=len(self.parameters.vBS_d)
 
-        n,m=self.parameters.n,self.parameters.m
-        self.parameters.EGG=range(0,n+m)#in R^(n+m)
-        self.parameters.LARVAE=range(n+m,2*(n+m))#in R^(n+m)
-        self.parameters.PUPAE=range(2*(n+m),3*(n+m))#in R^(n+m)
-        self.parameters.ADULT1=3*(n+m)#in R
-        self.parameters.ADULT2=3*(n+m)+1#in R
-        self.parameters.WATER=range(3*(n+m)+2,3*(n+m)+2+n)#in R^n #cause we only track outside containers
+        n=self.parameters.n
+        self.parameters.EGG=range(0,n)#in R^n
+        self.parameters.LARVAE=range(n,2*n)#in R^n
+        self.parameters.PUPAE=range(2*n,3*n)#in R^n
+        self.parameters.ADULT1=3*n#in R
+        self.parameters.ADULT2=3*n+1#in R
+        self.parameters.WATER=range(3*n + 2,3*n + 2 + n )#in R^n
         self.parameters.vAlpha0=configuration.getArray('biology','alpha0')#constant to be fitted
 
         #Cordoba

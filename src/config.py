@@ -34,21 +34,18 @@ class Configuration:
       return self.config_parser.get(section,option)
 
   def validate(self):
-    vBS_oc=self.getArray('breeding_site','outside_capacity')
-    vBS_ic=self.getArray('breeding_site','inside_capacity')
-    vBS_od=self.getArray('breeding_site','outside_distribution')
-    vBS_id=self.getArray('breeding_site','inside_distribution')
-    vBS_os=self.getArray('breeding_site','outside_surface')
+    vBS_d=self.getArray('breeding_site','distribution')
+    vBS_s=self.getArray('breeding_site','surface')
+    vBS_h=self.getArray('breeding_site','height')
     initial_condition=self.getArray('simulation','initial_condition')
     alpha0=self.getArray('biology','alpha0')
-    assert np.all(vBS_id>0),'vBS_id cannot have a zero in it'#not allowed anymore, to achieve the same,
-    assert np.all(vBS_od>0),'vBS_od cannot have a zero in it'#just don't put the container (empty arrays are allowed)
-    assert len(vBS_od) == len(vBS_oc) == len(vBS_os),'vBS_od,vBS_oc and vBS_os must have the same dimension!'
-    assert len(vBS_id) == len(vBS_ic),'vBS_id and vBS_ic must have the same dimension!'
-    n,m=len(vBS_od),len(vBS_id)
-    assert len(alpha0)== n+m, 'dim(alpha0)!=%s'%(n+m)
-    assert len(initial_condition)==3*(n+m)+1+1+n#(vE+vL+vP) +A1 +A2 +vW
-    assert abs(1.-np.sum(vBS_od)-np.sum(vBS_id))<1e-10,'sum(vBS_id)+sum(vBS_id)=%s!=1'%(np.sum(vBS_od)+np.sum(vBS_id))
+    assert np.all(vBS_d>0),'vBS_d cannot have a zero in it'#not allowed anymore
+    assert len(vBS_d) == len(vBS_h) == len(vBS_s),'vBS_d,vBS_h and vBS_s must have the same dimension!'
+    n=len(vBS_d)
+    assert len(alpha0)== n, 'dim(alpha0)!=%s'%(n)
+    assert abs(1.-np.sum(vBS_d))<1e-10,'sum(vBS_d)=%s!=1'%(np.sum(vBS_d))
+    assert len(initial_condition)==3*n+1+1+n#(vE+vL+vP) +A1 +A2 +vW
+
 
   def save(self,filename):
     self.config_parser.write(open(filename,'w'))
