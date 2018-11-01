@@ -18,8 +18,9 @@ def QR(RH_t,T_t):#in cm/day
 def QG(p_t):#Quantity gathered#in cm
     return p_t*0.1#cm
 
-def dW(p_t,RH_t,T_t):#in cm/day
-    return QG(p_t)-QR(RH_t,T_t)
+def dW(vBS_h,vW,p_t,RH_t,T_t):#in cm/day
+    netQ=QG(p_t)-QR(RH_t,T_t)
+    return np.minimum(vBS_h-vW,np.maximum(netQ,-vW))
 
 def a0(W):
     return 70.0* W
@@ -99,6 +100,6 @@ def diff_eqs(Y,t,parameters):
     dY[PUPAE]  = dvP(vL,vP,T_t,lpr,par)
     dY[ADULT1] = dA1(vP,A1,T_t,par,ovr1)
     dY[ADULT2] = dA2(A1,A2,T_t,ovr1)
-    dY[WATER] = np.minimum(vBS_h-vW,np.maximum(dW(p_t,RH_t,T_t),-vW))
+    dY[WATER]  = dW(vBS_h,vW,p_t,RH_t,T_t)
 
     return dY   # For odeint
