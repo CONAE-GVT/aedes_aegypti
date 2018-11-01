@@ -1,16 +1,12 @@
 #coding: utf-8
 import os
-import math
 import utils
 import datetime
-import pylab as pl
 import numpy as np
 import scipy.stats as stats
 import multiprocessing as mp
-from _equations import diff_eqs
 from config import Configuration
 from otero_precipitation import Model
-#import performance_equations as pe
 from scipy.optimize import minimize,differential_evolution
 
 MINIMIZE_METHOD='differential_evolution'
@@ -30,13 +26,12 @@ def calculateMetrics(time_range,mEggs,real_values):
     rho,p_value=stats.spearmanr(real_values[real_values!=[None]],lwE[real_values!=[None]])
     return lwE,error,rho,p_value
 
-def getConfiguration(x,n,m):
+def getConfiguration(x,n):
     MAX_BS_A=4550.
     configuration=Configuration('resources/otero_precipitation.cfg',
         {'breeding_site':{
-            'amount':MAX_BS_A*x[n+m]+50,
-            'outside_distribution':x[0:n],
-            'inside_distribution':x[n:n+m]
+            'amount':MAX_BS_A*x[n]+50,
+            'distribution':x[0:n]
             }
         })
     return configuration
@@ -46,25 +41,25 @@ def error(x,model,real_values=None,ovitrap=None):
     if(real_values is None):
         model,real_values,ovitrap=model#weird differential_evolution bug...
 
-    n,m=model.parameters.n,model.parameters.m
-    l=np.sum(x[0:n+m])
+    n=model.parameters.n
+    l=np.sum(x[0:n])
     if(l<1e-5): return 500.
-    x[0:n+m]/=l#constraint: #Σ vBS_od[i] + vBS_id[i] = 1
-    model=Model(getConfiguration(x,n,m))
+    x[0:n]/=l#constraint: #Σ vBS_od[i] + vBS_id[i] = 1
+    model=Model(getConfiguration(x,n))
     #time_range,INPUT,RES = pe.solvePopulationEquations(initial_condition = [100.0, 0.0,0.0,0.0,0.0])
-    time_range,INPUT,RES=model.solveEquations(equations=diff_eqs,method='rk')
+    time_range,INPUT,RES=model.solveEquations()
     lwE,error,rho,p_value=calculateMetrics(time_range,RES[:,model.parameters.EGG],real_values)
     ovitrap_data_len=float(len(real_values[real_values!=[None]]))
     if(ovitrap_data_len==0): ovitrap_data_len=1.
-    print('ovitrap:%s pid:%i od:%s id:%s BS_a:%s Error:%s len:%s Error/len: %s'%(ovitrap,os.getpid(),model.parameters.vBS_od,model.parameters.vBS_id,model.parameters.BS_a,error,ovitrap_data_len,error/ovitrap_data_len))
+    print('ovitrap:%s pid:%i d:%s BS_a:%s Error:%s len:%s Error/len: %s'%(ovitrap,os.getpid(),model.parameters.vBS_d.tolist(),model.parameters.BS_a,error,ovitrap_data_len,error/ovitrap_data_len))
     return error
 
 def getOptimalParameters(args):
     model=Model()
     #initial value
-    x0=np.append( np.append(model.parameters.vBS_od,model.parameters.vBS_id),np.array([model.parameters.BS_a]))
+    x0=np.append( model.parameters.vBS_d,np.array([model.parameters.BS_a]))
     #Σ vBS_od[i] + vBS_id[i] = 1
-    constraints = ({'type': 'eq', 'fun': lambda x:  1 - sum(x[0:model.parameters.n+model.parameters.m])})
+    constraints = ({'type': 'eq', 'fun': lambda x:  1 - sum(x[0:model.parameters.n])})
     #0<=x<=1,0<=ws_s<=1.
     bounds=tuple((1e-8,1) for x in x0 )#tuple((0,1) for x in range(0,len(x0)-1) ) + tuple((0,1.0) for x in range(0,1))
 
@@ -82,12 +77,6 @@ def populate(time_range,ovitrap_eggs):
     for d,eggs in enumerate(ovitrap_eggs):
         result[(np.abs(time_range-d)).argmin()]=eggs
     return result
-
-
-def print_parameters(vBS_od,vBS_id):
-    print("BS_o     * vo=%f * "%(round(sum(vBS_od),2)) + str( np.round( (1./sum(vBS_od))*vBS_od,2) ) )
-    print("(1-BS_o) * vi=%f * "%(round(sum(vBS_id),2)) + str( np.round( (1./sum(vBS_id))*vBS_id,2) ) )
-    return ''
 
 if(__name__ == '__main__'):
     #time_range,W0,W=pe.solveWaterEquations(initial_condition=[0. for i in op.vBS_od])
@@ -111,14 +100,13 @@ if(__name__ == '__main__'):
     for idx,opt in enumerate(vOpt):
         x=np.array(opt.x)
         model=Model()
-        n,m=model.parameters.n,model.parameters.m
-        model.parameters.vBS_od,model.parameters.vBS_id=x[0:n],x[n:n+m]
-        time_range,INPUT,RES = model.solveEquations(equations=diff_eqs,method='rk')
+        n=model.parameters.n
+        model.parameters.vBS_d=vBS_d=x[0:n]
+        time_range,INPUT,RES = model.solveEquations()
         filename=model.save()
         new_filename=filename.replace('.csv','_ovi%s.csv'%(idx+1))
         os.rename(filename,new_filename)
         os.rename(filename.replace('.csv','.cfg'),new_filename.replace('.csv','.cfg'))
         print('Ovitrap %s:'%(idx+1))
-        print_parameters(model.parameters.vBS_od,model.parameters.vBS_id)
         print(vOpt[idx])
         print('-'*200)
