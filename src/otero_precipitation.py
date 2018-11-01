@@ -18,6 +18,7 @@ class Model:
         self.parameters.vBS_h=configuration.getArray('breeding_site','height')#in cm
         self.parameters.vBS_s=configuration.getArray('breeding_site','surface')#in cm^2
         self.parameters.vBS_d=configuration.getArray('breeding_site','distribution')#distribution of BS. Sum must be equals to 1
+        self.parameters.vBS_mf=configuration.getArray('breeding_site','manually_filled')#in percentage of capacity
         self.parameters.n=len(self.parameters.vBS_d)
 
         n=self.parameters.n
@@ -39,6 +40,7 @@ class Model:
         WEATHER_DATA_FILENAME='data/public/'+self.parameters.location['name']+'.csv'
         self.parameters.weather=Weather(WEATHER_DATA_FILENAME,self.start_date,self.end_date)
 
+        self.parameters.mf=self.parameters.weather.getAsLambdaFunction(self.parameters.weather.aps, [0,0,0,0,0,0,1.]* int( (self.end_date - self.start_date).days/7 +1) )
         self.validate()
 
     def validate(self):

@@ -116,7 +116,8 @@ def runTestCases():
         {'breeding_site':{
             'height':[13.86],
             'surface':math.pi*np.array([5.25**2]),
-            'distribution':[1.]
+            'distribution':[1.],
+            'manually_filled':[0.5]
             },
         'simulation':{
             'initial_condition':[100.]*1 + [0.]*1 +[0.]*1 + [0.,0.]+ [9]
@@ -145,6 +146,7 @@ def runTestCases():
             'height':[5.8],
             'surface':math.pi*np.array([4.75**2]),
             'distribution':[1.0],
+            'manually_filled':[0.5]
             },
         'simulation':{
             'start_date':datetime.date(2015,7,15),
@@ -165,7 +167,8 @@ def runTestCases():
         {'breeding_site':{
             'height':[10,9.1],
             'surface':vBS_s[0:2],
-            'distribution':[0.9,0.1]
+            'distribution':[0.9,0.1],
+            'manually_filled':[0.5,0]
             },
         'simulation':{
             'initial_condition':[100.]*2 + [0.]*2 +[0.]*2 + [0.,0.]+ [0 for x in vBS_s[0:2]]
@@ -180,7 +183,8 @@ def runTestCases():
         {'breeding_site':{
             'height':[10],
             'surface':[50],
-            'distribution':[1.0]
+            'distribution':[1.0],
+            'manually_filled':[0.5]
             },
         'simulation':{
             'initial_condition':[100.]*1 + [0.]*1 +[0.]*1 + [0.,0.] + [9.]
@@ -205,7 +209,8 @@ def runTestCases():
         'breeding_site':{
             'height':vBS_h[1:3],
             'surface':vBS_s[1:3],
-            'distribution':[0.5,0.5]
+            'distribution':[0.5,0.5],
+            'manually_filled':[0.5,0.]
             },
         'simulation':{
             'initial_condition':[100.]*2 + [0.]*2 +[0.]*2 + [0.,0.]+ [0]*len(vBS_s[0:2])
@@ -214,7 +219,7 @@ def runTestCases():
             'alpha0':[1.5]*2
         }
     })
-    testModel(config,subplots=[['E','A1+A2','T','p','RH',[utils.safeAdd,utils.normalize] ],['W']],plot_start_date=datetime.date(2018,1,1))
+    testModel(config,subplots=[['E','A1+A2','T','p','RH',[utils.safeAdd,utils.normalize] ],['W'],['mf']],plot_start_date=datetime.date(2018,1,1))
 
     #*****9*****
     #ovitrap:9 pid:2382 od:[ 0.03088072  0.20904943  0.23383199  0.16713309  0.17310652  0.11768087] id:[ 0.06831738] ws_s:0.031265688907 Error:0.0765284863715 len:11.0 Error/len: 0.00695713512468
@@ -276,7 +281,8 @@ def runTestCases():
             'amount':2595,
             'height':vBS_h[0:2],
             'surface':vBS_s[0:2],
-            'distribution':vBS_d[0:2]
+            'distribution':vBS_d[0:2],
+            'manually_filled':[0.5,0.]
             },
         'simulation':{
             'start_date':datetime.date(2017,7,1),

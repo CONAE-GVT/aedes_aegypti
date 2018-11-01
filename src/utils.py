@@ -252,6 +252,7 @@ def plot(model,subplots,plot_start_date,title=''):
     T=parameters.weather.T
     p=parameters.weather.p
     RH=parameters.weather.RH
+    vBS_mf,mf=parameters.vBS_mf,parameters.mf
     BS_a,vBS_h,vBS_s,vBS_d,n=parameters.BS_a,parameters.vBS_h,parameters.vBS_s,parameters.vBS_d,parameters.n
     EGG,LARVAE,PUPAE,ADULT1,ADULT2,WATER=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.ADULT2,parameters.WATER
     AEDIC_INDICES_FILENAME='data/private/Indices aedicos Historicos '+parameters.location['name']+'.xlsx'
@@ -323,6 +324,11 @@ def plot(model,subplots,plot_start_date,title=''):
             vW=RES[:,WATER]
             pl.plot(date_range,applyFs(vW,subplot), label='W(t)')
             pl.ylabel('cm.')
+
+        #manually_filled(in mm.)
+        if ('mf' in subplot):
+            pl.plot(date_range,applyFs(np.array([mf(t)*vBS_mf*vBS_h*10. for t in time_range]),subplot), label='mf(t)')
+            pl.ylabel('mm./day')
 
         #spaa vs cimsim
         if ('spaavscimsim' in subplot):

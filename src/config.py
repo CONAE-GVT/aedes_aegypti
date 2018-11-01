@@ -37,10 +37,11 @@ class Configuration:
     vBS_d=self.getArray('breeding_site','distribution')
     vBS_s=self.getArray('breeding_site','surface')
     vBS_h=self.getArray('breeding_site','height')
+    vBS_mf=self.getArray('breeding_site','manually_filled')
     initial_condition=self.getArray('simulation','initial_condition')
     alpha0=self.getArray('biology','alpha0')
     assert np.all(vBS_d>0),'vBS_d cannot have a zero in it'#not allowed anymore
-    assert len(vBS_d) == len(vBS_h) == len(vBS_s),'vBS_d,vBS_h and vBS_s must have the same dimension!'
+    assert len(vBS_d) == len(vBS_h) == len(vBS_s) == len(vBS_mf),'vBS_d, vBS_h, vBS_s and vBS_mf must have the same dimension!'
     n=len(vBS_d)
     assert len(alpha0)== n, 'dim(alpha0)!=%s'%(n)
     assert abs(1.-np.sum(vBS_d))<1e-10,'sum(vBS_d)=%s!=1'%(np.sum(vBS_d))

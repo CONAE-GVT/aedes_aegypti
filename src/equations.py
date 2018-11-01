@@ -88,6 +88,7 @@ def diff_eqs(Y,t,parameters):
     T_t=parameters.weather.T(t)
     p_t=parameters.weather.p(t)
     RH_t=parameters.weather.RH(t)
+    vmf_t=parameters.mf(t)*parameters.vBS_mf*parameters.vBS_h*10.#% -> cm -> mm
     elr,lpr,par,ovr1,ovr2=vR_D(T_t)
     BS_a,vBS_h,vBS_s,vBS_d,vAlpha0,n=parameters.BS_a,parameters.vBS_h,parameters.vBS_s,parameters.vBS_d,parameters.vAlpha0,parameters.n
     EGG,LARVAE,PUPAE,ADULT1,ADULT2,WATER=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.ADULT2,parameters.WATER
@@ -100,6 +101,6 @@ def diff_eqs(Y,t,parameters):
     dY[PUPAE]  = dvP(vL,vP,T_t,lpr,par)
     dY[ADULT1] = dA1(vP,A1,T_t,par,ovr1)
     dY[ADULT2] = dA2(A1,A2,T_t,ovr1)
-    dY[WATER]  = dW(vBS_h,vW,p_t,RH_t,T_t)
+    dY[WATER]  = dW(vBS_h,vW,p_t+vmf_t,RH_t,T_t)
 
     return dY   # For odeint
