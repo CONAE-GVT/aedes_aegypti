@@ -24,8 +24,8 @@ def solve(_dYdt,Y0,time_range,args=()):
 	return Y
 
 from scipy.integrate import ode
-def scipy_solve(_dYdt,Y0,time_range,name,kwargs):
-	def dYdt(Y,t): return np.array(_dYdt(t,Y))#decorate the function to return an np array and swap args.
+def scipy_solve(_dYdt,Y0,time_range,name,kwargs,args=()):
+	def dYdt(t,Y): return np.array(_dYdt(Y,t,*args))#decorate the function to return an np array and swap args.
 	r = ode(dYdt).set_integrator(name,**kwargs)
 	r.set_initial_value(Y0, time_range[0])
 	Y=np.zeros([len(time_range),len(Y0)])
