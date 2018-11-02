@@ -219,7 +219,7 @@ def runTestCases():
             'alpha0':[1.5]*2
         }
     })
-    testModel(config,subplots=[['E','A1+A2','T','p','RH',[utils.safeAdd,utils.normalize] ],['W'],['mf']],plot_start_date=datetime.date(2018,1,1))
+    testModel(config,subplots=[['E','A1+A2','T','p','RH',[utils.safeAdd,utils.normalize] ],['W'],['mf']],plot_start_date=datetime.date(2018,1,1))#<---------------this one is giving odeint some trouble
 
     #*****9*****
     #ovitrap:9 pid:2382 od:[ 0.03088072  0.20904943  0.23383199  0.16713309  0.17310652  0.11768087] id:[ 0.06831738] ws_s:0.031265688907 Error:0.0765284863715 len:11.0 Error/len: 0.00695713512468

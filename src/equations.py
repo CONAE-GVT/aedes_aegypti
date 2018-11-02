@@ -18,9 +18,20 @@ def QR(RH_t,T_t):#in cm/day
 def QG(p_t):#Quantity gathered#in cm
     return p_t*0.1#cm
 
-def dW(vBS_h,vW,p_t,RH_t,T_t):#in cm/day
-    netQ=QG(p_t)-QR(RH_t,T_t)
-    return np.minimum(vBS_h-vW,np.maximum(netQ,-vW))
+'''
+    { QG(BS_s,t)-QR(BS_s,T(t))    if 0 < W < BS_h
+dW= { QG(BS_s,t)                  if W <= 0.0
+    { -QR(BS_s,T(t))               if W >= BS_h
+Note: in the implementation we needed to add functions to make function continuous, otherwise odeint breaks
+'''
+def dW(W,BS_h,T_t,p_t,RH_t):#in cm/day
+    epsilon=1e-3
+    if(0+epsilon < W < BS_h-epsilon):
+        return QG(p_t)-QR(RH_t,T_t)
+    elif(W <= 0.0+epsilon):
+        return QG(p_t) - QR(RH_t,T_t)*(W/epsilon)
+    elif( W >= BS_h-epsilon):
+        return QG(p_t)*((BS_h-W)/epsilon) - QR(RH_t,T_t)
 
 def a0(W):
     return 70.0* W
@@ -101,6 +112,6 @@ def diff_eqs(Y,t,parameters):
     dY[PUPAE]  = dvP(vL,vP,T_t,lpr,par)
     dY[ADULT1] = dA1(vP,A1,T_t,par,ovr1)
     dY[ADULT2] = dA2(A1,A2,T_t,ovr1)
-    dY[WATER]  = dW(vBS_h,vW,p_t+vmf_t,RH_t,T_t)
+    dY[WATER]  = np.array([dW(vW[i],vBS_h[i],T_t,p_t+vmf_t[i],RH_t) for i in range(0,n)])
 
     return dY   # For odeint

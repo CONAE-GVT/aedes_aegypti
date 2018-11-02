@@ -284,7 +284,7 @@ def plot(model,subplots,plot_start_date,title=''):
 
         #derivate
         dY=np.zeros(RES.shape)
-        if(np.any([a==b for a in subplot for b in ['dE','dL','dP','dA1','dA1']])):#if any of dE,...,dA2 is asked, calculate the whole dY
+        if(np.any([a==b for a in subplot for b in ['dE','dL','dP','dA1','dA1','dW']])):#if any of dE,...,dA2 is asked, calculate the whole dY
             for i,t in enumerate(time_range):
                 dY[i,:]=diff_eqs(RES[i,:],t,model.parameters)
 
@@ -293,6 +293,7 @@ def plot(model,subplots,plot_start_date,title=''):
         if ('dP' in subplot): pl.plot(date_range,applyFs(dY[:,PUPAE],subplot), '-g', label='dP')
         if ('dA1' in subplot): pl.plot(date_range,applyFs(dY[:,ADULT1],subplot), '-b', label='dA1')
         if ('dA2' in subplot): pl.plot(date_range,applyFs(dY[:,ADULT2],subplot), '-m', label='dA2')
+        if ('dW' in subplot): pl.plot(date_range,applyFs(dY[:,WATER],subplot), '-b', label='dW')
 
         #larvae indices
         if ('LI' in subplot):
