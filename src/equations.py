@@ -25,7 +25,7 @@ dW= { QG(BS_s,t)                  if W <= 0.0
 Note: in the implementation we needed to add functions to make function continuous, otherwise odeint breaks
 '''
 def dW(W,BS_h,T_t,p_t,RH_t):#in cm/day
-    epsilon=1e-3
+    epsilon=1e-1#1mm
     if(0+epsilon < W < BS_h-epsilon):
         return QG(p_t)-QR(RH_t,T_t)
     elif(W <= 0.0+epsilon):
