@@ -38,7 +38,18 @@ def a0(W):
 
 def vGamma(vL,vBS_a,vW):
     return np.array([gamma(vL[i],vBS_a[i],vW[i]) for i in range(0,len(vL))])
-
+###alternative vectorized dvW
+#dY[WATER]  = dvW(vW,vBS_h,T_t,p_t+vmf_t,RH_t)
+def dvW(vW,vBS_h,T_t,vp_t,RH_t):#in cm/day
+    dvW_t=np.zeros(( len(vW)))
+    epsilon=1e-1#1mm
+    c=np.where(np.logical_and( epsilon<vW, vW<vBS_h-epsilon))
+    dvW_t[c] = QG(vp_t[c])-QR(RH_t,T_t)
+    c=np.where(vW<=epsilon)
+    dvW_t[c] = QG(vp_t[c]) - QR(RH_t,T_t)*(vW[c]/epsilon)
+    c=np.where(vW>=vBS_h-epsilon)
+    dvW_t[c] = QG(vp_t[c])*((vBS_h[c]-vW[c])/epsilon) - QR(RH_t,T_t)
+    return dvW_t
 #</precipitation related functionality v>
 
 
