@@ -81,9 +81,9 @@ def populate(time_range,ovitrap_eggs):
 if(__name__ == '__main__'):
     #time_range,W0,W=pe.solveWaterEquations(initial_condition=[0. for i in op.vBS_od])
     vNormalized_ovitrap_eggs=[]
-    for ovitrap in range(1,30):
+    for ovitrap in range(2,151):
         model=Model()#just for dates and time_range
-        ovitrap_eggs=utils.getOvitrapEggsFromCsv('data/private/Datos sensores de oviposicion.NO.csv',model.start_date,model.end_date,ovitrap)
+        ovitrap_eggs=utils.getOvitrapEggsFromCsv('data/private/ovitrampas_2016-2017.csv',model.start_date,model.end_date,ovitrap)
         ovitrap_eggs=np.array(ovitrap_eggs)
         normalized_ovitrap_eggs=[e/ovitrap_eggs[np.not_equal(ovitrap_eggs,None)].max() if e else None for e in ovitrap_eggs]
         vNormalized_ovitrap_eggs.extend([[populate(model.time_range,ovitrap_eggs),ovitrap]])
