@@ -386,3 +386,16 @@ def plot3D(xline,yline,zline):
 
 def showPlot():
     return pl.show()
+
+#https://gist.github.com/vaclavcadek/66c9c61a1fac30150514a665c4bcb5dc
+from matplotlib.animation import FuncAnimation
+def update(i,matrix,ax,getTitle):
+    ax.imshow(matrix[i,:,:],cmap='gray',vmin=0, vmax=1,interpolation='nearest' )
+    ax.set_title( getTitle(i), fontsize=20)
+    ax.set_axis_off()
+
+def createAnimation(matrix,getTitle,out_filename):
+    fig, ax = pl.subplots(figsize=(5, 8))
+    anim = FuncAnimation(fig, update, frames=np.arange(0, matrix.shape[0],40), interval=50,fargs=(matrix,ax,getTitle))
+    anim.save(out_filename, dpi=80, writer='html')
+    pl.close()

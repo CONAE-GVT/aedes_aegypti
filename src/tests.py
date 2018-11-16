@@ -11,7 +11,7 @@ from scipy.stats import stats
 from config import Configuration
 from otero_precipitation import Model
 from utils import getSurface,getCapacity#not sure if this is a good practice
-from equations import diff_eqs
+from spatial_equations import diff_eqs,WIDTH,HEIGHT
 
 def printCorrelation():
     time_range,INPUT,RES=model.solveEquations()
@@ -414,6 +414,22 @@ def generateCSV(start_date,end_date):
     for i in range(len(precipitations)):
         print('%s, %s, %s'%(temperatures[i],relative_humiditys[i],precipitations[i]))
 
+def runSpatial():
+    configuration=Configuration('resources/otero_precipitation.cfg')
+    model=Model(configuration)
+    time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs,method='rk' )
+    parameters=model.parameters
+    n=parameters.n
+    EGG,LARVAE,PUPAE,ADULT1,FLYER,ADULT2,WATER=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.FLYER,parameters.ADULT2,parameters.WATER
+    Y=Y.reshape(Y.shape[0],WIDTH,HEIGHT,3*n + 3 + n)
+
+    stages={'E':EGG,'L':LARVAE, 'P':PUPAE, 'A1':ADULT1, 'F':FLYER, 'A2':ADULT2}
+    for key in stages:
+        matrix=np.sum(Y[:,:,:,stages[key]],axis=3)#Y[:,:,:,ADULT1]+Y[:,:,:,ADULT2]
+        matrix=matrix/matrix.max()
+        start_date=configuration.getDate('simulation','start_date')
+        getTitle=lambda i: datetime.timedelta(days=time_range[i])+start_date
+        utils.createAnimation(matrix,getTitle,'out/%s.html'%key)
 
 if(__name__ == '__main__'):
     if(len(sys.argv)>1 and sys.argv[1]=='compare'):
@@ -435,5 +451,7 @@ if(__name__ == '__main__'):
         start_date,end_date= datetime.datetime.strptime(sys.argv[2],FORMAT).date(),datetime.datetime.strptime(sys.argv[3],FORMAT).date()
         assert (end_date-start_date).days%7==0,(end_date-start_date).days%7
         generateCSV(start_date,end_date)
+    elif(len(sys.argv)>1 and sys.argv[1]=='spatial'):
+        runSpatial()
     else:
         runTestCases()

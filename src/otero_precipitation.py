@@ -4,11 +4,11 @@ from config import Configuration
 from weather import Weather
 from bunch import Bunch
 import numpy as np
-import equations
+import spatial_equations as equations
 import datetime
 import utils
 import rk
-
+from spatial_equations import WIDTH,HEIGHT
 class Model:
     def __init__(self, configuration=Configuration('resources/otero_precipitation.cfg')):
         self.configuration=configuration
@@ -25,9 +25,10 @@ class Model:
         self.parameters.EGG=range(0,n)#in R^n
         self.parameters.LARVAE=range(n,2*n)#in R^n
         self.parameters.PUPAE=range(2*n,3*n)#in R^n
-        self.parameters.ADULT1=3*n#in R
-        self.parameters.ADULT2=3*n+1#in R
-        self.parameters.WATER=range(3*n + 2,3*n + 2 + n )#in R^n
+        self.parameters.ADULT1=range(3*n,3*n+1)#in R
+        self.parameters.FLYER=range(3*n+1,3*n+2)#in R
+        self.parameters.ADULT2=range(3*n+2,3*n+3)#in R
+        self.parameters.WATER=range(3*n + 3,3*n + 3 + n )#in R^n
         self.parameters.vAlpha0=configuration.getArray('biology','alpha0')#constant to be fitted
 
         #Cordoba
@@ -66,7 +67,11 @@ class Model:
 
     def solveEquations(self,equations=equations.diff_eqs,method='odeint'):
         time_range=self.time_range
-        initial_condition=self.parameters.initial_condition
+        n=self.parameters.n
+        tmp=np.zeros((WIDTH,HEIGHT,3*n + 3 + n))
+        tmp[int(WIDTH/2),int(HEIGHT/2),:]=1.
+        initial_condition=(self.parameters.initial_condition*tmp).reshape((WIDTH*HEIGHT*(3*n + 3 + n) ))#TODO:check that this does what we expect.
+        self.parameters.vBS_a=self.parameters.BS_a*np.random.random((WIDTH,HEIGHT))#TODO:do something about this...
         Y=None
 
         if(method=='odeint'):

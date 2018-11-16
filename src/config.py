@@ -45,7 +45,7 @@ class Configuration:
     n=len(vBS_d)
     assert len(alpha0)== n, 'dim(alpha0)!=%s'%(n)
     assert abs(1.-np.sum(vBS_d))<1e-10,'sum(vBS_d)=%s!=1'%(np.sum(vBS_d))
-    assert len(initial_condition)==3*n+1+1+n#(vE+vL+vP) +A1 +A2 +vW
+    assert len(initial_condition)==3*n+1+1+1+n#(vE+vL+vP) +A1 +A2 +F +vW
 
 
   def save(self,filename):
