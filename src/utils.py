@@ -395,7 +395,7 @@ def update(i,matrix,ax,getTitle):
     ax.set_axis_off()
 
 def createAnimation(matrix,getTitle,out_filename):
-    fig, ax = pl.subplots(figsize=(5, 8))
-    anim = FuncAnimation(fig, update, frames=np.arange(0, matrix.shape[0],40), interval=50,fargs=(matrix,ax,getTitle))
-    anim.save(out_filename, dpi=80, writer='html')
+    figure, ax = pl.subplots(figsize=(5, 8))
+    animation = FuncAnimation(figure, update, frames=np.arange(0, matrix.shape[0],40), interval=50,fargs=(matrix,ax,getTitle))
+    animation.save(out_filename+'.html', bitrate=-1,fps=1, writer='html')#animation.writers.list()
     pl.close()

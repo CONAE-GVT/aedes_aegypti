@@ -429,7 +429,7 @@ def runSpatial():
         matrix=matrix/matrix.max()
         start_date=configuration.getDate('simulation','start_date')
         getTitle=lambda i: datetime.timedelta(days=time_range[i])+start_date
-        utils.createAnimation(matrix,getTitle,'out/%s.html'%key)
+        utils.createAnimation(matrix,getTitle,'out/%s'%key)
 
 if(__name__ == '__main__'):
     if(len(sys.argv)>1 and sys.argv[1]=='compare'):
