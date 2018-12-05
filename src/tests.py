@@ -414,6 +414,9 @@ def generateCSV(start_date,end_date):
     for i in range(len(precipitations)):
         print('%s, %s, %s'%(temperatures[i],relative_humiditys[i],precipitations[i]))
 
+def runShortCases():
+    testModel(Configuration('resources/otero_precipitation.cfg'),subplots=[['E'],['A1+A2'], ['W']])
+    utils.showPlot()
 
 if(__name__ == '__main__'):
     if(len(sys.argv)>1 and sys.argv[1]=='compare'):
@@ -435,5 +438,7 @@ if(__name__ == '__main__'):
         start_date,end_date= datetime.datetime.strptime(sys.argv[2],FORMAT).date(),datetime.datetime.strptime(sys.argv[3],FORMAT).date()
         assert (end_date-start_date).days%7==0,(end_date-start_date).days%7
         generateCSV(start_date,end_date)
+    elif(len(sys.argv)>1 and sys.argv[1]=='short'):
+        runShortCases()
     else:
         runTestCases()
