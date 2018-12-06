@@ -52,7 +52,7 @@ class Model:
 
     def save(self):
         #save results
-        results_filename='data/test/previous_results/'+datetime.datetime.now().strftime('%Y-%m-%d__%H_%M_%S')+'.csv'
+        results_filename='data/test/previous_results/'+self.configuration.getString('location','name')+'-'+datetime.datetime.now().strftime('%Y-%m-%d__%H_%M_%S')+'.csv'
         file=open(results_filename,'w')
         daily_Y=utils.getDailyResults(self.time_range,self.Y,self.start_date,self.end_date)
         for d,daily_Y_d in enumerate(daily_Y):
