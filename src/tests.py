@@ -84,7 +84,8 @@ def testModel(configuration, p=None,T=None,subplots=[['E','L'],['W']],plot_start
     if('save' in sys.argv and p==None and T==None):#if asked save, but not with tampered p or T functions
         model.save()
 
-    utils.plot(model,subplots,plot_start_date,title=configuration.getString('location','name'))
+    if('silent' not in sys.argv):
+        utils.plot(model,subplots,plot_start_date,title=configuration.getString('location','name'))
 
 
 def compare(old_RES_filename,model):
