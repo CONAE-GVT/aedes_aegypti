@@ -429,7 +429,11 @@ def runSpatial():
         matrix=matrix/matrix.max()
         start_date=configuration.getDate('simulation','start_date')
         getTitle=lambda i: datetime.timedelta(days=time_range[i])+start_date
-        utils.createAnimation(matrix,getTitle,'out/%s'%key)
+        utils.createAnimation(matrix,getTitle,'out/%s'%key
+
+def runShortCases():
+    testModel(Configuration('resources/otero_precipitation.cfg'),subplots=[['E'],['A1+A2'], ['W']])
+    utils.showPlot()
 
 if(__name__ == '__main__'):
     if(len(sys.argv)>1 and sys.argv[1]=='compare'):
@@ -453,5 +457,7 @@ if(__name__ == '__main__'):
         generateCSV(start_date,end_date)
     elif(len(sys.argv)>1 and sys.argv[1]=='spatial'):
         runSpatial()
+    elif(len(sys.argv)>1 and sys.argv[1]=='short'):
+        runShortCases()
     else:
         runTestCases()
