@@ -423,8 +423,9 @@ def runSpatial():
     EGG,LARVAE,PUPAE,ADULT1,FLYER,ADULT2,WATER=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.FLYER,parameters.ADULT2,parameters.WATER
     Y=Y.reshape(Y.shape[0],WIDTH,HEIGHT,3*n + 3 + n)
 
-    stages={'E':EGG,'L':LARVAE, 'P':PUPAE, 'A1':ADULT1, 'F':FLYER, 'A2':ADULT2}
+    stages={'E':EGG,'L':LARVAE, 'P':PUPAE, 'A':[ADULT1,FLYER,ADULT2]}
     for key in stages:
+        print('Creating animation for %s...'%key)
         matrix=np.sum(Y[:,:,:,stages[key]],axis=3)#Y[:,:,:,ADULT1]+Y[:,:,:,ADULT2]
         matrix=matrix/matrix.max()
         start_date=configuration.getDate('simulation','start_date')

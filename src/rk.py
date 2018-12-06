@@ -4,7 +4,7 @@ import math
 
 def solve(_dYdt,Y0,time_range,args=(),steps=1):
     #main
-    Y=np.zeros([len(time_range),len(Y0)])
+    Y=np.zeros([len(time_range),len(Y0)],dtype=np.float32)
     Y[0]=Y0#<---initial conditions
     def dYdt(Y,t,_args):
     	Y[Y<0]=0#this is to make rk work

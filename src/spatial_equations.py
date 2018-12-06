@@ -15,10 +15,12 @@ def dvW(vW,vBS_h,T_t,vp_t,RH_t):#in cm/day
     dvW_t[c1,c2,c3] = QG(vp_t[c1,c2,c3])*((vBS_h[c3]-vW[c1,c2,c3])/epsilon) - QR(RH_t,T_t)
     return dvW_t
 
-def dvE(vE,F,ovr,elr):
+def dvE(vE,F,vBS_d,ovr,elr):
     egn=63.0
     me=0.01#mortality of the egg, for T in [278,303]
-    return egn* ovr * F - me * vE - elr * vE
+    #a=np.ones((n,n,2))*np.array([0.3,0.7])#(np.expand_dims(L,axis=2)*a)[:,:,0]
+    D=np.ones(vE.shape)*vBS_d
+    return egn* np.expand_dims(ovr * F,axis=2)*D - me * vE - elr * vE
 
 def dvL(vE,vL,T_t,elr,lpr,vAlpha):
     ml=0.01 + 0.9725 * math.exp(-(T_t-278.0)/2.7035)#mortality of the larvae, for T in [278,303]
@@ -31,7 +33,7 @@ def dvP(vL,vP,T_t,lpr,par):
 def dA1(vP,A1,par,cycle1):
     ef=0.83#emergence factor
     ma=0.091#for T in [278,303]
-    return np.expand_dims(np.sum(par*ef*vP/2.0,axis=2),axis=2) - ma*A1 - cycle1*A1
+    return np.sum(par*ef*vP/2.0,axis=2) - ma*A1 - cycle1*A1
 
 def dF(A1,F,A2,ovr,cycle1,cycle2):
     ma=0.091#for T in [278,303]
@@ -58,9 +60,9 @@ def diff_eqs(Y,t,parameters):
     Y=Y.reshape(WIDTH,HEIGHT,3*n + 3 + n)
     vE,vL,vP,A1,F,A2,vW=Y[:,:,EGG],Y[:,:,LARVAE],Y[:,:,PUPAE],Y[:,:,ADULT1],Y[:,:,FLYER],Y[:,:,ADULT2],Y[:,:,WATER]
 
-    ovr=np.ones((WIDTH,HEIGHT,1))/0.229#TODO:implement!!!!
+    ovr=np.ones((WIDTH,HEIGHT))/0.229#TODO:implement!!!!
     dY=np.zeros(Y.shape)
-    dY[:,:,EGG]    = dvE(vE,F,ovr,elr)
+    dY[:,:,EGG]    = dvE(vE,F,vBS_d,ovr,elr)
     dY[:,:,LARVAE] = dvL(vE,vL,T_t,elr,lpr,vAlpha0/BS_a)
     dY[:,:,PUPAE]  = dvP(vL,vP,T_t,lpr,par)
     dY[:,:,ADULT1] = dA1(vP,A1,par,cycle1)

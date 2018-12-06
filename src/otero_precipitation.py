@@ -25,9 +25,9 @@ class Model:
         self.parameters.EGG=range(0,n)#in R^n
         self.parameters.LARVAE=range(n,2*n)#in R^n
         self.parameters.PUPAE=range(2*n,3*n)#in R^n
-        self.parameters.ADULT1=range(3*n,3*n+1)#in R
-        self.parameters.FLYER=range(3*n+1,3*n+2)#in R
-        self.parameters.ADULT2=range(3*n+2,3*n+3)#in R
+        self.parameters.ADULT1=3*n#in R
+        self.parameters.FLYER=3*n+1#in R
+        self.parameters.ADULT2=3*n+2#in R
         self.parameters.WATER=range(3*n + 3,3*n + 3 + n )#in R^n
         self.parameters.vAlpha0=configuration.getArray('biology','alpha0')#constant to be fitted
 
@@ -35,7 +35,7 @@ class Model:
         self.parameters.location={'name':configuration.getString('location','name')}
         self.start_date=configuration.getDate('simulation','start_date')
         self.end_date=configuration.getDate('simulation','end_date')
-        self.time_range = np.linspace(0, (self.end_date - self.start_date).days-1, (self.end_date - self.start_date).days * 20)
+        self.time_range = np.linspace(0, (self.end_date - self.start_date).days-1, (self.end_date - self.start_date).days )
         self.parameters.initial_condition=configuration.getArray('simulation','initial_condition')
 
         WEATHER_DATA_FILENAME='data/public/'+self.parameters.location['name']+'.csv'
@@ -77,7 +77,7 @@ class Model:
         if(method=='odeint'):
             Y = spi.odeint(equations,initial_condition,time_range,hmax=1.0,args=(self.parameters,))#the ',' in (parameters,) is very important! '(parameters)' or tuple(parameters) doesn't work#TODO: this is because it calls aps out of it's domain.Find a better way.
         elif(method=='rk'):
-            Y=rk.solve(equations,initial_condition,time_range,args=(self.parameters,))
+            Y=rk.solve(equations,initial_condition,time_range,args=(self.parameters,),steps=20)
         elif(method=='dopri'):
             Y=rk.scipy_solve(equations,initial_condition,time_range,'dopri',{'max_step':time_range[1]-time_range[0],'rtol':1e-3, 'atol':1e-6}, args=(self.parameters,))
 
