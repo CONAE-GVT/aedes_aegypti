@@ -54,7 +54,7 @@ def diff_eqs(Y,t,parameters):
     RH_t=parameters.weather.RH(t)
     vmf_t=parameters.mf(t)*parameters.vBS_mf*parameters.vBS_h*10.*np.ones((WIDTH,HEIGHT,len(parameters.vBS_h)))#% -> cm -> mm
     elr,lpr,par,cycle1,cycle2=vR_D(T_t)
-    BS_a,vBS_h,vBS_s,vBS_d,vAlpha0,n=parameters.BS_a,parameters.vBS_h,parameters.vBS_s,parameters.vBS_d,parameters.vAlpha0,parameters.n
+    vBS_a,vBS_h,vBS_s,vBS_d,vAlpha0,n=parameters.vBS_a,parameters.vBS_h,parameters.vBS_s,parameters.vBS_d,parameters.vAlpha0,parameters.n
     EGG,LARVAE,PUPAE,ADULT1,FLYER,ADULT2,WATER=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.FLYER,parameters.ADULT2,parameters.WATER
 
     Y=Y.reshape(WIDTH,HEIGHT,3*n + 3 + n)

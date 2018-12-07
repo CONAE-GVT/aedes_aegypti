@@ -71,7 +71,7 @@ class Model:
         tmp=np.zeros((WIDTH,HEIGHT,3*n + 3 + n))
         tmp[int(WIDTH/2),int(HEIGHT/2),:]=1.
         initial_condition=(self.parameters.initial_condition*tmp).reshape((WIDTH*HEIGHT*(3*n + 3 + n) ))#TODO:check that this does what we expect.
-        self.parameters.vBS_a=self.parameters.BS_a*np.random.random((WIDTH,HEIGHT))#TODO:do something about this...
+        self.parameters.vBS_a=self.parameters.BS_a*np.ones((WIDTH,HEIGHT))#np.random.random((WIDTH,HEIGHT))#TODO:do something about this...
         Y=None
 
         if(method=='odeint'):
