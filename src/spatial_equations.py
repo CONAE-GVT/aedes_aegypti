@@ -55,6 +55,7 @@ def diff_eqs(Y,t,parameters):
     vmf_t=parameters.mf(t)*parameters.vBS_mf*parameters.vBS_h*10.*np.ones((WIDTH,HEIGHT,len(parameters.vBS_h)))#% -> cm -> mm
     elr,lpr,par,cycle1,cycle2=vR_D(T_t)
     vBS_a,vBS_h,vBS_s,vBS_d,vAlpha0,n=parameters.vBS_a,parameters.vBS_h,parameters.vBS_s,parameters.vBS_d,parameters.vAlpha0,parameters.n
+    vAlpha=(vAlpha0*np.ones((WIDTH,HEIGHT,n)) )/np.expand_dims(vBS_a,axis=2) # N=np.array([1,2]),D=np.arange(1,17).reshape(4,4),  C=(N*np.ones((4,4,2)))/np.expand_dims(D,axis=2), print(C[:,:,0],C[:,:,1])
     EGG,LARVAE,PUPAE,ADULT1,FLYER,ADULT2,WATER=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.FLYER,parameters.ADULT2,parameters.WATER
 
     Y=Y.reshape(WIDTH,HEIGHT,3*n + 3 + n)
@@ -63,7 +64,7 @@ def diff_eqs(Y,t,parameters):
     ovr=np.ones((WIDTH,HEIGHT))/0.229#TODO:implement!!!!
     dY=np.zeros(Y.shape)
     dY[:,:,EGG]    = dvE(vE,F,vBS_d,ovr,elr)
-    dY[:,:,LARVAE] = dvL(vE,vL,T_t,elr,lpr,vAlpha0/BS_a)
+    dY[:,:,LARVAE] = dvL(vE,vL,T_t,elr,lpr,vAlpha )
     dY[:,:,PUPAE]  = dvP(vL,vP,T_t,lpr,par)
     dY[:,:,ADULT1] = dA1(vP,A1,par,cycle1)
     dY[:,:,FLYER]  = dF(A1,F,A2,ovr,cycle1,cycle2)
