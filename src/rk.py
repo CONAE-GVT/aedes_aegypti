@@ -19,7 +19,7 @@ def solve(_dYdt,Y0,time_range,args=(),steps=1):
             K_n1=dYdt(Y_j,t,args)
             K_n2=dYdt(Y_j + (h_j/2.)*K_n1, t + h_j/2.,args)
             K_n3=dYdt(Y_j + (h_j/2.)*K_n2, t + h_j/2.,args)
-            K_n4=dYdt(Y_j + h_j*K_n3, t + h,args)
+            K_n4=dYdt(Y_j + h_j*K_n3, t + h_j,args)
 
             Y_j=Y_j+ (h_j/6.0)*(K_n1 + 2.0*K_n2 + 2.0*K_n3 + K_n4)
             t=t+h_j
