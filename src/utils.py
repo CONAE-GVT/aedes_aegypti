@@ -142,6 +142,49 @@ def getLocations():
     config_parser = ConfigParser()
     config_parser.read('resources/get_weather.cfg')
     return config_parser.sections()
+
+def getPreferenceMatrix():
+    C=np.load('out/merged.npy')
+    #R = matplotlib.image.imread('out/test.jpeg')[:,:,0]#TODO:just to test
+    #print(C.shape),pl.imshow(C),pl.draw()#TODO:just to test
+    C=C[:C.shape[0]-C.shape[0]%10 , :C.shape[1]-C.shape[1]%10]#Clip the image to leave rows and columns multiple of ten
+
+    #assign each class points. like S[C=2]=9,or S[C=5]=1e-5 so class 2 is very good(grass or homes) we assign a ten. class 5 is very bad (cement)
+    S=np.zeros(C.shape)
+    #TODO: assign real scores!
+    S[C==0]=5
+    S[C==1]=1
+    S[C==2]=9#<----
+    S[C==3]=3
+    S[C==4]=4
+    S[C==5]=1e-5#<----
+    S[C==6]=6
+    S[C==7]=7
+    S[C==8]=8
+    S[C==9]=2
+
+    #Reduce the resolution to leave pixels as blocks of 100mx100m (10mx10m --> 100mx100m)
+    n,m=int(S.shape[0]/10),int(S.shape[1]/10)
+    B=np.array([np.hsplit(b,m) for b in  np.vsplit(S,n)])
+    M=np.mean(B,axis=(2,3))
+    #print(C.shape,S.shape,B.shape,M.shape)
+    #pl.figure(),pl.imshow(M),pl.draw()#TODO:just to test
+
+    #Create the preference matrix
+    P=np.zeros((n,m,8))
+    P[:,:,0]=np.roll(M,(0, 1),axis=(1,0))#up
+    P[:,:,1]=np.roll(M,(-1, 1),axis=(1,0))#up-right
+    P[:,:,2]=np.roll(M,(0,-1),axis=(0,1))#right
+    P[:,:,3]=np.roll(M,(-1,-1),axis=(1,0))# down-right
+    P[:,:,4]=np.roll(M,(-1,0),axis=(0,1))#down
+    P[:,:,5]=np.roll(M,(1,-1),axis=(1,0))#down-left
+    P[:,:,6]=np.roll(M,(1,0),axis=(1,0))#left
+    P[:,:,7]=np.roll(M,(1,1),axis=(1,0))#up-left
+    P=P/np.expand_dims(np.sum(P,axis=2),axis=2)#normalize
+    #print(np.sum(P[0,0,:]))
+    #pl.figure(),pl.imshow(P[:,:,5]),pl.show()#TODO:just to test
+    return P
+
 ###############################################################Misc.###############################################################
 def getSurface(x=None,y=None,r=None):#surface in cm2. x,y,r must be in cm
     if(r):

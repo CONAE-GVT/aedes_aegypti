@@ -35,13 +35,13 @@ def dA1(vP,A1,par,cycle1):
     ma=0.091#for T in [278,303]
     return np.sum(par*ef*vP/2.0,axis=2) - ma*A1 - cycle1*A1
 
-def dF(A1,F,A2,ovr,cycle1,cycle2):
+def dF(A1,F,A2,P,ovr,cycle1,cycle2):
     ma=0.091#for T in [278,303]
     beta_p=830./100.**2#TODO: check if its correct!!!# dispersal coefficient for perpendicular flights
     beta_d=beta_p/2.#dispersal coefficient for diagonal flights
     return cycle1*A1 + cycle2*A2 - ovr*F - ma*F - 4.*beta_d*F - 4.*beta_p*F +\
-        beta_p*(np.roll(F,-1,axis=0) + np.roll(F,-1,axis=1) + np.roll(F,1,axis=0) + np.roll(F,1,axis=1)) +\
-        beta_d*(np.roll(F,(1,1),axis=(0,1)) + np.roll(F,(-1,-1),axis=(0,1)) + np.roll(F,(1,-1),axis=(0,1)) + np.roll(F,(-1,1),axis=(0,1)) )#TODO:Check if this is correct!
+        beta_p*(np.roll(F,-1,axis=0)*P[:,:,0] + np.roll(F,-1,axis=1)*P[:,:,2] + np.roll(F,1,axis=0)*P[:,:,4] + np.roll(F,1,axis=1))*P[:,:,4] +\
+        beta_d*(np.roll(F,(1,1),axis=(0,1))*P[:,:,1] + np.roll(F,(-1,-1),axis=(0,1))*P[:,:,3] + np.roll(F,(1,-1),axis=(0,1))*P[:,:,5] + np.roll(F,(-1,1),axis=(0,1))*P[:,:,7] )#TODO:Check if this is correct!
 
 def dA2(F,A2,ovr,cycle2):
     ma=0.091#for T in [278,303]
@@ -54,7 +54,7 @@ def diff_eqs(Y,t,parameters):
     RH_t=parameters.weather.RH(t)
     vmf_t=parameters.mf(t)*parameters.vBS_mf*parameters.vBS_h*10.*np.ones((WIDTH,HEIGHT,len(parameters.vBS_h)))#% -> cm -> mm
     elr,lpr,par,cycle1,cycle2=vR_D(T_t)
-    vBS_a,vBS_h,vBS_s,vBS_d,vAlpha0,n=parameters.vBS_a,parameters.vBS_h,parameters.vBS_s,parameters.vBS_d,parameters.vAlpha0,parameters.n
+    vBS_a,vBS_h,vBS_s,vBS_d,vAlpha0,P,n=parameters.vBS_a,parameters.vBS_h,parameters.vBS_s,parameters.vBS_d,parameters.vAlpha0,parameters.P,parameters.n
     vAlpha=(vAlpha0*np.ones((WIDTH,HEIGHT,n)) )/np.expand_dims(vBS_a,axis=2) # N=np.array([1,2]),D=np.arange(1,17).reshape(4,4),  C=(N*np.ones((4,4,2)))/np.expand_dims(D,axis=2), print(C[:,:,0],C[:,:,1])
     EGG,LARVAE,PUPAE,ADULT1,FLYER,ADULT2,WATER=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.FLYER,parameters.ADULT2,parameters.WATER
 
@@ -67,7 +67,7 @@ def diff_eqs(Y,t,parameters):
     dY[:,:,LARVAE] = dvL(vE,vL,T_t,elr,lpr,vAlpha )
     dY[:,:,PUPAE]  = dvP(vL,vP,T_t,lpr,par)
     dY[:,:,ADULT1] = dA1(vP,A1,par,cycle1)
-    dY[:,:,FLYER]  = dF(A1,F,A2,ovr,cycle1,cycle2)
+    dY[:,:,FLYER]  = dF(A1,F,A2,P,ovr,cycle1,cycle2)
     dY[:,:,ADULT2] = dA2(F,A2,ovr,cycle2)
     dY[:,:,WATER]  = dvW(vW,vBS_h,T_t,p_t+vmf_t,RH_t)
 

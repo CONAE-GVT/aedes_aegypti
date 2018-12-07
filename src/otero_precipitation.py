@@ -42,6 +42,7 @@ class Model:
         self.parameters.weather=Weather(WEATHER_DATA_FILENAME,self.start_date,self.end_date)
 
         self.parameters.mf=self.parameters.weather.getAsLambdaFunction(self.parameters.weather.aps, [0,0,0,0,0,0,1.]* int( (self.end_date - self.start_date).days/7 +1) )
+        self.parameters.P=utils.getPreferenceMatrix()
         self.validate()
 
     def validate(self):
