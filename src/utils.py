@@ -144,12 +144,11 @@ def getLocations():
     return config_parser.sections()
 
 def getPreferenceMatrix():
-    C=np.load('out/merged.npy')
-    #R = matplotlib.image.imread('out/test.jpeg')[:,:,0]#TODO:just to test
+    C=np.load('out/merged.npy')#(matplotlib.image.imread('out/index.jpg')[:750,:750,0]/26).astype(int)#np.eye(750,750,-2)+np.eye(750,750,-1)+np.eye(750,750)+np.eye(750,750,1)+np.eye(750,750,2)
     #print(C.shape),pl.imshow(C),pl.draw()#TODO:just to test
     C=C[:C.shape[0]-C.shape[0]%10 , :C.shape[1]-C.shape[1]%10]#Clip the image to leave rows and columns multiple of ten
 
-    #assign each class points. like S[C=2]=9,or S[C=5]=1e-5 so class 2 is very good(grass or homes) we assign a ten. class 5 is very bad (cement)
+    #assign each class points. like S[C=2]=9,or S[C=5]=0 so class 2 is very good(grass or homes) we assign a ten. class 5 is very bad (cement)
     S=np.zeros(C.shape)
     #TODO: assign real scores!
     S[C==0]=5
@@ -157,7 +156,7 @@ def getPreferenceMatrix():
     S[C==2]=9#<----
     S[C==3]=3
     S[C==4]=4
-    S[C==5]=1e-5#<----
+    S[C==5]=0#<----
     S[C==6]=6
     S[C==7]=7
     S[C==8]=8
@@ -180,9 +179,14 @@ def getPreferenceMatrix():
     P[:,:,5]=np.roll(M,(1,-1),axis=(1,0))#down-left
     P[:,:,6]=np.roll(M,(1,0),axis=(1,0))#left
     P[:,:,7]=np.roll(M,(1,1),axis=(1,0))#up-left
-    P=P/np.expand_dims(np.sum(P,axis=2),axis=2)#normalize
+    PERPENDICULAR=(0,2,4,6)
+    DIAGONAL=(1,3,5,7)
+    P[:,:,PERPENDICULAR]=P[:,:,PERPENDICULAR]/np.maximum(1,np.sum(P[:,:,PERPENDICULAR],axis=2)[:,:,np.newaxis])*4.#normalize and multiply by 4
+    P[:,:,DIAGONAL]=P[:,:,DIAGONAL]/np.maximum(1,np.sum(P[:,:,DIAGONAL],axis=2)[:,:,np.newaxis])*4.#normalize
     #print(np.sum(P[0,0,:]))
     #pl.figure(),pl.imshow(P[:,:,5]),pl.show()#TODO:just to test
+    #return np.eye(75,75)[:,:,np.newaxis]*np.ones((75,75,8))
+    #print(np.sum(P[:,:,DIAGONAL],axis=2))
     return P
 
 ###############################################################Misc.###############################################################
