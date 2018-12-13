@@ -26,7 +26,7 @@ def gdalTranslate(parameters):
 def getGdalTranslateCmd(parameters):
     in_filename=parameters['filename']
     projwin=parameters['west'] +" "+parameters['north'] +" " +parameters['east'] +" " +parameters['south']
-    out_filename=FOLDER_OUT+os.path.basename(parameters['filename'])
+    out_filename=FOLDER_OUT+os.path.basename(parameters['filename']).replace('.tif','_cut.tif')
     cmd=(
     'gdal_translate -projwin {projwin} {in_filename} {out_filename}'
     ).format(projwin=projwin,in_filename=in_filename,out_filename=out_filename)
@@ -40,7 +40,7 @@ def gdalMerge(parameters):
     return out_filename
 
 def getGdalMergeCmd(parameters):
-    out_filename=FOLDER_IN+os.path.basename(parameters['filename'])
+    out_filename=FOLDER_OUT+os.path.basename(parameters['filename'])
     in_filenames=parameters['in_filenames']
     cmd=(
     'rm {out_filename};gdal_merge.py -o {out_filename} -separate {in_filenames}'
@@ -49,10 +49,10 @@ def getGdalMergeCmd(parameters):
 
 if(__name__=='__main__'):
     if(len(sys.argv)>2):#>python riskMap.py in/sentinel/B04.jp2 in/sentinel/B03.jp2 in/sentinel/B02.jp2
-        parameters['filename']=FOLDER_IN+'merged.tif'#out filename that will be created
+        parameters['filename']=FOLDER_OUT+'merged.tif'#out filename that will be created
         parameters['in_filenames']=sys.argv[1:]
         gdalMerge(parameters)
     else:
         parameters['filename']=sys.argv[1]
 
-    print(kmeans.kmeans_classification(gdalTranslate(parameters),n_clusters=10))
+    print(kmeans.kmeans_classification(gdalTranslate(parameters),n_clusters=4))

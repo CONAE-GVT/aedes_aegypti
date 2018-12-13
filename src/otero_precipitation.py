@@ -8,7 +8,7 @@ import spatial_equations as equations
 import datetime
 import utils
 import rk
-from spatial_equations import WIDTH,HEIGHT
+
 class Model:
     def __init__(self, configuration=Configuration('resources/otero_precipitation.cfg')):
         self.configuration=configuration
@@ -69,10 +69,12 @@ class Model:
     def solveEquations(self,equations=equations.diff_eqs,method='odeint'):
         time_range=self.time_range
         n=self.parameters.n
-        tmp=np.zeros((WIDTH,HEIGHT,3*n + 3 + n))
-        tmp[int(WIDTH/2),int(HEIGHT/2),:]=1.
-        initial_condition=(self.parameters.initial_condition*tmp).reshape((WIDTH*HEIGHT*(3*n + 3 + n) ))#TODO:check that this does what we expect.
-        self.parameters.vBS_a=self.parameters.BS_a*np.ones((WIDTH,HEIGHT))#np.random.random((WIDTH,HEIGHT))#TODO:do something about this...
+
+        HEIGHT,WIDTH=self.parameters.P.shape[:2]
+        tmp=np.zeros((HEIGHT,WIDTH,3*n + 3 + n))
+        tmp[int(HEIGHT/2),int(WIDTH/2),:]=1.
+        initial_condition=(self.parameters.initial_condition*tmp).reshape((HEIGHT*WIDTH*(3*n + 3 + n) ))#TODO:check that this does what we expect.
+        self.parameters.vBS_a=self.parameters.BS_a*np.ones((HEIGHT,WIDTH))#np.random.random((WIDTH,HEIGHT))#TODO:do something about this...
         Y=None
 
         if(method=='odeint'):

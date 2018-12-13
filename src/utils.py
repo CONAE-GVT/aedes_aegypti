@@ -144,30 +144,21 @@ def getLocations():
     return config_parser.sections()
 
 def getPreferenceMatrix():
-    C=np.load('out/merged.npy')#(matplotlib.image.imread('out/index.jpg')[:750,:750,0]/26).astype(int)#np.eye(750,750,-2)+np.eye(750,750,-1)+np.eye(750,750)+np.eye(750,750,1)+np.eye(750,750,2)
-    #print(C.shape),pl.imshow(C),pl.draw()#TODO:just to test
-    C=C[:C.shape[0]-C.shape[0]%10 , :C.shape[1]-C.shape[1]%10]#Clip the image to leave rows and columns multiple of ten
-
+    C=np.load('out/merged_cut.npy')
+    #Clip the image to leave rows and columns multiple of ten
+    C=C[:C.shape[0]-C.shape[0]%10 , :C.shape[1]-C.shape[1]%10]
     #assign each class points. like S[C=2]=9,or S[C=5]=0 so class 2 is very good(grass or homes) we assign a ten. class 5 is very bad (cement)
     S=np.zeros(C.shape)
     #TODO: assign real scores!
-    S[C==0]=5
-    S[C==1]=1
-    S[C==2]=9#<----
-    S[C==3]=3
-    S[C==4]=4
-    S[C==5]=0#<----
-    S[C==6]=6
-    S[C==7]=7
-    S[C==8]=8
-    S[C==9]=2
+    S[C==0]=0*0
+    S[C==1]=1*0
+    S[C==2]=9*0#<----
+    S[C==3]=3*10
 
     #Reduce the resolution to leave pixels as blocks of 100mx100m (10mx10m --> 100mx100m)
     n,m=int(S.shape[0]/10),int(S.shape[1]/10)
     B=np.array([np.hsplit(b,m) for b in  np.vsplit(S,n)])
     M=np.mean(B,axis=(2,3))
-    #print(C.shape,S.shape,B.shape,M.shape)
-    #pl.figure(),pl.imshow(M),pl.draw()#TODO:just to test
 
     #Create the preference matrix
     P=np.zeros((n,m,8))
@@ -183,10 +174,7 @@ def getPreferenceMatrix():
     DIAGONAL=(1,3,5,7)
     P[:,:,PERPENDICULAR]=P[:,:,PERPENDICULAR]/np.maximum(1,np.sum(P[:,:,PERPENDICULAR],axis=2)[:,:,np.newaxis])*4.#normalize and multiply by 4
     P[:,:,DIAGONAL]=P[:,:,DIAGONAL]/np.maximum(1,np.sum(P[:,:,DIAGONAL],axis=2)[:,:,np.newaxis])*4.#normalize
-    #print(np.sum(P[0,0,:]))
-    #pl.figure(),pl.imshow(P[:,:,5]),pl.show()#TODO:just to test
-    #return np.eye(75,75)[:,:,np.newaxis]*np.ones((75,75,8))
-    #print(np.sum(P[:,:,DIAGONAL],axis=2))
+
     return P
 
 ###############################################################Misc.###############################################################
@@ -434,15 +422,9 @@ def plot3D(xline,yline,zline):
 def showPlot():
     return pl.show()
 
-#https://gist.github.com/vaclavcadek/66c9c61a1fac30150514a665c4bcb5dc
-from matplotlib.animation import FuncAnimation
-def update(i,matrix,ax,getTitle):
-    ax.imshow(matrix[i,:,:],cmap='gray',vmin=0, vmax=1,interpolation='nearest' )
-    ax.set_title( getTitle(i), fontsize=20)
-    ax.set_axis_off()
-
+import moviepy.editor as mpy
 def createAnimation(matrix,getTitle,out_filename):
-    figure, ax = pl.subplots(figsize=(5, 8))
-    animation = FuncAnimation(figure, update, frames=np.arange(0, matrix.shape[0],40), interval=50,fargs=(matrix,ax,getTitle))
-    animation.save(out_filename+'.html', bitrate=-1,fps=1, writer='html')#animation.writers.list()
-    pl.close()
+    coefs = np.array([1,0,0]).reshape((1,1,3))
+    makeFrame=lambda t: 255*coefs*matrix[int(t),:,:,np.newaxis]
+    animation = mpy.VideoClip(makeFrame, duration=matrix.shape[0]) # 2 seconds
+    animation.write_videofile(out_filename+'.mp4', fps=15)

@@ -1,6 +1,6 @@
 **Dependencies**
 >sudo apt install python3-scipy python3-grib python3-netcdf4 python3-matplotlib python3-gdal python3-xlrd
-
+>pip install moviepy
 
 **Run**
 >python src/otero_precipitation.py
@@ -102,6 +102,11 @@ Source: http://www.king-foo.com/2011/11/creating-debianubuntu-deb-packages/
 
 **Engauge**
 >pdfimages -j densityDependantlarvaeDeath.pdf /tmp/out
+
+**Risk map**
+>python src/riskMap.py data/public/sensor/sentinel/B02.jp2 data/public/sensor/sentinel/B03.jp2 data/public/sensor/sentinel/B04.jp2 data/public/sensor/sentinel/B08.jp2
+band info: https://www.satimagingcorp.com/satellite-sensors/other-satellite-sensors/sentinel-2a/
+
 
 **Notes**
 constant ml -> constant survival (independent of initial larvaes)

@@ -1,6 +1,4 @@
 from equations import *
-WIDTH=50
-HEIGHT=50
 
 ###alternative vectorized dvW
 #dY[WATER]  = dvW(vW,vBS_h,T_t,p_t+vmf_t,RH_t)
@@ -52,16 +50,17 @@ def diff_eqs(Y,t,parameters):
     T_t=parameters.weather.T(t)
     p_t=parameters.weather.p(t)
     RH_t=parameters.weather.RH(t)
-    vmf_t=parameters.mf(t)*parameters.vBS_mf*parameters.vBS_h*10.*np.ones((WIDTH,HEIGHT,len(parameters.vBS_h)))#% -> cm -> mm
+    #vmf_t=parameters.mf(t)*parameters.vBS_mf*parameters.vBS_h*10.*np.ones((WIDTH,HEIGHT,len(parameters.vBS_h)))#% -> cm -> mm
     elr,lpr,par,cycle1,cycle2=vR_D(T_t)
     vBS_a,vBS_h,vBS_s,vBS_d,vAlpha0,P,n=parameters.vBS_a,parameters.vBS_h,parameters.vBS_s,parameters.vBS_d,parameters.vAlpha0,parameters.P,parameters.n
-    vAlpha=(vAlpha0*np.ones((WIDTH,HEIGHT,n)) )/np.expand_dims(vBS_a,axis=2) # N=np.array([1,2]),D=np.arange(1,17).reshape(4,4),  C=(N*np.ones((4,4,2)))/np.expand_dims(D,axis=2), print(C[:,:,0],C[:,:,1])
+    HEIGHT,WIDTH=P.shape[:2]
+    vAlpha=(vAlpha0*np.ones((HEIGHT,WIDTH,n)) )/np.expand_dims(vBS_a,axis=2) # N=np.array([1,2]),D=np.arange(1,17).reshape(4,4),  C=(N*np.ones((4,4,2)))/np.expand_dims(D,axis=2), print(C[:,:,0],C[:,:,1])
     EGG,LARVAE,PUPAE,ADULT1,FLYER,ADULT2,WATER=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.FLYER,parameters.ADULT2,parameters.WATER
 
-    Y=Y.reshape(WIDTH,HEIGHT,3*n + 3 + n)
+    Y=Y.reshape(HEIGHT,WIDTH,3*n + 3 + n)
     vE,vL,vP,A1,F,A2,vW=Y[:,:,EGG],Y[:,:,LARVAE],Y[:,:,PUPAE],Y[:,:,ADULT1],Y[:,:,FLYER],Y[:,:,ADULT2],Y[:,:,WATER]
 
-    ovr=np.ones((WIDTH,HEIGHT))/0.229#TODO:implement!!!!
+    ovr=np.ones((HEIGHT,WIDTH))/0.229#TODO:implement!!!!
     dY=np.zeros(Y.shape)
     dY[:,:,EGG]    = dvE(vE,F,vBS_d,ovr,elr)
     dY[:,:,LARVAE] = dvL(vE,vL,T_t,elr,lpr,vAlpha )
@@ -69,6 +68,6 @@ def diff_eqs(Y,t,parameters):
     dY[:,:,ADULT1] = dA1(vP,A1,par,cycle1)
     dY[:,:,FLYER]  = dF(A1,F,A2,P,ovr,cycle1,cycle2)
     dY[:,:,ADULT2] = dA2(F,A2,ovr,cycle2)
-    dY[:,:,WATER]  = dvW(vW,vBS_h,T_t,p_t+vmf_t,RH_t)
+    dY[:,:,WATER]  = 0#dvW(vW,vBS_h,T_t,p_t+vmf_t,RH_t)
 
-    return dY.reshape(WIDTH*HEIGHT*(3*n + 3 + n) )   # For odeint
+    return dY.reshape(HEIGHT*WIDTH*(3*n + 3 + n) )   # For odeint

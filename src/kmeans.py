@@ -34,7 +34,7 @@ def kmeans_classification(filename,n_clusters=2):
     plt.show()
     print('Cluster centers:\n'+str(kmeans.cluster_centers_))
     print('Code Image(image of labeled pixels):\n'+str(code_image))
-    print('Inertia:\n'+str(kmeans.inertia_))
+    print('Inertia:'+str(kmeans.inertia_))
     print('Min: '+ str(min(code_image.flatten()))+ ' Max: '+str(max(code_image.flatten())))
     #
 

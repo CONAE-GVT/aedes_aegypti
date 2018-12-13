@@ -11,7 +11,7 @@ from scipy.stats import stats
 from config import Configuration
 from otero_precipitation import Model
 from utils import getSurface,getCapacity#not sure if this is a good practice
-from spatial_equations import diff_eqs,WIDTH,HEIGHT
+from spatial_equations import diff_eqs
 
 def printCorrelation():
     time_range,INPUT,RES=model.solveEquations()
@@ -422,8 +422,10 @@ def runSpatial():
     time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs,method='rk' )
     parameters=model.parameters
     n=parameters.n
+    HEIGHT,WIDTH=parameters.P.shape[:2]
     EGG,LARVAE,PUPAE,ADULT1,FLYER,ADULT2,WATER=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.FLYER,parameters.ADULT2,parameters.WATER
-    Y=Y.reshape(Y.shape[0],WIDTH,HEIGHT,3*n + 3 + n)
+    Y=Y.reshape(Y.shape[0],HEIGHT,WIDTH,3*n + 3 + n)
+    np.save('out/spatial.npy',Y)
 
     stages={'E':EGG, 'A':[ADULT1,FLYER,ADULT2]}
     for key in stages:
