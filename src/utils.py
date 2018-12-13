@@ -159,6 +159,7 @@ def getPreferenceMatrix():
     n,m=int(S.shape[0]/10),int(S.shape[1]/10)
     B=np.array([np.hsplit(b,m) for b in  np.vsplit(S,n)])
     M=np.mean(B,axis=(2,3))
+    np.save('out/M.npy',M)
 
     #Create the preference matrix
     P=np.zeros((n,m,8))
@@ -422,9 +423,24 @@ def plot3D(xline,yline,zline):
 def showPlot():
     return pl.show()
 
+from PIL import ImageFont, ImageDraw,Image
+from moviepy.video.io.bindings import PIL_to_npimage
 import moviepy.editor as mpy
+#from https://gist.github.com/Zulko/06f49f075fd00e99b4e6#file-moviepy_time_accuracy-py-L33-L39
+def addText(matrix,text):
+    im = Image.fromarray( np.uint8(matrix))
+    draw = ImageDraw.Draw(im)
+    draw.text((50, 25), str(text))
+    return PIL_to_npimage(im)
+
 def createAnimation(matrix,getTitle,out_filename):
-    coefs = np.array([1,0,0]).reshape((1,1,3))
-    makeFrame=lambda t: 255*coefs*matrix[int(t),:,:,np.newaxis]
+    M=np.load('out/M.npy')
+    M=1.-M/np.max(M)
+    red = np.array([1,0,0]).transpose()
+    white = np.array([1,1,1]).transpose()
+    def makeFrame(t):
+        frame=255*(0.5*white*M[:,:,np.newaxis] + 0.5*red*matrix[int(t),:,:,np.newaxis])
+        return addText(frame, getTitle(int(t)))
+
     animation = mpy.VideoClip(makeFrame, duration=matrix.shape[0]) # 2 seconds
     animation.write_videofile(out_filename+'.mp4', fps=15)

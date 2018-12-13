@@ -418,6 +418,7 @@ def generateCSV(start_date,end_date):
 
 def runSpatial():
     configuration=Configuration('resources/otero_precipitation.cfg')
+    configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(30)))
     model=Model(configuration)
     time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs,method='rk' )
     parameters=model.parameters
@@ -426,6 +427,7 @@ def runSpatial():
     EGG,LARVAE,PUPAE,ADULT1,FLYER,ADULT2,WATER=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.FLYER,parameters.ADULT2,parameters.WATER
     Y=Y.reshape(Y.shape[0],HEIGHT,WIDTH,3*n + 3 + n)
     np.save('out/spatial.npy',Y)
+    #time_range,Y=model.time_range,np.load('out/spatial.npy')#to debug video
 
     stages={'E':EGG, 'A':[ADULT1,FLYER,ADULT2]}
     for key in stages:
