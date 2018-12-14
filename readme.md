@@ -104,7 +104,7 @@ Source: http://www.king-foo.com/2011/11/creating-debianubuntu-deb-packages/
 >pdfimages -j densityDependantlarvaeDeath.pdf /tmp/out
 
 **Risk map**
->python src/riskMap.py data/public/sensor/sentinel/B02.jp2 data/public/sensor/sentinel/B03.jp2 data/public/sensor/sentinel/B04.jp2 data/public/sensor/sentinel/B08.jp2
+>python src/risk_map.py data/public/sensor/sentinel/B02.jp2 data/public/sensor/sentinel/B03.jp2 data/public/sensor/sentinel/B04.jp2 data/public/sensor/sentinel/B08.jp2
 band info: https://www.satimagingcorp.com/satellite-sensors/other-satellite-sensors/sentinel-2a/
 
 
