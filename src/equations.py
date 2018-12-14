@@ -105,7 +105,7 @@ def diff_eqs(Y,t,parameters):
     '''The main set of equations'''
     T_t=parameters.weather.T(t)
     elr,lpr,par,ovr1,ovr2=vR_D(T_t)
-    BS_a,vBS_s,vBS_d,vAlpha0,n=parameters.BS_a,parameters.vBS_s,parameters.vBS_d,parameters.vAlpha0,parameters.n
+    BS_a,vBS_d,vAlpha0,n=parameters.BS_a,parameters.vBS_d,parameters.vAlpha0,parameters.n
     EGG,LARVAE,PUPAE,ADULT1,ADULT2=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.ADULT2
 
     vW=np.array([parameters.vW[i](t) for i in range(0,n)])
