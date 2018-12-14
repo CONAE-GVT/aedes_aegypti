@@ -1,5 +1,6 @@
 #coding: utf-8
 import scipy.integrate as spi
+from scipy import interpolate
 from config import Configuration
 from weather import Weather
 from bunch import Bunch
@@ -18,6 +19,7 @@ class Model:
         self.parameters.vBS_h=configuration.getArray('breeding_site','height')#in cm
         self.parameters.vBS_s=configuration.getArray('breeding_site','surface')#in cm^2
         self.parameters.vBS_d=configuration.getArray('breeding_site','distribution')#distribution of BS. Sum must be equals to 1
+        self.parameters.vBS_W0=configuration.getArray('breeding_site','initial_water')
         self.parameters.vBS_mf=configuration.getArray('breeding_site','manually_filled')#in percentage of capacity
         self.parameters.n=len(self.parameters.vBS_d)
 
@@ -28,7 +30,6 @@ class Model:
         self.parameters.ADULT1=3*n#in R
         self.parameters.FLYER=3*n+1#in R
         self.parameters.ADULT2=3*n+2#in R
-        self.parameters.WATER=range(3*n + 3,3*n + 3 + n )#in R^n
         self.parameters.vAlpha0=configuration.getArray('biology','alpha0')#constant to be fitted
 
         #Cordoba
@@ -42,6 +43,9 @@ class Model:
         self.parameters.weather=Weather(WEATHER_DATA_FILENAME,self.start_date,self.end_date)
 
         self.parameters.mf=self.parameters.weather.getAsLambdaFunction(self.parameters.weather.aps, [0,0,0,0,0,0,1.]* int( (self.end_date - self.start_date).days/7 +1) )
+        W = spi.odeint(equations.waterEquations,self.parameters.vBS_W0,self.time_range,hmax=1.0,args=(self.parameters,))
+        self.parameters.vW=[interpolate.InterpolatedUnivariateSpline(self.time_range,W[:,i]) for i in range(0,n)]
+
         self.parameters.P=utils.getPreferenceMatrix()
         self.validate()
 

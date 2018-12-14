@@ -290,7 +290,7 @@ def plot(model,subplots,plot_start_date,title=''):
     RH=parameters.weather.RH
     vBS_mf,mf=parameters.vBS_mf,parameters.mf
     BS_a,vBS_h,vBS_s,vBS_d,n=parameters.BS_a,parameters.vBS_h,parameters.vBS_s,parameters.vBS_d,parameters.n
-    EGG,LARVAE,PUPAE,ADULT1,ADULT2,WATER=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.ADULT2,parameters.WATER
+    EGG,LARVAE,PUPAE,ADULT1,ADULT2=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.ADULT2
     AEDIC_INDICES_FILENAME='data/private/Indices aedicos Historicos '+parameters.location['name']+'.xlsx'
 
     pl.figure()
@@ -358,7 +358,7 @@ def plot(model,subplots,plot_start_date,title=''):
             pl.ylabel('days')
         #Water in containers(in L)
         if ('W' in subplot):
-            vW=RES[:,WATER]
+            vW=np.array([ [parameters.vW[i](t) for i in range(0,n)] for t in time_range])
             pl.plot(date_range,applyFs(vW,subplot), label='W(t)')
             pl.ylabel('cm.')
 

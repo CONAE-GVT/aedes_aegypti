@@ -38,18 +38,14 @@ def a0(W):
 
 def vGamma(vL,vBS_a,vW):
     return np.array([gamma(vL[i],vBS_a[i],vW[i]) for i in range(0,len(vL))])
-###alternative vectorized dvW
-#dY[WATER]  = dvW(vW,vBS_h,T_t,p_t+vmf_t,RH_t)
-def dvW(vW,vBS_h,T_t,vp_t,RH_t):#in cm/day
-    dvW_t=np.zeros(( len(vW)))
-    epsilon=1e-1#1mm
-    c=np.where(np.logical_and( epsilon<vW, vW<vBS_h-epsilon))
-    dvW_t[c] = QG(vp_t[c])-QR(RH_t,T_t)
-    c=np.where(vW<=epsilon)
-    dvW_t[c] = QG(vp_t[c]) - QR(RH_t,T_t)*(vW[c]/epsilon)
-    c=np.where(vW>=vBS_h-epsilon)
-    dvW_t[c] = QG(vp_t[c])*((vBS_h[c]-vW[c])/epsilon) - QR(RH_t,T_t)
-    return dvW_t
+
+def waterEquations(vW,t,parameters):
+    T_t=parameters.weather.T(t)
+    p_t=parameters.weather.p(t)
+    RH_t=parameters.weather.RH(t)
+    vmf_t=parameters.mf(t)*parameters.vBS_mf*parameters.vBS_h*10.#% -> cm -> mm
+    vBS_h,n=parameters.vBS_h,parameters.n
+    return [dW(vW[i],vBS_h[i],T_t,p_t+vmf_t[i],RH_t) for i in range(0,n)]
 #</precipitation related functionality v>
 
 
@@ -108,21 +104,18 @@ def dA2(A1,A2,T_t,ovr1):
 def diff_eqs(Y,t,parameters):
     '''The main set of equations'''
     T_t=parameters.weather.T(t)
-    p_t=parameters.weather.p(t)
-    RH_t=parameters.weather.RH(t)
-    vmf_t=parameters.mf(t)*parameters.vBS_mf*parameters.vBS_h*10.#% -> cm -> mm
     elr,lpr,par,ovr1,ovr2=vR_D(T_t)
-    BS_a,vBS_h,vBS_s,vBS_d,vAlpha0,n=parameters.BS_a,parameters.vBS_h,parameters.vBS_s,parameters.vBS_d,parameters.vAlpha0,parameters.n
-    EGG,LARVAE,PUPAE,ADULT1,ADULT2,WATER=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.ADULT2,parameters.WATER
+    BS_a,vBS_s,vBS_d,vAlpha0,n=parameters.BS_a,parameters.vBS_s,parameters.vBS_d,parameters.vAlpha0,parameters.n
+    EGG,LARVAE,PUPAE,ADULT1,ADULT2=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.ADULT2
 
-    vE,vL,vP,A1,A2,vW=Y[EGG],Y[LARVAE],Y[PUPAE],Y[ADULT1],Y[ADULT2],Y[WATER]
+    vW=np.array([parameters.vW[i](t) for i in range(0,n)])
+    vE,vL,vP,A1,A2=Y[EGG],Y[LARVAE],Y[PUPAE],Y[ADULT1],Y[ADULT2]
 
-    dY=np.zeros((3*n + 2 + n ))
+    dY=np.zeros((3*n + 2 ))
     dY[EGG]    = dvE(vE,vL,A1,A2,vW,T_t,BS_a,vBS_d,elr,ovr1,ovr2)
     dY[LARVAE] = dvL(vE,vL,vW,T_t,      BS_a,vBS_d,elr,lpr,vAlpha0)
     dY[PUPAE]  = dvP(vL,vP,T_t,lpr,par)
     dY[ADULT1] = dA1(vP,A1,T_t,par,ovr1)
     dY[ADULT2] = dA2(A1,A2,T_t,ovr1)
-    dY[WATER]  = np.array([dW(vW[i],vBS_h[i],T_t,p_t+vmf_t[i],RH_t) for i in range(0,n)])
 
     return dY   # For odeint
