@@ -424,8 +424,8 @@ def runSpatial():
     parameters=model.parameters
     n=parameters.n
     HEIGHT,WIDTH=parameters.P.shape[:2]
-    EGG,LARVAE,PUPAE,ADULT1,FLYER,ADULT2,WATER=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.FLYER,parameters.ADULT2,parameters.WATER
-    Y=Y.reshape(Y.shape[0],HEIGHT,WIDTH,3*n + 3 + n)
+    EGG,LARVAE,PUPAE,ADULT1,FLYER,ADULT2=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.FLYER,parameters.ADULT2
+    Y=Y.reshape(Y.shape[0],HEIGHT,WIDTH,3*n + 3)
     np.save('out/spatial.npy',Y)
     #time_range,Y=model.time_range,np.load('out/spatial.npy')#to debug video
 
