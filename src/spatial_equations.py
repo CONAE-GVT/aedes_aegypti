@@ -1,18 +1,5 @@
 from equations import *
 
-###alternative vectorized dvW
-#dY[WATER]  = dvW(vW,vBS_h,T_t,p_t+vmf_t,RH_t)
-def dvW(vW,vBS_h,T_t,vp_t,RH_t):#in cm/day
-    dvW_t=np.zeros(vW.shape)
-    epsilon=1e-1#1mm
-    c1,c2,c3=np.where(np.logical_and( epsilon<vW, vW<vBS_h-epsilon))
-    dvW_t[c1,c2,c3] = QG(vp_t[c1,c2,c3])-QR(RH_t,T_t)
-    c1,c2,c3=np.where(vW<=epsilon)
-    dvW_t[c1,c2,c3] = QG(vp_t[c1,c2,c3]) - QR(RH_t,T_t)*(vW[c1,c2,c3]/epsilon)
-    c1,c2,c3=np.where(vW>=vBS_h-epsilon)
-    dvW_t[c1,c2,c3] = QG(vp_t[c1,c2,c3])*((vBS_h[c3]-vW[c1,c2,c3])/epsilon) - QR(RH_t,T_t)
-    return dvW_t
-
 def dvE(vE,F,vBS_d,ovr,elr):
     egn=63.0
     me=0.01#mortality of the egg, for T in [278,303]
