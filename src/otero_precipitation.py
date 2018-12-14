@@ -24,9 +24,9 @@ class Model:
         self.parameters.n=len(self.parameters.vBS_d)
 
         n=self.parameters.n
-        self.parameters.EGG=range(0,n)#in R^n
-        self.parameters.LARVAE=range(n,2*n)#in R^n
-        self.parameters.PUPAE=range(2*n,3*n)#in R^n
+        self.parameters.EGG=slice(0,n)#in R^n
+        self.parameters.LARVAE=slice(n,2*n)#in R^n
+        self.parameters.PUPAE=slice(2*n,3*n)#in R^n
         self.parameters.ADULT1=3*n#in R
         self.parameters.FLYER=3*n+1#in R
         self.parameters.ADULT2=3*n+2#in R
@@ -79,6 +79,9 @@ class Model:
         tmp[int(HEIGHT/2),int(WIDTH/2),:]=1.
         initial_condition=(self.parameters.initial_condition*tmp).reshape((HEIGHT*WIDTH*(3*n + 3) ))#TODO:check that this does what we expect.
         self.parameters.vBS_a=self.parameters.BS_a*np.ones((HEIGHT,WIDTH))#np.random.random((WIDTH,HEIGHT))#TODO:do something about this...
+        self.parameters.vBS_d=self.parameters.vBS_d*np.ones((HEIGHT,WIDTH,n))
+        self.parameters.vAlpha=(self.parameters.vAlpha0*np.ones((HEIGHT,WIDTH,n)) )/self.parameters.vBS_a[:,:,np.newaxis]
+        self.parameters.ovr=np.ones((HEIGHT,WIDTH))/0.229#TODO:implement!!!!
         Y=None
 
         if(method=='odeint'):

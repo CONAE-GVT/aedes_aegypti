@@ -1,5 +1,5 @@
 **Dependencies**
->sudo apt install python3-scipy python3-grib python3-netcdf4 python3-matplotlib python3-gdal python3-xlrd
+>sudo apt install python3-scipy python3-grib python3-netcdf4 python3-matplotlib python3-gdal python3-xlrd python3-line-profiler
 >pip install moviepy
 
 **Run**
@@ -62,6 +62,9 @@ Now merge development -> master
 
 **Profiling**
 >python -m cProfile -s cumtime src/tests.py  > p.txt
+or
+>kernprof -l src/tests.py spatial ; python -m line_profiler tests.py.lprof
+source:https://github.com/rkern/line_profiler
 
 **Usage**
 To save:
