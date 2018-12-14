@@ -426,8 +426,8 @@ def runSpatial():
     HEIGHT,WIDTH=parameters.P.shape[:2]
     EGG,LARVAE,PUPAE,ADULT1,FLYER,ADULT2=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.FLYER,parameters.ADULT2
     Y=Y.reshape(Y.shape[0],HEIGHT,WIDTH,3*n + 3)
-    np.save('out/spatial.npy',Y)
-    #time_range,Y=model.time_range,np.load('out/spatial.npy')#to debug video
+    np.save('out/Y.npy',Y)
+    #time_range,Y=model.time_range,np.load('out/Y.npy')#to debug video
 
     stages={'E':EGG, 'A':[ADULT1,FLYER,ADULT2]}
     for key in stages:

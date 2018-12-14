@@ -144,7 +144,7 @@ def getLocations():
     return config_parser.sections()
 
 def getPreferenceMatrix():
-    C=np.load('out/merged_cut.npy')
+    C=np.load('out/C.npy')
     #Clip the image to leave rows and columns multiple of ten
     C=C[:C.shape[0]-C.shape[0]%10 , :C.shape[1]-C.shape[1]%10]
     #assign each class points. like S[C=2]=9,or S[C=5]=0 so class 2 is very good(grass or homes) we assign a ten. class 5 is very bad (cement)

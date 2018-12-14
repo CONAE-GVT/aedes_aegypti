@@ -28,10 +28,7 @@ def kmeans_classification(filename,n_clusters=2):
     code=kmeans.predict(flat_raster.astype(float))#as float to avoid a warning.
     code_image=code.reshape(raster.shape[1],raster.shape[2])#this are class numbers, integers from [0,n_clusters]
 
-     #
-    import matplotlib.pyplot as plt
-    plt.imshow(code_image)
-    plt.show()
+    #
     print('Cluster centers:\n'+str(kmeans.cluster_centers_))
     print('Code Image(image of labeled pixels):\n'+str(code_image))
     print('Inertia:'+str(kmeans.inertia_))
@@ -40,5 +37,6 @@ def kmeans_classification(filename,n_clusters=2):
 
     #return code_imag
     out_dataset.GetRasterBand(1).WriteArray(code_image)#TODO:maybe we should use a color map like envi. >gdalinfo out/SPOT6.kmeans.envi.tiff
-    np.save(filename.replace('tif','npy'),code_image)
+    np.save('out/C.npy',code_image)
+    np.save(filename.replace('tif','npy'),raster)
     return filename
