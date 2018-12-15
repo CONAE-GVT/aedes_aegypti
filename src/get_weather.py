@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import time
 import urllib
 import logging
 import datetime
@@ -20,6 +21,7 @@ FORECAST_FOLDER=DATA_FOLDER+'/forecast/'
 FORECAST_PGB_FOLDER=FORECAST_FOLDER+'/pgb/'
 FORECAST_FLX_FOLDER=FORECAST_FOLDER+'/flx/'
 FORECAST_RANGE=30#in days
+SLEEP=5
 LOG_FILENAME='logs/get_weather.log'
 
 logging.basicConfig(format='%(levelname)s: %(asctime)s %(message)s',filename=LOG_FILENAME,level=logging.DEBUG)
@@ -40,6 +42,7 @@ def downloadForecast():
                 folder=key
                 filename=getFilenameForGDAS(a_date,a_time,f=f)
                 open(folder+'/'+filename, 'wb').write(urllib.request.urlopen(url).read())
+                time.sleep(SLEEP)
 
 def downloadData(start_date,end_date):
     logging.info('Downloading GDAS(fnl)')
@@ -69,6 +72,7 @@ def downloadDataFromIMERG(start_date,end_date,folder):
         request = urllib.request.Request(url)
         response = urllib.request.urlopen(request)
         handle = open(folder+'/'+filename, 'wb').write(response.read())
+        time.sleep(SLEEP)
 
 def extractDailyDataFromIMERG(lat,lon,a_date):
     nc_filename=IMERG_FOLDER+getFilenameForIMERG(a_date)
@@ -92,6 +96,7 @@ def downloadDataFromGDAS(start_date,end_date,folder):
                 url='http://nomads.ncep.noaa.gov/cgi-bin/filter_gdas_0p25.pl?file=gdas.t%sz.pgrb2.0p25.f0%s&lev_2_m_above_ground=on&var_GUST=on&var_RH=on&var_TCDC=on&var_TMAX=on&var_TMIN=on&var_TMP=on&subregion=&leftlon=-68&rightlon=-60&toplat=-28&bottomlat=-36&dir=%%2Fgdas.%d%02d%02d'%(a_time,a_forecast,a_date.year,a_date.month,a_date.day)
                 filename=getFilenameForGDAS(a_date,a_time,f=a_forecast)
                 open(folder+'/'+filename, 'wb').write(urllib.request.urlopen(url).read())
+                time.sleep(SLEEP)
 
 def extractDailyDataFromGDAS(lat,lon,a_date,folder,FIELDS,typeOfLevel,f):
     TIMES=['00','06','12','18']
