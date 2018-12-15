@@ -26,16 +26,6 @@ def calculateMetrics(time_range,mEggs,real_values):
     rho,p_value=stats.spearmanr(real_values[real_values!=[None]],lwE[real_values!=[None]])
     return lwE,error,rho,p_value
 
-def getConfiguration(x,n):
-    MAX_BS_A=4550.
-    configuration=Configuration('resources/otero_precipitation.cfg',
-        {'breeding_site':{
-            'amount':MAX_BS_A*x[n]+50,
-            'distribution':x[0:n]
-            }
-        })
-    return configuration
-
 def error(x,model,real_values=None,ovitrap=None):
     #return np.dot(x,x)
     if(real_values is None):
@@ -45,8 +35,14 @@ def error(x,model,real_values=None,ovitrap=None):
     l=np.sum(x[0:n])
     if(l<1e-5): return 500.
     x[0:n]/=l#constraint: #Σ vBS_od[i] + vBS_id[i] = 1
-    model=Model(getConfiguration(x,n))
-    #time_range,INPUT,RES = pe.solvePopulationEquations(initial_condition = [100.0, 0.0,0.0,0.0,0.0])
+    #update parameters
+    MAX_BS_A=4550.
+    model.parameters.BS_a=MAX_BS_A*x[n]+50,
+    model.parameters.vBS_d=x[0:n]
+    #sync the config with the new parameters (this couple lines should have no effect whatsoever)
+    model.configuration.config_parser.set('breeding_site','amount',str(model.parameters.BS_a))
+    model.configuration.config_parser.set('breeding_site','distribution',','.join([str(value) for value in model.parameters.vBS_d ]))
+
     time_range,INPUT,RES=model.solveEquations()
     lwE,error,rho,p_value=calculateMetrics(time_range,RES[:,model.parameters.EGG],real_values)
     ovitrap_data_len=float(len(real_values[real_values!=[None]]))
