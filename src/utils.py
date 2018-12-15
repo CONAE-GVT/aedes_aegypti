@@ -322,8 +322,8 @@ def plot(model,subplots,plot_start_date,title=''):
             pl.ylabel('days')
         #Water in containers(in L)
         if ('W' in subplot):
-            vW=np.array([ [parameters.vW[i](t) for i in range(0,n)] for t in time_range])
-            pl.plot(date_range,applyFs(vW,subplot), label='W(t)')
+            mW=parameters.vW(time_range)
+            pl.plot(date_range,applyFs(mW,subplot), label='W(t)')
             pl.ylabel('cm.')
 
         #manually_filled(in mm.)
