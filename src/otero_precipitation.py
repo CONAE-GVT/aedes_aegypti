@@ -24,9 +24,9 @@ class Model:
         self.parameters.n=len(self.parameters.vBS_d)
 
         n=self.parameters.n
-        self.parameters.EGG=range(0,n)#in R^n
-        self.parameters.LARVAE=range(n,2*n)#in R^n
-        self.parameters.PUPAE=range(2*n,3*n)#in R^n
+        self.parameters.EGG=slice(0,n)#in R^n
+        self.parameters.LARVAE=slice(n,2*n)#in R^n
+        self.parameters.PUPAE=slice(2*n,3*n)#in R^n
         self.parameters.ADULT1=3*n#in R
         self.parameters.ADULT2=3*n+1#in R
         self.parameters.vAlpha0=configuration.getArray('biology','alpha0')#constant to be fitted
@@ -43,7 +43,7 @@ class Model:
 
         self.parameters.mf=self.parameters.weather.getAsLambdaFunction(self.parameters.weather.aps, [0,0,0,0,0,0,1.]* int( (self.end_date - self.start_date).days/7 +1) )
         W = spi.odeint(equations.waterEquations,self.parameters.vBS_W0,self.time_range,hmax=1.0,args=(self.parameters,))
-        self.parameters.vW=[interpolate.InterpolatedUnivariateSpline(self.time_range,W[:,i]) for i in range(0,n)]
+        self.parameters.vW=interpolate.interp1d(self.time_range,W,axis=0)
         self.validate()
 
     def validate(self):

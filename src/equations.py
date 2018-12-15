@@ -108,12 +108,12 @@ def diff_eqs(Y,t,parameters):
     BS_a,vBS_d,vAlpha0,n=parameters.BS_a,parameters.vBS_d,parameters.vAlpha0,parameters.n
     EGG,LARVAE,PUPAE,ADULT1,ADULT2=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.ADULT2
 
-    vW=np.array([parameters.vW[i](t) for i in range(0,n)])
+    vW_t=parameters.vW(t)
     vE,vL,vP,A1,A2=Y[EGG],Y[LARVAE],Y[PUPAE],Y[ADULT1],Y[ADULT2]
 
-    dY=np.zeros((3*n + 2 ))
-    dY[EGG]    = dvE(vE,vL,A1,A2,vW,T_t,BS_a,vBS_d,elr,ovr1,ovr2)
-    dY[LARVAE] = dvL(vE,vL,vW,T_t,      BS_a,vBS_d,elr,lpr,vAlpha0)
+    dY=np.empty((3*n + 2 ))
+    dY[EGG]    = dvE(vE,vL,A1,A2,vW_t,T_t,BS_a,vBS_d,elr,ovr1,ovr2)
+    dY[LARVAE] = dvL(vE,vL,vW_t,T_t,      BS_a,vBS_d,elr,lpr,vAlpha0)
     dY[PUPAE]  = dvP(vL,vP,T_t,lpr,par)
     dY[ADULT1] = dA1(vP,A1,T_t,par,ovr1)
     dY[ADULT2] = dA2(A1,A2,T_t,ovr1)
