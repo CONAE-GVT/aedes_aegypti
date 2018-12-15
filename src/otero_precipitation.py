@@ -44,7 +44,7 @@ class Model:
 
         self.parameters.mf=self.parameters.weather.getAsLambdaFunction(self.parameters.weather.aps, [0,0,0,0,0,0,1.]* int( (self.end_date - self.start_date).days/7 +1) )
         W = spi.odeint(equations.waterEquations,self.parameters.vBS_W0,self.time_range,hmax=1.0,args=(self.parameters,))
-        self.parameters.vW=[interpolate.InterpolatedUnivariateSpline(self.time_range,W[:,i]) for i in range(0,n)]
+        self.parameters.vW=interpolate.interp1d(self.time_range,W,axis=0)
 
         self.parameters.P=utils.getPreferenceMatrix()
         self.validate()
