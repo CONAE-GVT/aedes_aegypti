@@ -40,8 +40,8 @@ def error(x,model,real_values=None,ovitrap=None):
     model.parameters.BS_a=MAX_BS_A*x[n]+50,
     model.parameters.vBS_d=x[0:n]
     #sync the config with the new parameters (this couple lines should have no effect whatsoever)
-    model.configuration.set('breeding_site','amount',model.parameters.BS_a)
-    model.configuration.set('breeding_site','distribution',model.parameters.vBS_d)
+    model.configuration.config_parser.set('breeding_site','amount',str(model.parameters.BS_a))
+    model.configuration.config_parser.set('breeding_site','distribution',','.join([str(value) for value in model.parameters.vBS_d ]))
 
     time_range,INPUT,RES=model.solveEquations()
     lwE,error,rho,p_value=calculateMetrics(time_range,RES[:,model.parameters.EGG],real_values)
