@@ -39,7 +39,7 @@ def diff_eqs(Y,t,parameters):
     EGG,LARVAE,PUPAE,ADULT1,FLYER,ADULT2=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.FLYER,parameters.ADULT2
 
     Y=Y.reshape(HEIGHT,WIDTH,3*n + 3)
-    vW=np.array([parameters.vW[i](t) for i in range(0,n)])
+    vW_t=parameters.vW(t)
     vE,vL,vP,A1,F,A2=Y[:,:,EGG],Y[:,:,LARVAE],Y[:,:,PUPAE],Y[:,:,ADULT1],Y[:,:,FLYER],Y[:,:,ADULT2]
 
     dY=np.empty(Y.shape)
