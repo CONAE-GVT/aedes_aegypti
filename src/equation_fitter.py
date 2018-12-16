@@ -17,6 +17,16 @@ def safeAdd(values):
     else:
         return np.sum(values,axis=1)
 
+def getConfiguration(x,n):
+    MAX_BS_A=4550.
+    configuration=Configuration('resources/otero_precipitation.cfg',
+        {'breeding_site':{
+            'amount':MAX_BS_A*x[n]+50,
+            'distribution':x[0:n]
+            }
+        })
+    return configuration
+
 def calculateMetrics(time_range,mEggs,real_values):
     cEggs=safeAdd(mEggs)
     lwE=np.array([cEggs[(np.abs(time_range-t)).argmin()]-cEggs[(np.abs(time_range-(t-7))).argmin()] for t in time_range])
@@ -37,11 +47,10 @@ def error(x,model,real_values=None,ovitrap=None):
     x[0:n]/=l#constraint: #Σ vBS_od[i] + vBS_id[i] = 1
     #update parameters
     MAX_BS_A=4550.
-    model.parameters.BS_a=MAX_BS_A*x[n]+50,
+    model.parameters.BS_a=MAX_BS_A*x[n]+50
     model.parameters.vBS_d=x[0:n]
     #sync the config with the new parameters (this couple lines should have no effect whatsoever)
-    model.configuration.config_parser.set('breeding_site','amount',str(model.parameters.BS_a))
-    model.configuration.config_parser.set('breeding_site','distribution',','.join([str(value) for value in model.parameters.vBS_d ]))
+    model.configuration=getConfiguration(x,n)
 
     time_range,INPUT,RES=model.solveEquations()
     lwE,error,rho,p_value=calculateMetrics(time_range,RES[:,model.parameters.EGG],real_values)
@@ -65,7 +74,13 @@ def getOptimalParameters(args):
         opt=minimize(error,x0,args,method='SLSQP',bounds=bounds,constraints=constraints,options={'eps': 1e-02, 'ftol': 1e-01})
     else:
         opt=differential_evolution(error,bounds,args=args)
-
+    #TODO:save results
+    opt.x[:model.parameters.n]/=np.sum(opt.x[:model.parameters.n])
+    model=Model(getConfiguration(opt.x,model.parameters.n))
+    model.solveEquations()
+    model.save()
+    results_filename='data/test/previous_results/'+self.configuration.getString('location','name')+'-'+datetime.datetime.now().strftime('%Y-%m-%d__%H_%M_%S')+'.txt'
+    open(results_filename,'w').write(opt)#TODO:not working
     return opt
 
 def populate(time_range,ovitrap_eggs):
@@ -75,10 +90,9 @@ def populate(time_range,ovitrap_eggs):
     return result
 
 if(__name__ == '__main__'):
-    #time_range,W0,W=pe.solveWaterEquations(initial_condition=[0. for i in op.vBS_od])
     vNormalized_ovitrap_eggs=[]
+    model=Model()#just for dates and time_range
     for ovitrap in range(2,151):
-        model=Model()#just for dates and time_range
         ovitrap_eggs=utils.getOvitrapEggsFromCsv('data/private/ovitrampas_2016-2017.csv',model.start_date,model.end_date,ovitrap)
         ovitrap_eggs=np.array(ovitrap_eggs)
         normalized_ovitrap_eggs=[e/ovitrap_eggs[np.not_equal(ovitrap_eggs,None)].max() if e else None for e in ovitrap_eggs]
@@ -95,9 +109,13 @@ if(__name__ == '__main__'):
     print(weight_mean_x)
     for idx,opt in enumerate(vOpt):
         x=np.array(opt.x)
-        model=Model()
         n=model.parameters.n
+        MAX_BS_A=4550.
+        model.parameters.BS_a=MAX_BS_A*x[n]+50
         model.parameters.vBS_d=vBS_d=x[0:n]
+        #sync the config with the new parameters(so we can save the config)
+        model.configuration=getConfiguration(x,n)
+
         time_range,INPUT,RES = model.solveEquations()
         filename=model.save()
         new_filename=filename.replace('.csv','_ovi%s.csv'%(idx+1))
