@@ -12,10 +12,14 @@ def createOutputImage(out_filename, in_dataset):
     return newDataset
 
 def kmeans_classification(filename,n_clusters=2):
+    #open input data set
     in_dataset=gdal.Open(filename, gdal.GA_ReadOnly)
-    out_dataset=createOutputImage(filename,in_dataset)
     raster=in_dataset.ReadAsArray()
+    #save input data set as npy
+    np.save('out/R.npy',raster)
 
+    #create output dataset (classified)
+    out_dataset=createOutputImage('out/C.tif',in_dataset)
     '''
     The original is a 3-dimensional matrix [band][x][y]
     for example, a matrix of [4,460,380]
@@ -23,10 +27,12 @@ def kmeans_classification(filename,n_clusters=2):
     '''
     flat_raster=raster.reshape(raster.shape[0],raster.shape[1]*raster.shape[2]).transpose()
 
-
     kmeans=MiniBatchKMeans(n_clusters=n_clusters).fit(flat_raster)
     code=kmeans.predict(flat_raster.astype(float))#as float to avoid a warning.
     code_image=code.reshape(raster.shape[1],raster.shape[2])#this are class numbers, integers from [0,n_clusters]
+    #save the classified raster as tif and npy
+    out_dataset.GetRasterBand(1).WriteArray(code_image)#TODO:maybe we should use a color map like envi. >gdalinfo out/SPOT6.kmeans.envi.tiff
+    np.save('out/C.npy',code_image)
 
     #
     print('Cluster centers:\n'+str(kmeans.cluster_centers_))
@@ -35,8 +41,4 @@ def kmeans_classification(filename,n_clusters=2):
     print('Min: '+ str(min(code_image.flatten()))+ ' Max: '+str(max(code_image.flatten())))
     #
 
-    #return code_imag
-    out_dataset.GetRasterBand(1).WriteArray(code_image)#TODO:maybe we should use a color map like envi. >gdalinfo out/SPOT6.kmeans.envi.tiff
-    np.save('out/C.npy',code_image)
-    np.save(filename.replace('tif','npy'),raster)
-    return filename
+    return 'out/C.tif'

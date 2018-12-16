@@ -143,26 +143,30 @@ def getLocations():
     config_parser.read('resources/get_weather.cfg')
     return config_parser.sections()
 
+#Reduce the resolution to leave pixels as blocks of 100mx100m (10mx10m --> 100mx100m)
+def getReducedMatrix(S):
+    #Clip the image to leave rows and columns multiple of ten
+    S=S[:S.shape[0]-S.shape[0]%10 , :S.shape[1]-S.shape[1]%10]
+    n,m=int(S.shape[0]/10),int(S.shape[1]/10)
+    B=np.array([np.hsplit(b,m) for b in  np.vsplit(S,n)])
+    M=np.mean(B,axis=(2,3))
+    return M
+
 def getPreferenceMatrix():
     C=np.load('out/C.npy')
-    #Clip the image to leave rows and columns multiple of ten
-    C=C[:C.shape[0]-C.shape[0]%10 , :C.shape[1]-C.shape[1]%10]
+
     #assign each class points. like S[C=2]=9,or S[C=5]=0 so class 2 is very good(grass or homes) we assign a ten. class 5 is very bad (cement)
     S=np.zeros(C.shape)
     #TODO: assign real scores!
     S[C==0]=0*0
     S[C==1]=1*0
-    S[C==2]=9*0#<----
-    S[C==3]=3*10
+    S[C==2]=9*10#<----
+    S[C==3]=3*0
 
-    #Reduce the resolution to leave pixels as blocks of 100mx100m (10mx10m --> 100mx100m)
-    n,m=int(S.shape[0]/10),int(S.shape[1]/10)
-    B=np.array([np.hsplit(b,m) for b in  np.vsplit(S,n)])
-    M=np.mean(B,axis=(2,3))
-    np.save('out/M.npy',M)
+    M=getReducedMatrix(S)#get a matrix of pixels 100mx100m (blocks)
 
     #Create the preference matrix
-    P=np.zeros((n,m,8))
+    P=np.zeros((M.shape[0],M.shape[1],8))
     P[:,:,0]=np.roll(M,(0, 1),axis=(1,0))#up
     P[:,:,1]=np.roll(M,(-1, 1),axis=(1,0))#up-right
     P[:,:,2]=np.roll(M,(0,-1),axis=(0,1))#right
@@ -386,12 +390,13 @@ def addText(matrix,text):
     return PIL_to_npimage(im)
 
 def createAnimation(matrix,getTitle,out_filename):
-    M=np.load('out/M.npy')
-    M=1.-M/np.max(M)
+    R=np.load('out/R.npy')#Load the original Raster
+    R=np.moveaxis(R,0,-1)#(4,n,m) ----> (n,m,4)
+    R=getReducedMatrix(R[:,:,0:3])#10mx10m ----> 100mx100m
+    R=np.clip(R/(2*R.mean()),0,1)#this is just to make the base image look nice.
     red = np.array([1,0,0]).transpose()
-    white = np.array([1,1,1]).transpose()
     def makeFrame(t):
-        frame=255*(0.5*white*M[:,:,np.newaxis] + 0.5*red*matrix[int(t),:,:,np.newaxis])
+        frame=255*(0.5*R + 0.5*red*matrix[int(t),:,:,np.newaxis])
         return addText(frame, getTitle(int(t)))
 
     animation = mpy.VideoClip(makeFrame, duration=matrix.shape[0]) # 2 seconds

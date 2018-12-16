@@ -26,7 +26,7 @@ def gdalTranslate(parameters):
 def getGdalTranslateCmd(parameters):
     in_filename=parameters['filename']
     projwin=parameters['west'] +" "+parameters['north'] +" " +parameters['east'] +" " +parameters['south']
-    out_filename=FOLDER_OUT+os.path.basename(parameters['filename']).replace('.tif','_cut.tif')
+    out_filename=FOLDER_OUT+'R.tif'
     cmd=(
     'gdal_translate -projwin {projwin} {in_filename} {out_filename}'
     ).format(projwin=projwin,in_filename=in_filename,out_filename=out_filename)
