@@ -75,12 +75,15 @@ def getOptimalParameters(args):
     else:
         opt=differential_evolution(error,bounds,args=args)
     #TODO:save results
-    opt.x[:model.parameters.n]/=np.sum(opt.x[:model.parameters.n])
-    model=Model(getConfiguration(opt.x,model.parameters.n))
-    model.solveEquations()
-    model.save()
-    results_filename='data/test/previous_results/'+self.configuration.getString('location','name')+'-'+datetime.datetime.now().strftime('%Y-%m-%d__%H_%M_%S')+'.txt'
-    open(results_filename,'w').write(opt)#TODO:not working
+    #opt.x[:model.parameters.n]/=np.sum(opt.x[:model.parameters.n])
+    model,real_values,ovitrap=args
+    results_filename='data/test/previous_results/%s_%s_%s_ovi%s'%(model.parameters.location['name'],datetime.datetime.now(),opt.fun,ovitrap)
+    if(np.abs(1-np.sum(opt.x[:model.parameters.n]))<1e-10 ):#save the model if its config is valid
+        model=Model(getConfiguration(opt.x,model.parameters.n))
+        model.solveEquations()
+        model.save(results_filename+'.csv')
+
+    open(results_filename+'.txt','w').write(str(opt))#TODO:not working
     return opt
 
 def populate(time_range,ovitrap_eggs):

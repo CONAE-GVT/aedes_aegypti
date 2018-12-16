@@ -53,9 +53,10 @@ class Model:
         if(lower_bound.size>0 or upper_bound.size>0):
             print('# WARNING: Temperature out of model\'s valid range:T<278:%s T>303:%s'%(lower_bound.size,upper_bound.size))
 
-    def save(self):
+    def save(self,results_filename=None):
         #save results
-        results_filename='data/test/previous_results/'+self.configuration.getString('location','name')+'-'+datetime.datetime.now().strftime('%Y-%m-%d__%H_%M_%S')+'.csv'
+        if(not results_filename):
+            results_filename='data/test/previous_results/'+self.configuration.getString('location','name')+'-'+datetime.datetime.now().strftime('%Y-%m-%d__%H_%M_%S')+'.csv'
         file=open(results_filename,'w')
         daily_Y=utils.getDailyResults(self.time_range,self.Y,self.start_date,self.end_date)
         for d,daily_Y_d in enumerate(daily_Y):
