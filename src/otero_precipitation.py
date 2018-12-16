@@ -44,7 +44,7 @@ class Model:
 
         self.parameters.mf=self.parameters.weather.getAsLambdaFunction(self.parameters.weather.aps, [0,0,0,0,0,0,1.]* int( (self.end_date - self.start_date).days/7 +1) )
         W = spi.odeint(equations.waterEquations,self.parameters.vBS_W0,self.time_range,hmax=1.0,args=(self.parameters,))
-        self.parameters.vW=interpolate.interp1d(self.time_range,W,axis=0,fill_value="extrapolate")
+        self.parameters.vW=interpolate.interp1d(self.time_range,W,axis=0,fill_value="extrapolate")#TODO:find a way to avoid extrapolate(mainly needed because odeint goes outside timerange)
 
         self.parameters.P=utils.getPreferenceMatrix()
         self.validate()
@@ -73,16 +73,7 @@ class Model:
 
     def solveEquations(self,equations=equations.diff_eqs,method='odeint'):
         time_range=self.time_range
-        n=self.parameters.n
-
-        HEIGHT,WIDTH=self.parameters.P.shape[:2]
-        tmp=np.zeros((HEIGHT,WIDTH,3*n + 3))
-        tmp[int(HEIGHT/2),int(WIDTH/2),:]=1.
-        initial_condition=(self.parameters.initial_condition*tmp).reshape((HEIGHT*WIDTH*(3*n + 3) ))#TODO:check that this does what we expect.
-        self.parameters.vBS_a=self.parameters.BS_a*np.ones((HEIGHT,WIDTH))#np.random.random((WIDTH,HEIGHT))#TODO:do something about this...
-        self.parameters.vBS_d=self.parameters.vBS_d*np.ones((HEIGHT,WIDTH,n))
-        self.parameters.vAlpha=(self.parameters.vAlpha0*np.ones((HEIGHT,WIDTH,n)) )/self.parameters.vBS_a[:,:,np.newaxis]
-        self.parameters.ovr=np.ones((HEIGHT,WIDTH))/0.229#TODO:implement!!!!
+        initial_condition=self.parameters.initial_condition
         Y=None
 
         if(method=='odeint'):

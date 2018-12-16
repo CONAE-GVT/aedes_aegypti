@@ -420,10 +420,20 @@ def runSpatial():
     configuration=Configuration('resources/otero_precipitation.cfg')
     configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(30)))
     model=Model(configuration)
-    time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs,method='rk' )
+    #modify some parameters to make them spatial
     parameters=model.parameters
     n=parameters.n
     HEIGHT,WIDTH=parameters.P.shape[:2]
+    tmp=np.zeros((HEIGHT,WIDTH,3*n + 3))
+    tmp[int(HEIGHT/2),int(WIDTH/2),:]=1.
+    parameters.initial_condition=(parameters.initial_condition*tmp).reshape((HEIGHT*WIDTH*(3*n + 3) ))#TODO:check that this does what we expect.
+    parameters.vBS_a=parameters.BS_a*np.ones((HEIGHT,WIDTH))#np.random.random((WIDTH,HEIGHT))#TODO:do something about this...
+    parameters.vBS_d=parameters.vBS_d*np.ones((HEIGHT,WIDTH,n))
+    parameters.vAlpha=(parameters.vAlpha0*np.ones((HEIGHT,WIDTH,n)) )/parameters.vBS_a[:,:,np.newaxis]
+    parameters.ovr=np.ones((HEIGHT,WIDTH))/0.229#TODO:implement!!!!
+
+    #solve the equations
+    time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs,method='rk' )
     EGG,LARVAE,PUPAE,ADULT1,FLYER,ADULT2=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.FLYER,parameters.ADULT2
     Y=Y.reshape(Y.shape[0],HEIGHT,WIDTH,3*n + 3)
     np.save('out/Y.npy',Y)
