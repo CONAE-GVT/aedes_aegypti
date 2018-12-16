@@ -43,7 +43,7 @@ class Model:
 
         self.parameters.mf=self.parameters.weather.getAsLambdaFunction(self.parameters.weather.aps, [0,0,0,0,0,0,1.]* int( (self.end_date - self.start_date).days/7 +1) )
         W = spi.odeint(equations.waterEquations,self.parameters.vBS_W0,self.time_range,hmax=1.0,args=(self.parameters,))
-        self.parameters.vW=interpolate.interp1d(self.time_range,W,axis=0)
+        self.parameters.vW=interpolate.interp1d(self.time_range,W,axis=0,fill_value="extrapolate")#TODO:find a way to avoid extrapolate(mainly needed because odeint goes outside timerange)
         self.validate()
 
     def validate(self):
