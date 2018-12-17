@@ -433,7 +433,7 @@ def runSpatial():
     parameters.ovr=np.ones((HEIGHT,WIDTH))/0.229#TODO:implement!!!!
 
     #solve the equations
-    time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs,method='rk' )
+    time_range,initial_condition,Y=model.solveEquations(equations=utils.ProgressEquations(model,diff_eqs),method='rk' )
     EGG,LARVAE,PUPAE,ADULT1,FLYER,ADULT2=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.FLYER,parameters.ADULT2
     Y=Y.reshape(Y.shape[0],HEIGHT,WIDTH,3*n + 3)
     np.save('out/Y.npy',Y)

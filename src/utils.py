@@ -199,6 +199,16 @@ def getCapacity(x=None,y=None,r=None,z=None):#capacity in litres. x,y,z,r must b
     else:
         assert(False)
 
+import sys
+class ProgressEquations:
+    def __init__(self,model,diff_eqs):
+        self.model=model
+        self.diff_eqs=diff_eqs
+        self.t_max=np.max(model.time_range)
+    def __call__(self,Y,t,parameters):
+        sys.stdout.write("Completed: %d%%   \r" % ( t/self.t_max *100.) )
+        sys.stdout.flush()
+        return self.diff_eqs(Y,t,parameters)
 ###############################################################Plot################################################################
 def normalize(values):#TODO:change name.
     return (values-values.min())/(values.max()-values.min())
