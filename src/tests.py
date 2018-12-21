@@ -11,7 +11,8 @@ from scipy.stats import stats
 from config import Configuration
 from otero_precipitation import Model
 from utils import getSurface,getCapacity#not sure if this is a good practice
-from spatial_equations import diff_eqs
+from equations import diff_eqs
+from spatial_equations import diff_eqs as spatial_diff_eqs
 
 def printCorrelation():
     time_range,INPUT,RES=model.solveEquations()
@@ -423,9 +424,12 @@ def runSpatial():
     #modify some parameters to make them spatial
     parameters=model.parameters
     n=parameters.n
+    parameters.FLYER=3*n+2#in R
+    parameters.P=utils.getPreferenceMatrix()
     HEIGHT,WIDTH=parameters.P.shape[:2]
     tmp=np.zeros((HEIGHT,WIDTH,3*n + 3))
     tmp[int(HEIGHT/2),int(WIDTH/2),:]=1.
+    parameters.initial_condition=np.append(parameters.initial_condition,[0])#append flyers#TODO:use a config file
     parameters.initial_condition=(parameters.initial_condition*tmp).reshape((HEIGHT*WIDTH*(3*n + 3) ))#TODO:check that this does what we expect.
     parameters.vBS_a=parameters.BS_a*np.ones((HEIGHT,WIDTH))#np.random.random((WIDTH,HEIGHT))#TODO:do something about this...
     parameters.vBS_d=parameters.vBS_d*np.ones((HEIGHT,WIDTH,n))
@@ -433,7 +437,7 @@ def runSpatial():
     parameters.ovr=np.ones((HEIGHT,WIDTH))/0.229#TODO:implement!!!!
 
     #solve the equations
-    time_range,initial_condition,Y=model.solveEquations(equations=utils.ProgressEquations(model,diff_eqs),method='cuda_rk' )
+    time_range,initial_condition,Y=model.solveEquations(equations=utils.ProgressEquations(model,spatial_diff_eqs),method='cuda_rk' )
     EGG,LARVAE,PUPAE,ADULT1,FLYER,ADULT2=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.FLYER,parameters.ADULT2
     Y=Y.reshape(Y.shape[0],HEIGHT,WIDTH,3*n + 3)
     np.save('out/Y.npy',Y)

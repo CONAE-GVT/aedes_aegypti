@@ -5,7 +5,7 @@ from config import Configuration
 from weather import Weather
 from bunch import Bunch
 import numpy as np
-import spatial_equations as equations
+import equations
 import datetime
 import utils
 import rk
@@ -28,8 +28,7 @@ class Model:
         self.parameters.LARVAE=slice(n,2*n)#in R^n
         self.parameters.PUPAE=slice(2*n,3*n)#in R^n
         self.parameters.ADULT1=3*n#in R
-        self.parameters.FLYER=3*n+1#in R
-        self.parameters.ADULT2=3*n+2#in R
+        self.parameters.ADULT2=3*n+1#in R
         self.parameters.vAlpha0=configuration.getArray('biology','alpha0')#constant to be fitted
 
         #Cordoba
@@ -46,7 +45,6 @@ class Model:
         W = spi.odeint(equations.waterEquations,self.parameters.vBS_W0,self.time_range,hmax=1.0,args=(self.parameters,))
         self.parameters.vW=interpolate.interp1d(self.time_range,W,axis=0,fill_value="extrapolate")#TODO:find a way to avoid extrapolate(mainly needed because odeint goes outside timerange)
 
-        self.parameters.P=utils.getPreferenceMatrix()
         self.validate()
 
     def validate(self):
