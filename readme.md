@@ -1,6 +1,6 @@
 **Dependencies**
->sudo apt install python3-scipy python3-grib python3-netcdf4 python3-matplotlib python3-gdal python3-xlrd python3-line-profiler
->pip install moviepy
+>sudo apt install python3-scipy python3-grib python3-netcdf4 python3-matplotlib python3-gdal python3-xlrd python3-line-profiler nvidia-cuda-toolkit
+>pip install moviepy cupy
 
 **Run**
 >python src/otero_precipitation.py

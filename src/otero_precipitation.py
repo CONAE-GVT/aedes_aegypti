@@ -80,6 +80,8 @@ class Model:
             Y = spi.odeint(equations,initial_condition,time_range,hmax=1.0,args=(self.parameters,))#the ',' in (parameters,) is very important! '(parameters)' or tuple(parameters) doesn't work#TODO: this is because it calls aps out of it's domain.Find a better way.
         elif(method=='rk'):
             Y=rk.solve(equations,initial_condition,time_range,args=(self.parameters,),steps=20)
+        elif(method=='cuda_rk'):
+            Y=rk.cuda_solve(equations,initial_condition,time_range,args=(self.parameters,),steps=20)
         elif(method=='dopri'):
             Y=rk.scipy_solve(equations,initial_condition,time_range,'dopri',{'max_step':time_range[1]-time_range[0],'rtol':1e-3, 'atol':1e-6}, args=(self.parameters,))
 

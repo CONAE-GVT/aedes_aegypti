@@ -27,6 +27,40 @@ def solve(_dYdt,Y0,time_range,args=(),steps=1):
 
     return Y
 
+import cupy as cp
+#this is way too similar to the RK method above
+def cuda_solve(_dYdt,Y0,time_range,args=(),steps=1):
+    #numpy array ----> cupy arrays
+    Y0=cp.array(Y0)
+    parameters,=args
+    for param_name in parameters.__dict__:
+        if(isinstance(parameters.__dict__[param_name],np.ndarray)):
+            parameters.__dict__[param_name]=cp.array(parameters.__dict__[param_name])
+
+    #main
+    Y=np.zeros([len(time_range),len(Y0)],dtype=np.float32)
+    Y[0]=Y0.get()#<---initial conditions
+    def dYdt(Y,t,_args):
+        Y[Y<0]=0#this is to make rk work
+        return _dYdt(Y,t,*_args)
+
+    Y_j=Y0
+    for i,t in enumerate(time_range[:-1]):
+        h=time_range[i+1]-time_range[i]
+        h_j=h/float(steps)
+        for j in range(0,steps):
+            #Runge-Kutta's terms
+            K_n1=dYdt(Y_j,t,args)
+            K_n2=dYdt(Y_j + (h_j/2.)*K_n1, t + h_j/2.,args)
+            K_n3=dYdt(Y_j + (h_j/2.)*K_n2, t + h_j/2.,args)
+            K_n4=dYdt(Y_j + h_j*K_n3, t + h_j,args)
+
+            Y_j=Y_j+ (h_j/6.0)*(K_n1 + 2.0*K_n2 + 2.0*K_n3 + K_n4)
+            t=t+h_j
+        Y[i+1]=Y_j.get()#use stream to make this async, https://docs-cupy.chainer.org/en/stable/reference/generated/cupy.ndarray.html
+
+    return Y
+
 from scipy.integrate import ode
 def scipy_solve(_dYdt,Y0,time_range,name,kwargs,args=()):
 	def dYdt(t,Y): return np.array(_dYdt(Y,t,*args))#decorate the function to return an np array and swap args.

@@ -1,9 +1,10 @@
 from equations import *
+import cupy as cp
 
 def dvE(vE,F,vBS_d,ovr,elr):
     egn=63.0
     me=0.01#mortality of the egg, for T in [278,303]
-    return egn* np.expand_dims(ovr * F,axis=2)*vBS_d - (me+elr) * vE
+    return egn* (ovr * F)[:,:,np.newaxis]*vBS_d - (me+elr) * vE
 
 def dvL(vE,vL,T_t,elr,lpr,vAlpha):
     ml=0.01 + 0.9725 * math.exp(-(T_t-278.0)/2.7035)#mortality of the larvae, for T in [278,303]
@@ -16,16 +17,17 @@ def dvP(vL,vP,T_t,lpr,par):
 def dA1(vP,A1,par,cycle1):
     ef=0.83#emergence factor
     ma=0.091#for T in [278,303]
-    return np.sum(par*ef*vP/2.0,axis=2) - ma*A1 - cycle1*A1
+    return (par*ef*vP/2.0).sum(axis=2) - ma*A1 - cycle1*A1
 
 def dF(A1,F,A2,P,ovr,cycle1,cycle2):
     ma=0.091#for T in [278,303]
     beta_p=830./100.**2#TODO: check if its correct!!!# dispersal coefficient for perpendicular flights
     beta_d=beta_p/2.#dispersal coefficient for diagonal flights
+    xp = cp.get_array_module(A1)
     return cycle1*A1 + cycle2*A2 - (ovr + ma + 4.*beta_d + 4*beta_p)*F +\
-            beta_p*(np.roll(F,1,axis=0)*P[:,:,0] +  np.roll(F,-1,axis=1)*P[:,:,2] +  np.roll(F,-1,axis=0)*P[:,:,4] + np.roll(F,1,axis=1)*P[:,:,6] ) +\
-            beta_d*(np.roll(np.roll(F,-1,axis=1),1,axis=0)*P[:,:,1] + np.roll(np.roll(F,-1,axis=1),-1,axis=0)*P[:,:,3] +\
-            np.roll(np.roll(F,1,axis=1),-1,axis=0)*P[:,:,5] + np.roll(np.roll(F,1,axis=1),1,axis=0)*P[:,:,7] )#TODO:Check if this is correct!
+            beta_p*(xp.roll(F,1,axis=0)*P[:,:,0] +  xp.roll(F,-1,axis=1)*P[:,:,2] +  xp.roll(F,-1,axis=0)*P[:,:,4] + xp.roll(F,1,axis=1)*P[:,:,6] ) +\
+            beta_d*(xp.roll(xp.roll(F,-1,axis=1),1,axis=0)*P[:,:,1] + xp.roll(xp.roll(F,-1,axis=1),-1,axis=0)*P[:,:,3] +\
+            xp.roll(xp.roll(F,1,axis=1),-1,axis=0)*P[:,:,5] + xp.roll(xp.roll(F,1,axis=1),1,axis=0)*P[:,:,7] )#TODO:Check if this is correct!
 
 def dA2(F,A2,ovr,cycle2):
     ma=0.091#for T in [278,303]
@@ -43,7 +45,8 @@ def diff_eqs(Y,t,parameters):
     vW_t=parameters.vW(t)
     vE,vL,vP,A1,F,A2=Y[:,:,EGG],Y[:,:,LARVAE],Y[:,:,PUPAE],Y[:,:,ADULT1],Y[:,:,FLYER],Y[:,:,ADULT2]
 
-    dY=np.empty(Y.shape)
+    xp = cp.get_array_module(A1)
+    dY=xp.empty(Y.shape)
     dY[:,:,EGG]    = dvE(vE,F,vBS_d,ovr,elr)
     dY[:,:,LARVAE] = dvL(vE,vL,T_t,elr,lpr,vAlpha )
     dY[:,:,PUPAE]  = dvP(vL,vP,T_t,lpr,par)
