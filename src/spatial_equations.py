@@ -23,8 +23,9 @@ def dF(A1,F,A2,P,ovr,cycle1,cycle2):
     beta_p=830./100.**2#TODO: check if its correct!!!# dispersal coefficient for perpendicular flights
     beta_d=beta_p/2.#dispersal coefficient for diagonal flights
     return cycle1*A1 + cycle2*A2 - (ovr + ma + 4.*beta_d + 4*beta_p)*F +\
-        beta_p*(np.roll(F,(0, 1),axis=(1,0))*P[:,:,0] +  np.roll(F,(0,-1),axis=(0,1))*P[:,:,2] +  np.roll(F,(-1,0),axis=(0,1))*P[:,:,4] + np.roll(F,(1,0),axis=(1,0))*P[:,:,6] ) +\
-        beta_d*(np.roll(F,(-1, 1),axis=(1,0))*P[:,:,1] + np.roll(F,(-1,-1),axis=(1,0))*P[:,:,3] + np.roll(F,(1,-1),axis=(1,0))*P[:,:,5] + np.roll(F,(1,1),axis=(1,0))*P[:,:,7] )#TODO:Check if this is correct!
+            beta_p*(np.roll(F,1,axis=0)*P[:,:,0] +  np.roll(F,-1,axis=1)*P[:,:,2] +  np.roll(F,-1,axis=0)*P[:,:,4] + np.roll(F,1,axis=1)*P[:,:,6] ) +\
+            beta_d*(np.roll(np.roll(F,-1,axis=1),1,axis=0)*P[:,:,1] + np.roll(np.roll(F,-1,axis=1),-1,axis=0)*P[:,:,3] +\
+            np.roll(np.roll(F,1,axis=1),-1,axis=0)*P[:,:,5] + np.roll(np.roll(F,1,axis=1),1,axis=0)*P[:,:,7] )#TODO:Check if this is correct!
 
 def dA2(F,A2,ovr,cycle2):
     ma=0.091#for T in [278,303]

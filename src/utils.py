@@ -158,23 +158,23 @@ def getPreferenceMatrix():
     #assign each class points. like S[C=2]=9,or S[C=5]=0 so class 2 is very good(grass or homes) we assign a ten. class 5 is very bad (cement)
     S=np.zeros(C.shape)
     #TODO: assign real scores!
-    S[C==0]=0*0
-    S[C==1]=1*0
-    S[C==2]=9*10#<----
-    S[C==3]=3*0
+    S[C==0]=1*0
+    S[C==1]=2*0
+    S[C==2]=3*0
+    S[C==3]=4*1
 
     M=getReducedMatrix(S)#get a matrix of pixels 100mx100m (blocks)
 
     #Create the preference matrix
     P=np.zeros((M.shape[0],M.shape[1],8))
-    P[:,:,0]=np.roll(M,(0, 1),axis=(1,0))#up
-    P[:,:,1]=np.roll(M,(-1, 1),axis=(1,0))#up-right
-    P[:,:,2]=np.roll(M,(0,-1),axis=(0,1))#right
-    P[:,:,3]=np.roll(M,(-1,-1),axis=(1,0))# down-right
-    P[:,:,4]=np.roll(M,(-1,0),axis=(0,1))#down
-    P[:,:,5]=np.roll(M,(1,-1),axis=(1,0))#down-left
-    P[:,:,6]=np.roll(M,(1,0),axis=(1,0))#left
-    P[:,:,7]=np.roll(M,(1,1),axis=(1,0))#up-left
+    P[:,:,0]=np.roll(M,1,axis=0)#up
+    P[:,:,1]=np.roll(np.roll(M,-1,axis=1),1,axis=0)#up-right
+    P[:,:,2]=np.roll(M,-1,axis=1)#right
+    P[:,:,3]=np.roll(np.roll(M,-1,axis=1),-1,axis=0)# down-right
+    P[:,:,4]=np.roll(M,-1,axis=0)#down
+    P[:,:,5]=np.roll(np.roll(M,1,axis=1),-1,axis=0)#down-left
+    P[:,:,6]=np.roll(M,1,axis=1)#left
+    P[:,:,7]=np.roll(np.roll(M,1,axis=1),1,axis=0)#up-left
     PERPENDICULAR=(0,2,4,6)
     DIAGONAL=(1,3,5,7)
     P[:,:,PERPENDICULAR]=P[:,:,PERPENDICULAR]/np.maximum(1,np.sum(P[:,:,PERPENDICULAR],axis=2)[:,:,np.newaxis])*4.#normalize and multiply by 4
