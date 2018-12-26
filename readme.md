@@ -1,7 +1,6 @@
 **Dependencies**
 >sudo apt install python3-scipy python3-grib python3-netcdf4 python3-matplotlib python3-gdal python3-xlrd python3-line-profiler nvidia-cuda-toolkit
->pip install moviepy cupy
-
+>sudo -H pip install moviepy cupy
 **Run**
 >python src/otero_precipitation.py
 >python src/tests.py
@@ -110,6 +109,25 @@ Source: http://www.king-foo.com/2011/11/creating-debianubuntu-deb-packages/
 >python src/risk_map.py data/public/sensor/sentinel/B04.jp2 data/public/sensor/sentinel/B03.jp2 data/public/sensor/sentinel/B02.jp2 data/public/sensor/sentinel/B08.jp2
 band info: https://www.satimagingcorp.com/satellite-sensors/other-satellite-sensors/sentinel-2a/
 
+
+
+**Web**
+>sudo apt install apache2
+>sudo a2enmod cgid
+>sudo service apache2 restart
+>sudo vim /etc/apache2/conf-available/cgi-enabled.conf
+# create new
+# processes .cgi and .py as CGI scripts
+<Directory "/var/www/html/app/cgi-bin">
+   Options +ExecCGI
+   AddHandler cgi-script .cgi .py
+</Directory>
+
+>sudo ln -s /home/exequiel/Desktop/models/programs/aedes_aegypti/src/app /var/www/html/
+>sudo a2enconf cgi-enabled
+>sudo service apache2 restart
+>chmod 705 /home/exequiel/Desktop/models/programs/aedes_aegypti/src/app/cgi-bin/iface.py
+#Can now access to http://localhost/app/cgi-bin/iface.py
 
 **Notes**
 constant ml -> constant survival (independent of initial larvaes)

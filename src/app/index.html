@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-type" value="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="css/bootstrap-datepicker3.css"/>
+    <link rel="stylesheet" href="css/app.css" />
+    <script type="text/javascript" src="js/jquery.min.js"></script>
+    <script type="text/javascript" src="js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="js/bootstrap-datepicker.min.js"></script>
+    <script type="text/javascript" src="js/plotly.min.js"></script>
+    <script type="text/javascript" src="js/app.js"></script>
+</head>
+
+<body>
+    <div class="alert alert-danger alert-dismissable fade in" style="display: none">
+      <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+      <span id="message"></span>
+    </div>
+    <div id="container">
+      <div id="controls" class="panel panel-default">
+        <div class="panel-body">
+          <form>
+             <div class="form-group">
+              <label for="dates">Fechas</label>
+              <div>
+                <input type="text" autocomplete="off" name="start_date" id="start_date" class="form-control date" value="" />
+                <input type="text" autocomplete="off" name="end_date" id="end_date" class="form-control date" value="" />
+                <select name="location" id="location" class="form-control">
+                  <option value="jesus_maria">Jesus María</option>
+                  <option value="la_para">La Para</option>
+                  <option value="marcos_juarez">Marcos Juarez</option>
+                  <option value="rio_cuarto">Río Cuarto</option>
+                  <option value="salsipuedes">Salsipuedes</option>
+                  <option value="san_francisco">San Francisco</option>
+                  <option value="villa_maria">Villa María</option>
+		  <option value="cordoba">Córdoba</option>
+                </select>
+                <select name="scenario" id="scenario" class="form-control">
+                  <option value="rc">Condiciones regulares</option>
+                  <option value="it">Temperatura aumentada(20%)</option>
+                  <option value="dt">Temperatura disminuida(-20%)</option>
+                  <option value="ip">Precipitación aumentada(20%)</option>
+                  <option value="dp">Precipitación disminuida(-20%)</option>
+                  <option value="oc">80% Contenedores afectados por precipitación</option>
+                  <option value="ic">80% Contenedores no afectados por precipitación</option>
+                </select>
+              </div>
+            </div>
+            <button id="runSimulation" class="btn btn-primary">Correr Simulación</button>
+          </form>
+         </div>
+      </div>
+      <div id="weather"></div>
+      <div id="population"></div>
+    </div>
+</body>
+</html>
