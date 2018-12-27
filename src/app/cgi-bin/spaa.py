@@ -1,6 +1,5 @@
 import os
 import json
-import tempfile
 import datetime
 import numpy as np
 import sys
@@ -10,38 +9,7 @@ import utils
 from config import Configuration
 from otero_precipitation import Model
 
-
-
-
-DOWNLOAD_FOLDER='download/'
 SCENARIO_FULLNAMES={'rc':'condiciones_regulares','it':'temperatura_aumentada','dt':'temperatura_disminuida','ip':'precipitacion_aumentada','dp':'precipitacion_disminuida','oc':'contenedores_externos','ic':'contenedores_internos'}
-#taken from https://stackoverflow.com/questions/12522844/change-character-set-for-tempfile-namedtemporaryfile
-class MyRandomSequence(tempfile._RandomNameSequence):
-    characters = "abcdefghijklmnopqrstuvwxyz0123456789"
-
-tempfile._name_sequence = MyRandomSequence()
-
-def createOrderId(prefix='_'):
-	file=tempfile.NamedTemporaryFile(dir=DOWNLOAD_FOLDER,prefix=prefix,delete=False)
-	file.close()
-	return os.path.basename(file.name)
-
-def generateCSV(time_range,columns,names,start_date,end_date,location,scenario):
-    augmented_Y=np.zeros((len(time_range),6))#Y will be augmented with weather variables.
-    for i,M in enumerate(columns):
-        M=np.array(M)
-        augmented_Y[:,i]=M[:,1]
-    daily_Y=utils.getDailyResults(time_range,augmented_Y,start_date,end_date)
-
-    id=createOrderId()
-    filename=location+'_'+start_date.strftime('%Y-%m-%d')+'_'+end_date.strftime('%Y-%m-%d')+ '_'+SCENARIO_FULLNAMES[scenario]+id+'.csv'
-    file=open(DOWNLOAD_FOLDER+filename,'w')
-
-    file.write('Fecha,' + ','.join(names)+ '\n')#add the header
-    for d,daily_Y_d in enumerate(daily_Y):
-        date_d=start_date+datetime.timedelta(days=d)
-        file.write(date_d.strftime('%Y-%m-%d')+','+','.join([str(value) for value in daily_Y_d ])+ '\n')
-    return filename
 
 def daysSinceEpoch(start_datetime,days):
     epoch = datetime.datetime.utcfromtimestamp(0)
@@ -85,7 +53,6 @@ def getConfig(configuration,scenario):
     return configuration
 
 def runSimulation(GET):
-    #return json.dumps(os.getcwd())
     start_datetime=datetime.datetime.strptime(GET.get('start_date'),'%Y-%m-%d')
     start_date=start_datetime.date()
     end_date=datetime.datetime.strptime(GET.get('end_date'),'%Y-%m-%d').date()
@@ -118,13 +85,5 @@ def runSimulation(GET):
 
     return json.dumps({
                         'population':[{'name':'Huevos','data':E},{'name':'Larvas','data':L},{'name':'Adultos','data':A}],
-                        'weather':[{'name':'Temperatura','data':T},{'name':'Humedad Relativa','data':RH},{'name':'Precipitacion','data':p}],
-                        'filename':generateCSV(time_range,[E,L,A,T,RH,p],['Huevos','Larvas','Adultos','Temperatura','Humedad Relativa','Precipitacion'],start_date,end_date,location,scenario)#TODO:find a better way to pass the header
-                         })
-
-
-def download(GET):
-    filename=GET.get('filename')
-    response=FileResponse(open(DOWNLOAD_FOLDER+filename, 'rb'))
-    response['Content-Disposition'] = 'attachment; filename='+'_'.join(filename.split('_')[:-1])+ os.path.splitext(filename)[1]#remove order id
-    return response
+                        'weather':[{'name':'Temperatura','data':T},{'name':'Humedad Relativa','data':RH},{'name':'Precipitacion','data':p}]
+                        })

@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 #url: http://localhost/app/cgi-bin/iface.py?method=runSimulation&start_date=2017-7-1&end_date=2018-1-1&location=cordoba&scenario=rc
 import cgi
-#import cgitb  #these 2 lines
-#cgitb.enable()#are for debug
 import spaa
 
 #main
