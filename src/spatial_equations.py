@@ -17,7 +17,7 @@ def dvP(vL,vP,T_t,lpr,par):
 def dA1(vP,A1,par,cycle1):
     ef=0.83#emergence factor
     ma=0.091#for T in [278,303]
-    return (par*ef*vP/2.0).sum(axis=2) - ma*A1 - cycle1*A1
+    return (1/2 * par*ef*vP).sum(axis=2) - (ma+cycle1)*A1
 
 def dF(A1,F,A2,P,ovr,cycle1,cycle2):
     ma=0.091#for T in [278,303]
@@ -31,7 +31,7 @@ def dF(A1,F,A2,P,ovr,cycle1,cycle2):
 
 def dA2(F,A2,ovr,cycle2):
     ma=0.091#for T in [278,303]
-    return ovr*F - cycle2*A2 - ma*A2
+    return ovr*F - (ma+cycle2)*A2
 
 def diff_eqs(Y,t,parameters):
     '''The main set of equations'''
