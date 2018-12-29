@@ -89,19 +89,19 @@ def runSpatial():
 
     #solve the equations
     time_range,initial_condition,Y=model.solveEquations(equations=utils.ProgressEquations(model,spatial_diff_eqs),method='cuda_rk' )
-    EGG,LARVAE,PUPAE,ADULT1,FLYER,ADULT2=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.FLYER,parameters.ADULT2
     Y=Y.reshape(Y.shape[0],HEIGHT,WIDTH,3*n + 3)
     np.save('out/Y.npy',Y)
     #time_range,Y=model.time_range,np.load('out/Y.npy')#to debug video
 
+    EGG,LARVAE,PUPAE,ADULT1,FLYER,ADULT2=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.FLYER,parameters.ADULT2
     stages={'E':EGG, 'A':[ADULT1,FLYER,ADULT2]}
     for key in stages:
         print('Creating animation for %s...'%key)
-        matrix=np.sum(Y[:,:,:,stages[key]],axis=3)#Y[:,:,:,ADULT1]+Y[:,:,:,ADULT2]
+        matrix=np.sum(Y[:,:,:,stages[key]],axis=3)
         matrix=matrix/matrix.max()
         start_date=configuration.getDate('simulation','start_date')
         getTitle=lambda i: datetime.timedelta(days=time_range[i])+start_date
-        utils.createAnimation(matrix,getTitle,'out/%s'%key)
+        utils.createAnimation('out/%s'%key,matrix,getTitle,time_range.max())# 1 day : 1 second
 
 def runCases():
     testModel(Configuration('resources/otero_precipitation.cfg'),subplots=[['E'],['A1+A2'], ['W']])

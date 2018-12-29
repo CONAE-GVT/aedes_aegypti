@@ -349,7 +349,7 @@ def addText(matrix,text):
     draw.text((50, 25), str(text))
     return PIL_to_npimage(im)
 
-def createAnimation(matrix,getTitle,out_filename):
+def createAnimation(out_filename,matrix,getTitle,duration):
     R=np.load('out/R.npy')#Load the original Raster
     R=np.moveaxis(R,0,-1)#(4,n,m) ----> (n,m,4)
     R=getReducedMatrix(R[:,:,0:3])#10mx10m ----> 100mx100m
@@ -359,5 +359,5 @@ def createAnimation(matrix,getTitle,out_filename):
         frame=255*(0.5*R + 0.5*red*matrix[int(t),:,:,np.newaxis])
         return addText(frame, getTitle(int(t)))
 
-    animation = mpy.VideoClip(makeFrame, duration=matrix.shape[0]) # 2 seconds
+    animation = mpy.VideoClip(makeFrame, duration=duration)
     animation.write_videofile(out_filename+'.mp4', fps=15)
