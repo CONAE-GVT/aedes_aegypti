@@ -244,7 +244,7 @@ def subData(time_range,Y,date_range,an_start_date):
             break#conserve the first one.
     return time_range[index:],Y[index:,:],date_range[index:]
 
-def plot(model,subplots,plot_start_date,title=''):
+def plot(model,subplots,plot_start_date,title='',figure=True,color=None):
     time_range=model.time_range
     RES=model.Y
     parameters=model.parameters
@@ -255,7 +255,7 @@ def plot(model,subplots,plot_start_date,title=''):
     EGG,LARVAE,PUPAE,ADULT1,ADULT2,WATER=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.ADULT2,parameters.WATER
     AEDIC_INDICES_FILENAME='data/private/Indices aedicos Historicos '+parameters.location['name']+'.xlsx'
 
-    pl.figure()
+    if(figure): pl.figure()
     pl.subplots_adjust(top=0.95,hspace=0.28)
     ax1=None
     for i,subplot in enumerate(subplots):
@@ -278,7 +278,7 @@ def plot(model,subplots,plot_start_date,title=''):
         if ('P' in subplot): pl.plot(date_range,applyFs(RES[:,PUPAE],subplot), '-g', label='P')
         if ('A1' in subplot): pl.plot(date_range,applyFs(RES[:,ADULT1],subplot), '-b', label='A1')
         if ('A2' in subplot): pl.plot(date_range,applyFs(RES[:,ADULT2],subplot), '-m', label='A2')
-        if ('A1+A2' in subplot): pl.plot(date_range,applyFs(RES[:,ADULT2]+RES[:,ADULT1],subplot), '-m', label='A1+A2')
+        if ('A1+A2' in subplot): pl.plot(date_range,applyFs(RES[:,ADULT2]+RES[:,ADULT1],subplot), '-m',color=color, label='A1+A2'+title)
 
         #derivate
         dY=np.zeros(RES.shape)
@@ -335,7 +335,7 @@ def plot(model,subplots,plot_start_date,title=''):
 
         #Temperature in K
         if ('T' in subplot):
-            pl.plot(date_range,applyFs(np.array([T(t) for t in time_range]),subplot), label='Temperature')
+            pl.plot(date_range,applyFs(np.array([T(t) for t in time_range]),subplot),color=color, label='Temperature'+title)
             pl.ylabel('K')
 
         #precipitations(in mm.)
