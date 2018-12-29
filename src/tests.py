@@ -352,6 +352,25 @@ def runOviShow(folder):
 
     utils.showPlot()
 
+def runShow(folder):
+    filenames=[filename for filename in os.listdir(folder) if re.match(r'.*cordoba\.[0-9]+.*\.csv',filename)]
+    filenames.sort()
+    for i,filename in enumerate(filenames):
+        configuration=Configuration('resources/otero_precipitation.cfg',
+            {'simulation':{
+                'start_date':datetime.date(2017,7,1),
+                'end_date':datetime.date(2019,1,4),
+            }
+            })
+        configuration.config_parser.set('location','name',filename.replace('.csv',''))
+        model=Model(configuration)
+        time_range,INPUT,RES=model.solveEquations(equations=diff_eqs,method='rk' )
+        p=i/len(filenames)
+        color=p*np.array([1,0,0]) + (1-p)*np.array([0,1,0])
+        print(color)
+        utils.plot(model,subplots=[ ['A1+A2',[utils.safeAdd] ],['T'] ],plot_start_date=datetime.date(2018,12,1),title=': '+configuration.getString('location','name'),color=color.tolist(),figure=False)
+    utils.showPlot()
+
 def runLab():
     testMacia()
 
@@ -462,6 +481,8 @@ if(__name__ == '__main__'):
     elif(len(sys.argv)>1 and sys.argv[1]=='lab'):
         runLab()
     elif(len(sys.argv)>2 and sys.argv[1]=='show'):
+            runShow(sys.argv[2])
+    elif(len(sys.argv)>2 and sys.argv[1]=='ovishow'):
         runOviShow(sys.argv[2])
     elif(len(sys.argv)>1 and sys.argv[1]=='weather'):
         gfs_folder,cfs_folder=sys.argv[2:4]
