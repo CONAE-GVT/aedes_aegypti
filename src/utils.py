@@ -6,41 +6,9 @@ import numpy as np
 import pylab as pl
 import matplotlib
 import datetime
-import math
-import xlrd
-
+import sys
 
 ###############################################################I/O###############################################################
-#print(getValuesFromXls('data/Indices aedicos Historicos.xlsx',date(2015, 1, 1),0,2,'SE',1))
-def getValuesFromXls(filename,initial_date,date_column,value_column,filter_value=None,filter_column=None):#Maybe add a filter
-    #Loads only current sheets to memory
-    workbook = xlrd.open_workbook(filename, on_demand = True)
-
-    # Load a specific sheet by index
-    worksheet = workbook.sheet_by_index(0)
-
-    # Retrieve the data pairs(key_column,value_column)
-    data=collections.OrderedDict()
-    last_date_value=None
-    for row in range(2,worksheet.nrows):
-
-        if(not worksheet.cell(row, value_column).value):
-            continue
-        if(worksheet.cell(row, date_column).value):
-            last_date_value=worksheet.cell(row, date_column).value
-        if(not last_date_value):
-            continue
-        if(filter_value and filter_column and not worksheet.cell(row, filter_column).value==filter_value):
-            continue
-
-        #get the days passed from initial_date to the date in the excel
-        year,month,day,hour,minute,second=xlrd.xldate_as_tuple(last_date_value,workbook.datemode)
-        delta=datetime.date(year,month,day)-initial_date
-        #put it in a dict
-        data[delta.days]=worksheet.cell(row, value_column).value
-        #print('world.indices['+str(delta.days)+']='+str(worksheet.cell(row, value_column).value)) #just for dengueme
-    return data
-
 def daterange(start_date, end_date):
     for n in range(int ((end_date - start_date).days)):
         yield start_date + datetime.timedelta(n)
@@ -133,11 +101,6 @@ def getDailyResults(time_range,RES,start_date,end_date):
         daily_RES.append(mean_RES_d)
     return np.array(daily_RES)
 
-def loadResults(filename,start_date):
-    converters = {0: lambda d: (datetime.datetime.strptime(d.decode('ascii'), '%Y-%m-%d').date()-start_date).days}#date->days passed from start_date
-    RES=np.loadtxt(filename,delimiter=',',converters=converters)
-    return RES[:,1:]# 1: is to discard the date column
-
 def getLocations():
     config_parser = ConfigParser()
     config_parser.read('resources/get_weather.cfg')
@@ -182,24 +145,25 @@ def getPreferenceMatrix():
 
     return P
 
-###############################################################Misc.###############################################################
-def getSurface(x=None,y=None,r=None):#surface in cm2. x,y,r must be in cm
-    if(r):
-        return (math.pi*r**2)
-    elif(x and y):
-        return x*y
-    else:
-        assert(False)
+###############################################################Equation Decorators###############################################################
+class MetricsEquations:
+    def __init__(self,model,diff_eqs):
+        self.model=model
+        self.diff_eqs=diff_eqs
 
-def getCapacity(x=None,y=None,r=None,z=None):#capacity in litres. x,y,z,r must be in cm
-    if (r and z):
-        return getSurface(r=r)*z * 1e-3 # cm3->litres
-    elif(x and y and z):
-        return getSurface(x=x,y=y)*z * 1e-3 # cm3->litres
-    else:
-        assert(False)
+    def __call__(self,Y,t,parameters):
+        dY=self.diff_eqs(Y,t,parameters)
+        time_range=self.model.time_range
+        #account calls
+        if(parameters.calls is None):
+            parameters.calls=np.array([0]*len(time_range))
+        parameters.calls[(np.abs(time_range-t)).argmin()]+=1
+        #account negatives
+        if(parameters.negatives is None):
+            parameters.negatives=np.array([0]*len(time_range))
+        if(np.any(Y<0)): parameters.negatives[(np.abs(time_range-t)).argmin()]+=1
+        return dY
 
-import sys
 class ProgressEquations:
     def __init__(self,model,diff_eqs):
         self.model=model
@@ -296,11 +260,6 @@ def plot(model,subplots,plot_start_date,title='',figure=True,color=None):
         if ('dA2' in subplot): pl.plot(date_range,applyFs(dY[:,ADULT2],subplot), '-m', label='dA2')
         if ('dW' in subplot): pl.plot(date_range,applyFs(dY[:,WATER],subplot), '-b', label='dW')
 
-        #larvae indices
-        if ('LI' in subplot):
-            ri_days, ris=np.array(getIndexesForPlot(AEDIC_INDICES_FILENAME,model.start_date,0,5))
-            pl.plot([datetime.timedelta(days=d)+datetime.datetime.combine(model.start_date,datetime.time()) for d in ri_days], applyFs(ris,subplot), '^y', label='Recip. Indices',clip_on=False, zorder=100,markersize=8)
-
         #ovitraps
         if('O' in subplot):
             for i in subplot['O']:
@@ -375,15 +334,6 @@ def plot(model,subplots,plot_start_date,title='',figure=True,color=None):
         pl.legend(loc=0)
         pl.xticks(rotation='vertical')
         pl.title(title)
-
-from mpl_toolkits import mplot3d
-def plot3D(xline,yline,zline):
-    ax = pl.axes(projection='3d')
-    pl.xlabel('time')
-    pl.ylabel('W')
-    #pl.zlabel('E')
-    ax.plot3D(xline, yline, zline, 'gray')
-
 
 def showPlot():
     return pl.show()
