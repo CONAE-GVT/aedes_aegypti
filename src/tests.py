@@ -10,29 +10,18 @@ from otero_precipitation import Model
 from equations import diff_eqs
 from spatial_equations import diff_eqs as spatial_diff_eqs
 
-def testModel(configuration, p=None,T=None,subplots=[['E','L'],['W']],plot_start_date=None):
+def testModel(configuration, subplots=[],plot_start_date=None,title='',figure=True,color=None):
     model=Model(configuration)
-
-    if(p):
-        model.parameters.weather.p=p
-    if(T):
-        model.parameters.weather.T=T
-
     model.parameters.calls=None
     model.parameters.negatives=None
     time_range,INPUT,RES=model.solveEquations(equations=utils.MetricsEquations(model,diff_eqs),method='rk' )
-    if('save' in sys.argv and p==None and T==None):#if asked save, but not with tampered p or T functions
-        model.save()
-
-    if('silent' not in sys.argv):
-        utils.plot(model,subplots,plot_start_date,title=configuration.getString('location','name'))
+    utils.plot(model,subplots,plot_start_date,title,figure,color)
 
 def runOviShow(folder):
     config_filenames=[filename for filename in os.listdir(folder) if filename.endswith('.cfg')]
     for config_filename in config_filenames:
         for ovitrap_id in re.findall(r'.*_ovi([0-9]+)\.cfg',config_filename):
             testModel(Configuration(folder+'/'+config_filename),subplots=[ ['E','P','A1+A2',[utils.safeAdd,utils.normalize] ],{'lwE':'','O':[int(ovitrap_id)+1],'f':[utils.replaceNegativesWithZeros,utils.safeAdd,utils.safeNormalize]}])
-
     utils.showPlot()
 
 def runShow(folder):
@@ -46,13 +35,10 @@ def runShow(folder):
             }
             })
         configuration.config_parser.set('location','name',filename.replace('.csv',''))
-        model=Model(configuration)
-        time_range,INPUT,RES=model.solveEquations(equations=diff_eqs,method='rk' )
         p=i/len(filenames)
         color=p*np.array([1,0,0]) + (1-p)*np.array([0,1,0])
-        utils.plot(model,subplots=[ ['A1+A2',[utils.safeAdd] ],['T'] ],plot_start_date=datetime.date(2018,12,1),title=': '+configuration.getString('location','name'),color=color.tolist(),figure=False)
+        testModel(configuration,subplots=[ ['A1+A2',[utils.safeAdd] ],['T'] ],plot_start_date=datetime.date(2018,12,1),title=': '+configuration.getString('location','name'),color=color.tolist(),figure=False)
     utils.showPlot()
-
 
 def runProject():
     config=Configuration('resources/otero_precipitation.cfg',
@@ -63,10 +49,8 @@ def runProject():
         })
     for location in utils.getLocations():
         config.config_parser.set('location','name',location+'.full')
-        testModel(config,subplots=[['E','A1+A2',[utils.safeAdd,utils.normalize] ]])
-
-    if('silent' not in sys.argv):
-        utils.showPlot()
+        testModel(config,subplots=[['E','A1+A2',[utils.safeAdd,utils.normalize] ]],title=location)
+    utils.showPlot()
 
 def runSpatial():
     configuration=Configuration('resources/otero_precipitation.cfg')
@@ -105,6 +89,7 @@ def runSpatial():
 
 def runCases():
     testModel(Configuration('resources/otero_precipitation.cfg'),subplots=[['E'],['A1+A2'], ['W']])
+    testModel(Configuration('resources/otero_precipitation.cfg'),subplots=[['E'],['L'], ['T']])
     utils.showPlot()
 
 if(__name__ == '__main__'):

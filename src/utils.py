@@ -52,18 +52,6 @@ def getValuesFromCsv(filename,start_date,end_date,value_column,verbose=True):
             if(verbose): print ('No info for ' + str(date))
     return values_list
 
-def getIndexesForPlot(filename,initial_date,date_column,value_column,filter_value=None,filter_column=None):
-    if(not os.path.isfile(filename)): return [0.0],[0]
-    indexes_data=getValuesFromXls(filename,initial_date,date_column,value_column,filter_value,filter_column)
-    lists = sorted(indexes_data.items()) # sorted by key, return a list of tuples
-    days, indexes = zip(*lists) # unpack a list of pairs into two tuples
-    return np.asarray(days).tolist(),np.asarray(indexes).tolist()#to list
-
-def getDatesTicksForPlot(start_date, time_range):
-    locations = [d for d in time_range if (datetime.timedelta(days=d)+start_date).day==1]
-    labels = [datetime.timedelta(days=d)+start_date for d in time_range if (datetime.timedelta(days=d)+start_date).day==1]
-    return locations,labels
-
 def  getMinTemperaturesFromCsv(filename,start_date,end_date):#in Kelvin
     return [x +273.15 if x is not None else None for x in getValuesFromCsv(filename,start_date,end_date,1)]
 
@@ -220,7 +208,6 @@ def plot(model,subplots,plot_start_date,title='',figure=True,color=None):
     vBS_mf,mf=parameters.vBS_mf,parameters.mf
     BS_a,vBS_h,vBS_s,vBS_d,n=parameters.BS_a,parameters.vBS_h,parameters.vBS_s,parameters.vBS_d,parameters.n
     EGG,LARVAE,PUPAE,ADULT1,ADULT2=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.ADULT2
-    AEDIC_INDICES_FILENAME='data/private/Indices aedicos Historicos '+parameters.location['name']+'.xlsx'
 
     if(figure): pl.figure()
     pl.subplots_adjust(top=0.95,hspace=0.28)
@@ -334,6 +321,9 @@ def plot(model,subplots,plot_start_date,title='',figure=True,color=None):
         pl.legend(loc=0)
         pl.xticks(rotation='vertical')
         pl.title(title)
+        #https://stackoverflow.com/questions/28269157/plotting-in-a-non-blocking-way-with-matplotlib/42674363
+        pl.draw()
+        pl.pause(0.001)
 
 def showPlot():
     return pl.show()
