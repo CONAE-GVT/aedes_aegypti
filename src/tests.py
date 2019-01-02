@@ -87,9 +87,25 @@ def runSpatial():
         getTitle=lambda i: datetime.timedelta(days=time_range[i])+start_date
         utils.createAnimation('out/%s'%key,matrix,getTitle,time_range.max())# 1 day : 1 second
 
-def runCases():
-    testModel(Configuration('resources/otero_precipitation.cfg'),subplots=[['E'],['A1+A2'], ['W']])
-    testModel(Configuration('resources/otero_precipitation.cfg'),subplots=[['E'],['L'], ['T']])
+def runCases(case):
+    if(case==1):
+        testModel(Configuration('resources/otero_precipitation.cfg'),subplots=[['E'],['A1+A2'], ['W']])
+    #Model against ovitraps
+    start_date,end_date=utils.getStartEndDates('data/private/ovitrampas_2017-2018.csv')
+    configuration=Configuration('resources/otero_precipitation.cfg',
+        {'simulation':{
+            'start_date':start_date,
+            'end_date':end_date
+            }
+        })
+    if(case==2):
+        #this test seems to indicate that the lwe produced by EACH ovitrap is independent of the BS_a. Meaning that there's no value in fitting this by BS_a
+        BS_d=configuration.getArray('breeding_site','distribution')
+        for BS_a in range(20,220,20):
+            configuration.config_parser.set('breeding_site','amount',str(BS_a))
+            per_ovitrap=lambda lwE: lwE[:,0]/(BS_a*BS_d[0])
+            testModel(configuration,subplots=[{'lwE':'','f':[utils.replaceNegativesWithZeros,per_ovitrap]}],title=BS_a)
+
     utils.showPlot()
 
 if(__name__ == '__main__'):
@@ -101,5 +117,9 @@ if(__name__ == '__main__'):
         runProject()
     elif(len(sys.argv)>1 and sys.argv[1]=='spatial'):
         runSpatial()
-    else:
-        runCases()
+    else:#the default is just a number indicating which test case to run, or none (test case 1 will will be default)
+        if(len(sys.argv)<2):
+            case=1
+        else:
+            case=int(sys.argv[1])
+        runCases(case)

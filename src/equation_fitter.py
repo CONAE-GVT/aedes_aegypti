@@ -9,7 +9,8 @@ from config import Configuration
 from otero_precipitation import Model
 from scipy.optimize import minimize,differential_evolution
 
-MINIMIZE_METHOD='differential_evolution'
+MINIMIZE_METHOD='SLSQP'
+OVITRAP_FILENAME='data/private/ovitrampas_2017-2018.csv'
 
 def safeAdd(values):
     if(len(values.shape)!=2):
@@ -17,12 +18,20 @@ def safeAdd(values):
     else:
         return np.sum(values,axis=1)
 
-def getConfiguration(x,n):
-    MAX_BS_A=4550.
+def getConfiguration(x=None,n=None):
+    if(x is None and n is None): return Configuration('resources/otero_precipitation.cfg')#no arguments passed, return default configuration
+
+    x[0:n]/=x[0:n].sum()#sometimes the constraints fails
+    start_date,end_date=utils.getStartEndDates(OVITRAP_FILENAME)
     configuration=Configuration('resources/otero_precipitation.cfg',
-        {'breeding_site':{
-            'amount':MAX_BS_A*x[n]+50,
+        {
+        'breeding_site':{
+            'amount':x[n],
             'distribution':x[0:n]
+            },
+        'simulation':{
+            'start_date':start_date,
+            'end_date':end_date
             }
         })
     return configuration
@@ -31,60 +40,9 @@ def calculateMetrics(time_range,mEggs,real_values):
     cEggs=safeAdd(mEggs)
     lwE=np.array([cEggs[(np.abs(time_range-t)).argmin()]-cEggs[(np.abs(time_range-(t-7))).argmin()] for t in time_range])
     lwE[lwE<0]=0.#replace negatives with zeros
-    lwE=lwE/np.max(lwE)#normalize
     error=sum([(real_values[t]-lwE[t] )**2  for t in range(0,len(real_values)) if real_values[t]] )
-    rho,p_value=stats.spearmanr(real_values[real_values!=[None]],lwE[real_values!=[None]])
+    rho,p_value=stats.pearsonr(real_values[real_values!=[None]],lwE[real_values!=[None]])
     return lwE,error,rho,p_value
-
-def error(x,model,real_values=None,ovitrap=None):
-    #return np.dot(x,x)
-    if(real_values is None):
-        model,real_values,ovitrap=model#weird differential_evolution bug...
-
-    n=model.parameters.n
-    l=np.sum(x[0:n])
-    if(l<1e-5): return 500.
-    x[0:n]/=l#constraint: #Σ vBS_od[i] + vBS_id[i] = 1
-    #update parameters
-    MAX_BS_A=4550.
-    model.parameters.BS_a=MAX_BS_A*x[n]+50
-    model.parameters.vBS_d=x[0:n]
-    #sync the config with the new parameters (this couple lines should have no effect whatsoever)
-    model.configuration=getConfiguration(x,n)
-
-    time_range,INPUT,RES=model.solveEquations()
-    lwE,error,rho,p_value=calculateMetrics(time_range,RES[:,model.parameters.EGG],real_values)
-    ovitrap_data_len=float(len(real_values[real_values!=[None]]))
-    if(ovitrap_data_len==0): ovitrap_data_len=1.
-    print('ovitrap:%s pid:%i d:%s BS_a:%s Error:%s len:%s Error/len: %s'%(ovitrap,os.getpid(),model.parameters.vBS_d.tolist(),model.parameters.BS_a,error,ovitrap_data_len,error/ovitrap_data_len))
-    return error
-
-def getOptimalParameters(args):
-    model=Model()
-    #initial value
-    x0=np.append( model.parameters.vBS_d,np.array([model.parameters.BS_a]))
-    #Σ vBS_od[i] + vBS_id[i] = 1
-    constraints = ({'type': 'eq', 'fun': lambda x:  1 - sum(x[0:model.parameters.n])})
-    #0<=x<=1,0<=ws_s<=1.
-    bounds=tuple((1e-8,1) for x in x0 )#tuple((0,1) for x in range(0,len(x0)-1) ) + tuple((0,1.0) for x in range(0,1))
-
-    opt=None
-    args=[model]+args
-    if(MINIMIZE_METHOD=='SLSQP'):
-        opt=minimize(error,x0,args,method='SLSQP',bounds=bounds,constraints=constraints,options={'eps': 1e-02, 'ftol': 1e-01})
-    else:
-        opt=differential_evolution(error,bounds,args=args)
-    #TODO:save results
-    #opt.x[:model.parameters.n]/=np.sum(opt.x[:model.parameters.n])
-    model,real_values,ovitrap=args
-    results_filename='data/test/previous_results/%s_%s_%s_ovi%s'%(model.parameters.location['name'],datetime.datetime.now(),opt.fun,ovitrap)
-    if(np.abs(1-np.sum(opt.x[:model.parameters.n]))<1e-10 ):#save the model if its config is valid
-        model=Model(getConfiguration(opt.x,model.parameters.n))
-        model.solveEquations()
-        model.save(results_filename+'.csv')
-
-    open(results_filename+'.txt','w').write(str(opt))#TODO:not working
-    return opt
 
 def populate(time_range,ovitrap_eggs):
     result=np.array([None]*len(time_range))
@@ -92,38 +50,36 @@ def populate(time_range,ovitrap_eggs):
         result[(np.abs(time_range-d)).argmin()]=eggs
     return result
 
+def error(x,ovitrap_eggs_i_with_id):
+    #return np.dot(x,x)
+    ovitrap_id,ovitrap_eggs_i=ovitrap_eggs_i_with_id
+    model=Model(getConfiguration(x,len(x)-1))#vBS_d,BS_a#TODO:not agnostic
+    ovitrap_eggs_i=populate(model.time_range,ovitrap_eggs_i)
+    time_range,INPUT,Y=model.solveEquations()
+    lwE,error,rho,p_value=calculateMetrics(time_range,Y[:,model.parameters.EGG],ovitrap_eggs_i)
+    print('ovitrap:%s pid:%i d:%s BS_a:%s Error:%s rho:%s p value:%s'%(ovitrap_id,os.getpid(),model.parameters.vBS_d.tolist(),model.parameters.BS_a,error,rho,p_value))
+    return error
+
+def getOptimalParameters(ovitrap_eggs_i_with_id):
+    configuration=getConfiguration()
+    #initial value
+    x0=np.append( configuration.getArray('breeding_site','distribution'), configuration.getFloat('breeding_site','amount'))
+    #Σ vBS_d[i] = 1
+    constraints = ({'type': 'eq', 'fun': lambda x:  1 - sum(x[0:-1])})#TODO:not agnostic
+    #0<=x<=1,0<=ws_s<=1.
+    bounds=tuple((1e-8,1) for x in x0[0:-1] )+ ((0,200),)#TODO:not agnostic
+
+    if(MINIMIZE_METHOD=='SLSQP'):
+        opt=minimize(error,x0,ovitrap_eggs_i_with_id,method='SLSQP',bounds=bounds,constraints=constraints,options={'eps': 1e-02, 'ftol': 1e-01})
+    else:
+        opt=differential_evolution(error,bounds,args=(ovitrap_eggs_i_with_id,))
+
+    return opt
+
 if(__name__ == '__main__'):
-    vNormalized_ovitrap_eggs=[]
-    model=Model()#just for dates and time_range
-    for ovitrap in range(2,151):
-        ovitrap_eggs=utils.getOvitrapEggsFromCsv('data/private/ovitrampas_2016-2017.csv',model.start_date,model.end_date,ovitrap)
-        ovitrap_eggs=np.array(ovitrap_eggs)
-        normalized_ovitrap_eggs=[e/ovitrap_eggs[np.not_equal(ovitrap_eggs,None)].max() if e else None for e in ovitrap_eggs]
-        vNormalized_ovitrap_eggs.extend([[populate(model.time_range,ovitrap_eggs),ovitrap]])
+    start_date,end_date=utils.getStartEndDates(OVITRAP_FILENAME)
+    ovitrap_eggs=[[ovitrap_id,utils.getOvitrapEggsFromCsv(OVITRAP_FILENAME,start_date,end_date,ovitrap_id)] for ovitrap_id in range(2,151)]
 
     print('Starting...')
-    p = mp.Pool(mp.cpu_count() -2)
-    vOpt=p.map(getOptimalParameters, vNormalized_ovitrap_eggs)
-
-    #
-    weight= lambda z: 1./z
-    total_weight=np.sum([weight(opt.fun+1e-1) for opt in vOpt])
-    weight_mean_x=np.array([weight(opt.fun+1e-1)*opt.x/total_weight for opt in vOpt]).sum(axis=0)
-    print(weight_mean_x)
-    for idx,opt in enumerate(vOpt):
-        x=np.array(opt.x)
-        n=model.parameters.n
-        MAX_BS_A=4550.
-        model.parameters.BS_a=MAX_BS_A*x[n]+50
-        model.parameters.vBS_d=vBS_d=x[0:n]
-        #sync the config with the new parameters(so we can save the config)
-        model.configuration=getConfiguration(x,n)
-
-        time_range,INPUT,RES = model.solveEquations()
-        filename=model.save()
-        new_filename=filename.replace('.csv','_ovi%s.csv'%(idx+1))
-        os.rename(filename,new_filename)
-        os.rename(filename.replace('.csv','.cfg'),new_filename.replace('.csv','.cfg'))
-        print('Ovitrap %s:'%(idx+1))
-        print(vOpt[idx])
-        print('-'*200)
+    vOpt=mp.Pool(mp.cpu_count()-2).map(getOptimalParameters, ovitrap_eggs)
+    print(vOpt)

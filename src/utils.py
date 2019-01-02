@@ -81,6 +81,10 @@ def  getMeanWindSpeedFromCsv(filename,start_date,end_date):#in km/h
 def  getOvitrapEggsFromCsv(filename,start_date,end_date,ovitrap):#amount
     return [x for x in getValuesFromCsv(filename,start_date,end_date,ovitrap,False)]
 
+def getStartEndDates(filename):
+    dates=[line.split(',')[0] for line in open(filename,'r').readlines()]
+    return datetime.datetime.strptime(dates[1], '%Y-%m-%d').date(),datetime.datetime.strptime(dates[-1], '%Y-%m-%d').date()
+
 def getDailyResults(time_range,RES,start_date,end_date):
     daily_RES=[]
     for d in range(0,(end_date-start_date).days):
@@ -250,7 +254,7 @@ def plot(model,subplots,plot_start_date,title='',figure=True,color=None):
         #ovitraps
         if('O' in subplot):
             for i in subplot['O']:
-                ovitrap_eggs=np.array(getOvitrapEggsFromCsv('data/private/Datos sensores de oviposicion.NO.csv',model.start_date,model.end_date,i))
+                ovitrap_eggs=np.array(getOvitrapEggsFromCsv('data/private/ovitrampas_2017-2018.csv',model.start_date,model.end_date,i))
                 pl.plot([datetime.timedelta(days=d)+datetime.datetime.combine(model.start_date,datetime.time()) for d in range(0,len(ovitrap_eggs))], applyFs(ovitrap_eggs,subplot), '^', label='Ovitrap %s eggs'%i,clip_on=False, zorder=100,markersize=8)
 
         #delta Eggs
