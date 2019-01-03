@@ -112,7 +112,7 @@ band info: https://www.satimagingcorp.com/satellite-sensors/other-satellite-sens
 
 
 **Web**
->sudo apt install apache2
+>sudo apt install apache2 libapache2-mod-python
 >sudo a2enmod cgid
 >sudo service apache2 restart
 >sudo vim /etc/apache2/conf-available/cgi-enabled.conf

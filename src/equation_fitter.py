@@ -10,7 +10,7 @@ from config import Configuration
 from otero_precipitation import Model
 from scipy.optimize import minimize,differential_evolution
 
-MINIMIZE_METHOD='SLSQP'
+MINIMIZE_METHOD='differential_evolution'
 OVITRAP_FILENAME='data/private/ovitrampas_2017-2018.csv'
 
 class perOvitrap:
@@ -48,8 +48,9 @@ def calculateMetrics(time_range,model,ovitrap_eggs_i):
     lwE=np.array([mEggs[(np.abs(time_range-t)).argmin()]-mEggs[(np.abs(time_range-(t-7))).argmin()] for t in time_range])#last week eggs
     lwE[lwE<0]=0.#replace negatives with zeros
     lwE=perOvitrap(model)(lwE)
-    error=sum([(ovitrap_eggs_i[t]-lwE[t] )**2  for t in range(0,len(ovitrap_eggs_i)) if ovitrap_eggs_i[t]] )
+    d=sum([(ovitrap_eggs_i[t]-lwE[t] )**2  for t in range(0,len(ovitrap_eggs_i)) if ovitrap_eggs_i[t]] )/len(ovitrap_eggs_i[ovitrap_eggs_i!=[None]])
     rho,p_value=stats.pearsonr(ovitrap_eggs_i[ovitrap_eggs_i!=[None]],lwE[ovitrap_eggs_i!=[None]])
+    error=d*(2-rho)*p_value
     return lwE,error,rho,p_value
 
 def populate(time_range,ovitrap_eggs):
@@ -66,6 +67,7 @@ def error(x,ovitrap_eggs_i_with_id):
     time_range,INPUT,Y=model.solveEquations(method='rk')
     lwE,error,rho,p_value=calculateMetrics(time_range,model,ovitrap_eggs_i)
     title='ovitrap:%s\nmf:%s\n' r'$\alpha_0$:%s' '\n' r'Error:%s $\rho$:%s p value:%s'%(ovitrap_id,model.parameters.vBS_mf.tolist(),model.parameters.vAlpha0.tolist(),error,rho,p_value)
+    pl.clf()
     utils.plot(model,subplots=[{'lwE':'','f':[utils.replaceNegativesWithZeros,perOvitrap(model)],'O':[int(ovitrap_id)]}],title=title,figure=False)
     return error
 
@@ -79,7 +81,7 @@ def getOptimalParameters(ovitrap_eggs_i_with_id):
     #Σ vBS_d[i] = 1
     constraints = ()#({'type': 'eq', 'fun': lambda x:  1 - sum(x[0:-1])})#TODO:not agnostic
     #0<=x<=1,0<=ws_s<=1.
-    bounds=tuple((1e-8,1) for x in vmf )+ tuple((1e-8,1) for x in vAlpha0)#TODO:not agnostic
+    bounds=tuple((1e-8,1) for x in vmf )+ tuple((1.5,3.5) for x in vAlpha0)#TODO:not agnostic
 
     if(MINIMIZE_METHOD=='SLSQP'):
         opt=minimize(error,x0,ovitrap_eggs_i_with_id,method='SLSQP',bounds=bounds,constraints=constraints,options={'eps': 1e-02, 'ftol': 1e-01})
