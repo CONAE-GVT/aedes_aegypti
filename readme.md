@@ -127,6 +127,9 @@ band info: https://www.satimagingcorp.com/satellite-sensors/other-satellite-sens
 >sudo a2enconf cgi-enabled
 >sudo service apache2 restart
 >chmod 705 /home/exequiel/Desktop/models/programs/aedes_aegypti/src/app/cgi-bin/iface.py
+#optional:
+>sudo vim /etc/apache2/conf-available/charset.conf #and uncomment the utf-8
+>sudo mkdir /var/www/.imageio ; sudo chmod 777 /var/www/.imageio -R #to allow moviepy download ffmpeglib
 #Can now access to http://localhost/app/cgi-bin/iface.py
 
 **Notes**
