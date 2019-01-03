@@ -48,11 +48,12 @@ class Model:
         self.validate()
 
     def validate(self):
+        self.warnings=[]
         mean_temperatures=np.array([self.parameters.weather.T(t) for t in self.time_range])
         lower_bound=mean_temperatures[mean_temperatures<278.]
         upper_bound=mean_temperatures[mean_temperatures>303.]
         if(lower_bound.size>0 or upper_bound.size>0):
-            print('# WARNING: Temperature out of model\'s valid range:T<278:%s T>303:%s'%(lower_bound.size,upper_bound.size))
+            self.warnings.append('Temperature out of model\'s valid range:T<278:%s T>303:%s'%(lower_bound.size,upper_bound.size))
 
     def save(self,results_filename=None):
         #save results

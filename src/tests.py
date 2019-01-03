@@ -16,6 +16,8 @@ def testModel(configuration, subplots=[],plot_start_date=None,title='',figure=Tr
     model.parameters.negatives=None
     time_range,INPUT,RES=model.solveEquations(equations=utils.MetricsEquations(model,diff_eqs),method='rk' )
     utils.plot(model,subplots,plot_start_date,title,figure,color)
+    for warning in model.warnings:
+        print('# WARNING: ' + warning)
 
 def runOviShow(folder):
     config_filenames=[filename for filename in os.listdir(folder) if filename.endswith('.cfg')]
