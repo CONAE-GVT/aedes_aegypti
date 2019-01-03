@@ -2,6 +2,7 @@
 import os
 import utils
 import datetime
+import pylab as pl
 import numpy as np
 import scipy.stats as stats
 import multiprocessing as mp
@@ -12,36 +13,43 @@ from scipy.optimize import minimize,differential_evolution
 MINIMIZE_METHOD='SLSQP'
 OVITRAP_FILENAME='data/private/ovitrampas_2017-2018.csv'
 
-def safeAdd(values):
-    if(len(values.shape)!=2):
-        return values
-    else:
-        return np.sum(values,axis=1)
+class perOvitrap:
+    def __init__(self,model):
+        self.BS_a=model.parameters.BS_a
+        self.vBS_d=model.parameters.vBS_d
+
+    def __call__(self,lwE):
+        if (lwE.ndim!=2):
+            return  lwE#if ndims!=2 is not the lwE, but the real ovitraps#not a clean way to check this.
+        else:
+            return lwE[:,0]/(self.BS_a*self.vBS_d[0])
 
 def getConfiguration(x=None,n=None):
     if(x is None and n is None): return Configuration('resources/otero_precipitation.cfg')#no arguments passed, return default configuration
 
-    x[0:n]/=x[0:n].sum()#sometimes the constraints fails
     start_date,end_date=utils.getStartEndDates(OVITRAP_FILENAME)
     configuration=Configuration('resources/otero_precipitation.cfg',
         {
         'breeding_site':{
-            'amount':x[n],
-            'distribution':x[0:n]
+            'manually_filled':x[0:n]
             },
         'simulation':{
             'start_date':start_date,
             'end_date':end_date
+            },
+        'biology':{
+            'alpha0':x[n:]
             }
         })
     return configuration
 
-def calculateMetrics(time_range,mEggs,real_values):
-    cEggs=safeAdd(mEggs)
-    lwE=np.array([cEggs[(np.abs(time_range-t)).argmin()]-cEggs[(np.abs(time_range-(t-7))).argmin()] for t in time_range])
+def calculateMetrics(time_range,model,ovitrap_eggs_i):
+    mEggs=model.Y[:,model.parameters.EGG]
+    lwE=np.array([mEggs[(np.abs(time_range-t)).argmin()]-mEggs[(np.abs(time_range-(t-7))).argmin()] for t in time_range])#last week eggs
     lwE[lwE<0]=0.#replace negatives with zeros
-    error=sum([(real_values[t]-lwE[t] )**2  for t in range(0,len(real_values)) if real_values[t]] )
-    rho,p_value=stats.pearsonr(real_values[real_values!=[None]],lwE[real_values!=[None]])
+    lwE=perOvitrap(model)(lwE)
+    error=sum([(ovitrap_eggs_i[t]-lwE[t] )**2  for t in range(0,len(ovitrap_eggs_i)) if ovitrap_eggs_i[t]] )
+    rho,p_value=stats.pearsonr(ovitrap_eggs_i[ovitrap_eggs_i!=[None]],lwE[ovitrap_eggs_i!=[None]])
     return lwE,error,rho,p_value
 
 def populate(time_range,ovitrap_eggs):
@@ -53,21 +61,25 @@ def populate(time_range,ovitrap_eggs):
 def error(x,ovitrap_eggs_i_with_id):
     #return np.dot(x,x)
     ovitrap_id,ovitrap_eggs_i=ovitrap_eggs_i_with_id
-    model=Model(getConfiguration(x,len(x)-1))#vBS_d,BS_a#TODO:not agnostic
+    model=Model(getConfiguration(x,int(len(x)/2)))#vBS_d,BS_a#TODO:not agnostic
     ovitrap_eggs_i=populate(model.time_range,ovitrap_eggs_i)
-    time_range,INPUT,Y=model.solveEquations()
-    lwE,error,rho,p_value=calculateMetrics(time_range,Y[:,model.parameters.EGG],ovitrap_eggs_i)
-    print('ovitrap:%s pid:%i d:%s BS_a:%s Error:%s rho:%s p value:%s'%(ovitrap_id,os.getpid(),model.parameters.vBS_d.tolist(),model.parameters.BS_a,error,rho,p_value))
+    time_range,INPUT,Y=model.solveEquations(method='rk')
+    lwE,error,rho,p_value=calculateMetrics(time_range,model,ovitrap_eggs_i)
+    title='ovitrap:%s\nmf:%s\n' r'$\alpha_0$:%s' '\n' r'Error:%s $\rho$:%s p value:%s'%(ovitrap_id,model.parameters.vBS_mf.tolist(),model.parameters.vAlpha0.tolist(),error,rho,p_value)
+    utils.plot(model,subplots=[{'lwE':'','f':[utils.replaceNegativesWithZeros,perOvitrap(model)],'O':[int(ovitrap_id)]}],title=title,figure=False)
     return error
 
 def getOptimalParameters(ovitrap_eggs_i_with_id):
+    pl.figure()#hack
     configuration=getConfiguration()
+    vmf=configuration.getArray('breeding_site','manually_filled')
+    vAlpha0=configuration.getArray('biology','alpha0')
     #initial value
-    x0=np.append( configuration.getArray('breeding_site','distribution'), configuration.getFloat('breeding_site','amount'))
+    x0=np.append( vmf, vAlpha0)
     #Σ vBS_d[i] = 1
-    constraints = ({'type': 'eq', 'fun': lambda x:  1 - sum(x[0:-1])})#TODO:not agnostic
+    constraints = ()#({'type': 'eq', 'fun': lambda x:  1 - sum(x[0:-1])})#TODO:not agnostic
     #0<=x<=1,0<=ws_s<=1.
-    bounds=tuple((1e-8,1) for x in x0[0:-1] )+ ((0,200),)#TODO:not agnostic
+    bounds=tuple((1e-8,1) for x in vmf )+ tuple((1e-8,1) for x in vAlpha0)#TODO:not agnostic
 
     if(MINIMIZE_METHOD=='SLSQP'):
         opt=minimize(error,x0,ovitrap_eggs_i_with_id,method='SLSQP',bounds=bounds,constraints=constraints,options={'eps': 1e-02, 'ftol': 1e-01})

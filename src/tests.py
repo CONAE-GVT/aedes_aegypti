@@ -105,6 +105,13 @@ def runCases(case):
             configuration.config_parser.set('breeding_site','amount',str(BS_a))
             per_ovitrap=lambda lwE: lwE[:,0]/(BS_a*BS_d[0])
             testModel(configuration,subplots=[{'lwE':'','f':[utils.replaceNegativesWithZeros,per_ovitrap]}],title=BS_a)
+    if(case==3):
+        for alpha0 in np.linspace(1.0,2,10):
+            configuration.config_parser.set('biology','alpha0',str(alpha0))
+            BS_a=configuration.getFloat('breeding_site','amount')
+            BS_d=configuration.getArray('breeding_site','distribution')
+            per_ovitrap=lambda lwE: lwE[:,0]/(BS_a*BS_d[0])
+            testModel(configuration,subplots=[{'lwE':'','f':[utils.replaceNegativesWithZeros,per_ovitrap]}],title=str(alpha0),figure=False)
 
     utils.showPlot()
 
