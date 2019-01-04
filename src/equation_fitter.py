@@ -62,7 +62,7 @@ def populate(time_range,ovitrap_eggs):
 def error(x,ovitrap_eggs_i_with_id):
     #return np.dot(x,x)
     ovitrap_id,ovitrap_eggs_i=ovitrap_eggs_i_with_id
-    model=Model(getConfiguration(x,int(len(x)/2)))#vBS_d,BS_a#TODO:not agnostic
+    model=Model(getConfiguration(x,int(len(x)/2)))#TODO:not agnostic
     ovitrap_eggs_i=populate(model.time_range,ovitrap_eggs_i)
     time_range,INPUT,Y=model.solveEquations(method='rk')
     lwE,error,rho,p_value=calculateMetrics(time_range,model,ovitrap_eggs_i)
@@ -87,6 +87,13 @@ def getOptimalParameters(ovitrap_eggs_i_with_id):
         opt=minimize(error,x0,ovitrap_eggs_i_with_id,method='SLSQP',bounds=bounds,constraints=constraints,options={'eps': 1e-02, 'ftol': 1e-01})
     else:
         opt=differential_evolution(error,bounds,args=(ovitrap_eggs_i_with_id,))
+
+    #save the model
+    model=Model(getConfiguration(opt.x,int(len(opt.x)/2)))#TODO:not agnostic
+    model.solveEquations(method='rk')
+    results_filename='out/equation_fitter/_ovi%s.csv'%ovitrap_eggs_i_with_id[0]#ovitrap_eggs_i_with_id[0] is the ovitrap_id
+    model.save(results_filename)
+    open(results_filename.replace('.csv','.txt'),'w').write(str(opt))
 
     return opt
 
