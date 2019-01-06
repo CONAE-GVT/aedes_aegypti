@@ -2,6 +2,7 @@ import numpy as np
 import pylab as pl
 import math
 
+#"Elementary Differential Equations and Boundary Value Problem"Boyce, DiPrima:
 def solve(_dYdt,Y0,time_range,args=(),steps=1):
     #main
     Y=np.zeros([len(time_range),len(Y0)],dtype=np.float32)
@@ -60,6 +61,64 @@ def cuda_solve(_dYdt,Y0,time_range,args=(),steps=1):
         Y[i+1]=Y_j.get()#use stream to make this async, https://docs-cupy.chainer.org/en/stable/reference/generated/cupy.ndarray.html
 
     return Y
+
+
+d_21=1/4
+d_31,d_32=3/32, 9/32
+d_41,d_42,d_43=1932/2197, -7200/2197, 7296/2197
+d_51,d_52,d_53,d_54=439/216, -8, 3680/513, -845/4104
+d_61,d_62,d_63,d_64,d_65=-8/27, 2, -3544/2565, 1859/4104, -11/40
+c_2,c_3,c_4,c_5,c_6=1/4, 3/8, 12/13, 1, 1/2
+a_1,a_2,a_3,a_4,a_5,a_6=16/135, 0, 6656/12825, 28561/56430, -9/50, 2/55
+a1_b1,a2_b2,a3_b3,a4_b4,a5_b5,a6_b6=1/360, 0, -128/4275, -2197/75240, 1/50, 2/55
+#NUMERICAL ANALYSIS MATHEMATICS OF SCIENTIFIC COMPUTING - David Kincaid and Ward Cheney
+#Numerical Methods Using Matlab, 4 th Edition, 2004 - John H. Mathews and Kurtis K. Fink
+#http://www.math-cs.gordon.edu/courses/ma342/python/diffeq.py
+from numpy.core.multiarray import interp as compiled_interp
+def rkf_solve(_dYdt,Y0,time_range,args=(),tol=1e-2,hmin=1e-15,hmax=1):
+    def dYdt(Y,t,_args):
+        Y[Y<0]=0#this is to make rk work
+        return np.array(_dYdt(Y,t,*_args))#decorate the function to return an np array
+    #main
+    a=time_range.min()
+    b=time_range.max()
+    Y_j=Y0#<---initial conditions
+    t=a
+    h=hmax
+    Y=np.array([Y_j])
+    T=np.array([t])
+    while t<b:
+        if t+h>b:
+            h=b-t
+        #Runge-Kutta-Fehlberg's terms
+        F_1=h*dYdt(Y_j,t,args)
+        F_2=h*dYdt(Y_j +d_21*F_1, t + c_2*h,args)
+        F_3=h*dYdt(Y_j +d_31*F_1 + d_32*F_2, t + c_3*h,args)
+        F_4=h*dYdt(Y_j +d_41*F_1 + d_42*F_2 + d_43*F_3, t + c_4*h,args)
+        F_5=h*dYdt(Y_j +d_51*F_1 + d_52*F_2 + d_53*F_3 + d_54*F_4, t + c_5*h,args)
+        F_6=h*dYdt(Y_j +d_61*F_1 + d_62*F_2 + d_63*F_3 + d_64*F_4 + d_65*F_5, t + c_6*h,args)
+
+        #compute error
+        e= a1_b1*F_1 + a2_b2*F_2 + a3_b3*F_3 + a4_b4*F_4 + a5_b5*F_5 + a6_b6*F_6
+        e=np.max(e)
+        if(e<=tol):
+            t=t+h
+            #compute rk of fifth order
+            Y_j =Y_j + a_1*F_1 + a_2*F_2 + a_3*F_3 + a_4*F_4 + a_5*F_5 + a_6*F_6
+            T=np.append(T,t)
+            Y=np.append(Y,[Y_j],axis=0)
+
+        #compute new step
+        s=(tol/(2*e))**1/4
+        h=h* min(max(s, 0.1), 4.0)#h=h*s', force s' in [0.1,4]
+        if(h>hmax):
+            h=hmax
+        elif (h<hmin):
+            print('FATAL: step size should be smaller than %s, h needed:%s, reached t:%s'%(hmin,h,t))#TODO:append this to model.warnings
+            break
+
+    #https://stackoverflow.com/questions/43772218/fastest-way-to-use-numpy-interp-on-a-2-d-array
+    return np.concatenate([ np.array([compiled_interp(time_range, T, Y[:,i])]).transpose() for i in range(Y.shape[1])],axis=1 )
 
 from scipy.integrate import ode
 def scipy_solve(_dYdt,Y0,time_range,name,kwargs,args=()):

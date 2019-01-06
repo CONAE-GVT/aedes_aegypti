@@ -81,6 +81,8 @@ class Model:
             Y=rk.solve(equations,initial_condition,time_range,args=(self.parameters,),steps=20)
         elif(method=='cuda_rk'):
             Y=rk.cuda_solve(equations,initial_condition,time_range,args=(self.parameters,),steps=20)
+        elif(method=='rkf'):
+            Y=rk.rkf_solve(equations,initial_condition,time_range,args=(self.parameters,))
         elif(method=='dopri'):
             Y=rk.scipy_solve(equations,initial_condition,time_range,'dopri',{'max_step':time_range[1]-time_range[0],'rtol':1e-3, 'atol':1e-6}, args=(self.parameters,))
 

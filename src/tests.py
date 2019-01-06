@@ -114,6 +114,20 @@ def runCases(case):
             BS_d=configuration.getArray('breeding_site','distribution')
             per_ovitrap=lambda lwE: lwE[:,0]/(BS_a*BS_d[0])
             testModel(configuration,subplots=[{'lwE':'','f':[utils.replaceNegativesWithZeros,per_ovitrap]}],title=str(alpha0),figure=False)
+    if(case==4):
+        for alpha0 in np.linspace(1.0,2,10):
+            configuration.config_parser.set('biology','alpha0',str(alpha0))
+            model=Model(configuration)
+            model.parameters.calls=None     #move these two to
+            model.parameters.negatives=None#the MetricsEquations decorator
+            time_range,Y0,Y=model.solveEquations(equations=utils.MetricsEquations(model,diff_eqs) )
+            time_range,Y0,Y_rk=model.solveEquations(equations=utils.MetricsEquations(model,diff_eqs),method='rk' )
+            time_range,Y0,Y_rkf=model.solveEquations(equations=utils.MetricsEquations(model,diff_eqs),method='rkf' )
+            print('>'*200)
+            print('rk:  e=||Y-Y_rk||=   %s'%(np.linalg.norm(Y-Y_rk)))
+            print('rkf: e=||Y-Y_rkf||=  %s'%(np.linalg.norm(Y-Y_rkf)))
+            print('     e_rkf/e_rk=     %s'%(np.linalg.norm(Y-Y_rkf)/np.linalg.norm(Y-Y_rk) ) )
+            print('<'*200)
 
     utils.showPlot()
 
