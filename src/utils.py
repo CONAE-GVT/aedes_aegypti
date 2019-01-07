@@ -137,6 +137,11 @@ def getPreferenceMatrix():
 
     return P
 
+from skimage import transform
+def getY0FactorMatrix(height,width):
+    Y0_f=np.load('out/Y0_f.npy')
+    return transform.resize(Y0_f,(height,width),mode='constant')
+
 ###############################################################Equation Decorators###############################################################
 class MetricsEquations:
     def __init__(self,model,diff_eqs):

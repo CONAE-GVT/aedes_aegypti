@@ -19,9 +19,9 @@ def dA1(vP,A1,par,cycle1):
     ma=0.091#for T in [278,303]
     return (1/2 * par*ef*vP).sum(axis=2) - (ma+cycle1)*A1
 
-def dF(A1,F,A2,P,ovr,cycle1,cycle2):
+def dF(A1,F,A2,P,ovr,diff,cycle1,cycle2):
     ma=0.091#for T in [278,303]
-    beta_p=830./100.**2#TODO: check if its correct!!!# dispersal coefficient for perpendicular flights
+    beta_p=diff/100.**2#dispersal coefficient for perpendicular flights
     beta_d=beta_p/2.#dispersal coefficient for diagonal flights
     xp = cp.get_array_module(A1)
     return cycle1*A1 + cycle2*A2 - (ovr + ma + 4.*beta_d + 4*beta_p)*F +\
@@ -37,7 +37,7 @@ def diff_eqs(Y,t,parameters):
     '''The main set of equations'''
     T_t=parameters.weather.T(t)
     elr,lpr,par,cycle1,cycle2=vR_D(T_t)
-    vBS_a,vBS_d,vAlpha,ovr,P,n=parameters.vBS_a,parameters.vBS_d,parameters.vAlpha,parameters.ovr,parameters.P,parameters.n
+    vBS_a,vBS_d,vAlpha,P,ovr,diff,n=parameters.vBS_a,parameters.vBS_d,parameters.vAlpha,parameters.P,parameters.ovr,parameters.diff,parameters.n
     HEIGHT,WIDTH=P.shape[:2]
     EGG,LARVAE,PUPAE,ADULT1,FLYER,ADULT2=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.FLYER,parameters.ADULT2
 
@@ -51,7 +51,7 @@ def diff_eqs(Y,t,parameters):
     dY[:,:,LARVAE] = dvL(vE,vL,T_t,elr,lpr,vAlpha )
     dY[:,:,PUPAE]  = dvP(vL,vP,T_t,lpr,par)
     dY[:,:,ADULT1] = dA1(vP,A1,par,cycle1)
-    dY[:,:,FLYER]  = dF(A1,F,A2,P,ovr,cycle1,cycle2)
+    dY[:,:,FLYER]  = dF(A1,F,A2,P,ovr,diff,cycle1,cycle2)
     dY[:,:,ADULT2] = dA2(F,A2,ovr,cycle2)
 
     return dY.reshape(HEIGHT*WIDTH*(3*n + 3) )   # For odeint

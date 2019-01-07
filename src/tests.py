@@ -62,16 +62,17 @@ def runSpatial():
     parameters=model.parameters
     n=parameters.n
     parameters.FLYER=3*n+2#in R
+    parameters.diff=configuration.getFloat('biology','diffusion')#diffusion-like coefficient
     parameters.P=utils.getPreferenceMatrix()
     HEIGHT,WIDTH=parameters.P.shape[:2]
-    tmp=np.zeros((HEIGHT,WIDTH,3*n + 3))
-    tmp[int(HEIGHT/2),int(WIDTH/2),:]=1.
-    parameters.initial_condition=np.append(parameters.initial_condition,[0])#append flyers#TODO:use a config file
-    parameters.initial_condition=(parameters.initial_condition*tmp).reshape((HEIGHT*WIDTH*(3*n + 3) ))#TODO:check that this does what we expect.
-    parameters.vBS_a=parameters.BS_a*np.ones((HEIGHT,WIDTH))#np.random.random((WIDTH,HEIGHT))#TODO:do something about this...
-    parameters.vBS_d=parameters.vBS_d*np.ones((HEIGHT,WIDTH,n))
+    parameters.initial_condition=np.append(parameters.initial_condition,[0])#append flyers
+    parameters.initial_condition=(parameters.initial_condition*utils.getY0FactorMatrix(HEIGHT,WIDTH)[:,:,np.newaxis]).reshape(HEIGHT*WIDTH*(3*n+3))#TODO:find a better way of introducing initial conditions to spatial
+    parameters.vBS_a=parameters.BS_a*np.ones((HEIGHT,WIDTH))#TODO:Estimate BS_a as in section 8.3 Otero 2008, "Estimation of the breeding site density"
+    parameters.vBS_d=parameters.vBS_d*np.ones((HEIGHT,WIDTH,n))#ASSUMPTION: distribuition is constant on (x,y)
     parameters.vAlpha=(parameters.vAlpha0*np.ones((HEIGHT,WIDTH,n)) )/parameters.vBS_a[:,:,np.newaxis]
-    parameters.ovr=np.ones((HEIGHT,WIDTH))/0.229#TODO:implement!!!!
+    theta=parameters.vBS_a/150.
+    tdep=0.229#Average time for egg deposition Christophers(1960)
+    parameters.ovr= np.where(parameters.vBS_a<=150, theta/tdep, 1/tdep)
 
     #solve the equations
     time_range,initial_condition,Y=model.solveEquations(equations=utils.ProgressEquations(model,spatial_diff_eqs),method='cuda_rk' )
