@@ -147,6 +147,8 @@ class MetricsEquations:
     def __init__(self,model,diff_eqs):
         self.model=model
         self.diff_eqs=diff_eqs
+        model.parameters.calls=None
+        model.parameters.negatives=None
 
     def __call__(self,Y,t,parameters):
         dY=self.diff_eqs(Y,t,parameters)

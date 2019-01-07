@@ -75,10 +75,7 @@ a1_b1,a2_b2,a3_b3,a4_b4,a5_b5,a6_b6=1/360, 0, -128/4275, -2197/75240, 1/50, 2/55
 #Numerical Methods Using Matlab, 4 th Edition, 2004 - John H. Mathews and Kurtis K. Fink
 #http://www.math-cs.gordon.edu/courses/ma342/python/diffeq.py
 from numpy.core.multiarray import interp as compiled_interp
-def rkf_solve(_dYdt,Y0,time_range,args=(),tol=1e-2,hmin=1e-15,hmax=1):
-    def dYdt(Y,t,_args):
-        Y[Y<0]=0#this is to make rk work
-        return np.array(_dYdt(Y,t,*_args))#decorate the function to return an np array
+def rkf_solve(dYdt,Y0,time_range,args=(),tol=50.,hmin=0.001,hmax=0.05):
     #main
     a=time_range.min()
     b=time_range.max()
@@ -91,15 +88,15 @@ def rkf_solve(_dYdt,Y0,time_range,args=(),tol=1e-2,hmin=1e-15,hmax=1):
         if t+h>b:
             h=b-t
         #Runge-Kutta-Fehlberg's terms
-        F_1=h*dYdt(Y_j,t,args)
-        F_2=h*dYdt(Y_j +d_21*F_1, t + c_2*h,args)
-        F_3=h*dYdt(Y_j +d_31*F_1 + d_32*F_2, t + c_3*h,args)
-        F_4=h*dYdt(Y_j +d_41*F_1 + d_42*F_2 + d_43*F_3, t + c_4*h,args)
-        F_5=h*dYdt(Y_j +d_51*F_1 + d_52*F_2 + d_53*F_3 + d_54*F_4, t + c_5*h,args)
-        F_6=h*dYdt(Y_j +d_61*F_1 + d_62*F_2 + d_63*F_3 + d_64*F_4 + d_65*F_5, t + c_6*h,args)
+        F_1=h*dYdt(Y_j,t, *args)
+        F_2=h*dYdt(Y_j +d_21*F_1, t + c_2*h, *args)
+        F_3=h*dYdt(Y_j +d_31*F_1 + d_32*F_2, t + c_3*h, *args)
+        F_4=h*dYdt(Y_j +d_41*F_1 + d_42*F_2 + d_43*F_3, t + c_4*h, *args)
+        F_5=h*dYdt(Y_j +d_51*F_1 + d_52*F_2 + d_53*F_3 + d_54*F_4, t + c_5*h, *args)
+        F_6=h*dYdt(Y_j +d_61*F_1 + d_62*F_2 + d_63*F_3 + d_64*F_4 + d_65*F_5, t + c_6*h, *args)
 
         #compute error
-        e= a1_b1*F_1 + a2_b2*F_2 + a3_b3*F_3 + a4_b4*F_4 + a5_b5*F_5 + a6_b6*F_6
+        e= np.abs(a1_b1*F_1 + a3_b3*F_3 + a4_b4*F_4 + a5_b5*F_5 + a6_b6*F_6)/h
         e=np.max(e)
         if(e<=tol):
             t=t+h
@@ -109,7 +106,7 @@ def rkf_solve(_dYdt,Y0,time_range,args=(),tol=1e-2,hmin=1e-15,hmax=1):
             Y=np.append(Y,[Y_j],axis=0)
 
         #compute new step
-        s=(tol/(2*e))**1/4
+        s=0.84*(tol/e)**(1/4)
         h=h* min(max(s, 0.1), 4.0)#h=h*s', force s' in [0.1,4]
         if(h>hmax):
             h=hmax

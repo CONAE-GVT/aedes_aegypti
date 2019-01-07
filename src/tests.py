@@ -12,8 +12,6 @@ from spatial_equations import diff_eqs as spatial_diff_eqs
 
 def testModel(configuration, subplots=[],plot_start_date=None,title='',figure=True,color=None):
     model=Model(configuration)
-    model.parameters.calls=None
-    model.parameters.negatives=None
     time_range,INPUT,RES=model.solveEquations(equations=utils.MetricsEquations(model,diff_eqs),method='rk' )
     utils.plot(model,subplots,plot_start_date,title,figure,color)
     for warning in model.warnings:
@@ -116,13 +114,14 @@ def runCases(case):
             per_ovitrap=lambda lwE: lwE[:,0]/(BS_a*BS_d[0])
             testModel(configuration,subplots=[{'lwE':'','f':[utils.replaceNegativesWithZeros,per_ovitrap]}],title=str(alpha0),figure=False)
     if(case==4):
+        configuration=Configuration('resources/otero_precipitation.cfg')#reset config
         for alpha0 in np.linspace(1.0,2,10):
             configuration.config_parser.set('biology','alpha0',str(alpha0))
             model=Model(configuration)
-            model.parameters.calls=None     #move these two to
-            model.parameters.negatives=None#the MetricsEquations decorator
             time_range,Y0,Y=model.solveEquations(equations=utils.MetricsEquations(model,diff_eqs) )
+            model=Model(configuration)
             time_range,Y0,Y_rk=model.solveEquations(equations=utils.MetricsEquations(model,diff_eqs),method='rk' )
+            model=Model(configuration)
             time_range,Y0,Y_rkf=model.solveEquations(equations=utils.MetricsEquations(model,diff_eqs),method='rkf' )
             print('>'*200)
             print('rk:  e=||Y-Y_rk||=   %s'%(np.linalg.norm(Y-Y_rk)))
