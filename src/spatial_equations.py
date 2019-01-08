@@ -46,7 +46,7 @@ def diff_eqs(Y,t,parameters):
     vE,vL,vP,A1,F,A2=Y[:,:,EGG],Y[:,:,LARVAE],Y[:,:,PUPAE],Y[:,:,ADULT1],Y[:,:,FLYER],Y[:,:,ADULT2]
 
     xp = cp.get_array_module(A1)
-    dY=xp.empty(Y.shape)
+    dY=xp.empty(Y.shape, dtype=Y.dtype)
     dY[:,:,EGG]    = dvE(vE,F,vBS_d,ovr,elr)
     dY[:,:,LARVAE] = dvL(vE,vL,T_t,elr,lpr,vAlpha )
     dY[:,:,PUPAE]  = dvP(vL,vP,T_t,lpr,par)

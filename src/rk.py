@@ -30,16 +30,16 @@ def solve(_dYdt,Y0,time_range,args=(),steps=1):
 
 import cupy as cp
 #this is way too similar to the RK method above
-def cuda_solve(_dYdt,Y0,time_range,args=(),steps=1):
+def cuda_solve(_dYdt,Y0,time_range,args=(),steps=1,dtype=np.float64):
     #numpy array ----> cupy arrays
-    Y0=cp.array(Y0)
+    Y0=cp.array(Y0,dtype=dtype)
     parameters,=args
     for param_name in parameters.__dict__:
         if(isinstance(parameters.__dict__[param_name],np.ndarray)):
-            parameters.__dict__[param_name]=cp.array(parameters.__dict__[param_name])
+            parameters.__dict__[param_name]=cp.array(parameters.__dict__[param_name],dtype=dtype)
 
     #main
-    Y=np.zeros([len(time_range),len(Y0)],dtype=np.float32)
+    Y=np.memmap('out/Y.npy.swap', mode='w+', shape=(len(time_range),len(Y0)), dtype=dtype)
     Y[0]=Y0.get()#<---initial conditions
     def dYdt(Y,t,_args):
         Y[Y<0]=0#this is to make rk work
