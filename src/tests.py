@@ -61,7 +61,8 @@ def runSpatial():
     n=parameters.n
     parameters.FLYER=3*n+2#in R
     parameters.diff=configuration.getFloat('biology','diffusion')#diffusion-like coefficient
-    parameters.P=utils.getPreferenceMatrix()
+    parameters.P,warning=utils.getPreferenceMatrix('data/public/goodness/'+configuration.getString('biology','goodness'),patch_size=100)
+    model.warnings.append(warning)
     HEIGHT,WIDTH=parameters.P.shape[:2]
     parameters.initial_condition=np.append(parameters.initial_condition,[0])#append flyers
     parameters.initial_condition=(parameters.initial_condition*utils.getY0FactorMatrix(HEIGHT,WIDTH)[:,:,np.newaxis]).reshape(HEIGHT*WIDTH*(3*n+3))#TODO:find a better way of introducing initial conditions to spatial
@@ -71,6 +72,9 @@ def runSpatial():
     theta=parameters.vBS_a/150.
     tdep=0.229#Average time for egg deposition Christophers(1960)
     parameters.ovr= np.where(parameters.vBS_a<=150, theta/tdep, 1/tdep)
+
+    for warning in model.warnings:
+        print('# WARNING: ' + warning)
 
     #solve the equations
     time_range,initial_condition,Y=model.solveEquations(equations=utils.ProgressEquations(model,spatial_diff_eqs),method='cuda_rk' )

@@ -99,26 +99,25 @@ def getLocations():
     return config_parser.sections()
 
 #Reduce the resolution to leave pixels as blocks of 100mx100m (10mx10m --> 100mx100m)
-def getReducedMatrix(S):
+def getReducedMatrix(S,block_size=10):
     #Clip the image to leave rows and columns multiple of ten
-    S=S[:S.shape[0]-S.shape[0]%10 , :S.shape[1]-S.shape[1]%10]
-    n,m=int(S.shape[0]/10),int(S.shape[1]/10)
+    S=S[:S.shape[0]-S.shape[0]%block_size , :S.shape[1]-S.shape[1]%block_size]
+    n,m=int(S.shape[0]/block_size),int(S.shape[1]/block_size)
     B=np.array([np.hsplit(b,m) for b in  np.vsplit(S,n)])
     M=np.mean(B,axis=(2,3))
     return M
 
-def getPreferenceMatrix():
-    C=np.load('out/C.npy')
-
-    #assign each class points. like S[C=2]=9,or S[C=5]=0 so class 2 is very good(grass or homes) we assign a ten. class 5 is very bad (cement)
-    S=np.zeros(C.shape)
-    #TODO: assign real scores!
-    S[C==0]=1*0
-    S[C==1]=2*0
-    S[C==2]=3*0
-    S[C==3]=4*1
-
-    M=getReducedMatrix(S)#get a matrix of pixels 100mx100m (blocks)
+import gdal
+def getPreferenceMatrix(raster_filename,patch_size):
+    raster=gdal.Open(raster_filename, gdal.GA_ReadOnly)
+    pixel_size_X,pixel_size_Y= raster.GetGeoTransform()[1], -raster.GetGeoTransform()[5]
+    assert pixel_size_X==pixel_size_Y#right now we just tested on images with squared pixels, but it shouldn't be hard to accepts different values
+    S=raster.ReadAsArray()
+    S[S<-1e30]=0.#no data --> 0
+    block_size=int(round(patch_size/int(pixel_size_X)))
+    warning=None
+    if(block_size*pixel_size_X != patch_size): warning='Using a patch of %smx%sm instead of %smx%sm'%(int(block_size*pixel_size_X),int(block_size*pixel_size_X),patch_size,patch_size)
+    M=getReducedMatrix(S,block_size=int(round(patch_size/int(pixel_size_X))))#get a matrix of pixels 100mx100m (blocks)
 
     #Create the preference matrix
     P=np.zeros((M.shape[0],M.shape[1],8))
@@ -135,7 +134,7 @@ def getPreferenceMatrix():
     P[:,:,PERPENDICULAR]=P[:,:,PERPENDICULAR]/np.maximum(1,np.sum(P[:,:,PERPENDICULAR],axis=2)[:,:,np.newaxis])*4.#normalize and multiply by 4
     P[:,:,DIAGONAL]=P[:,:,DIAGONAL]/np.maximum(1,np.sum(P[:,:,DIAGONAL],axis=2)[:,:,np.newaxis])*4.#normalize
 
-    return P
+    return P,warning
 
 from skimage import transform
 def getY0FactorMatrix(height,width):
@@ -350,13 +349,13 @@ def addText(matrix,text):
     return PIL_to_npimage(im)
 
 def createAnimation(out_filename,matrix,getTitle,duration):
-    R=np.load('out/R.npy')#Load the original Raster
-    R=np.moveaxis(R,0,-1)#(4,n,m) ----> (n,m,4)
-    R=getReducedMatrix(R[:,:,0:3])#10mx10m ----> 100mx100m
-    R=np.clip(R/(2*R.mean()),0,1)#this is just to make the base image look nice.
+    S=gdal.Open('data/public/goodness/predict.backgr.out_mean.tif', gdal.GA_ReadOnly).ReadAsArray()
+    S[S<-1e30]=0.#no data --> 0
+    R=getReducedMatrix(S,block_size=int(round(100/6)))#get a matrix of pixels 100mx100m (blocks)
     red = np.array([1,0,0]).transpose()
+    grey= (np.array([119,136,153])/255).transpose()
     def makeFrame(t):
-        frame=255*(0.5*R + 0.5*red*matrix[int(t),:,:,np.newaxis])
+        frame=255*(0.5*grey*R[:,:,np.newaxis] + 0.5*red*matrix[int(t),:,:,np.newaxis])
         return addText(frame, getTitle(int(t)))
 
     animation = mpy.VideoClip(makeFrame, duration=duration)
