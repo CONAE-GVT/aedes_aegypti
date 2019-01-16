@@ -71,6 +71,7 @@ d_61,d_62,d_63,d_64,d_65=-8/27, 2, -3544/2565, 1859/4104, -11/40
 c_2,c_3,c_4,c_5,c_6=1/4, 3/8, 12/13, 1, 1/2
 a_1,a_2,a_3,a_4,a_5,a_6=16/135, 0, 6656/12825, 28561/56430, -9/50, 2/55
 a1_b1,a2_b2,a3_b3,a4_b4,a5_b5,a6_b6=1/360, 0, -128/4275, -2197/75240, 1/50, 2/55
+#Numerical Analysis, TENTH EDITION - Richard L. Burden, J. Douglas Faires and Annette M. Burden #<----- base
 #NUMERICAL ANALYSIS MATHEMATICS OF SCIENTIFIC COMPUTING - David Kincaid and Ward Cheney
 #Numerical Methods Using Matlab, 4 th Edition, 2004 - John H. Mathews and Kurtis K. Fink
 #http://www.math-cs.gordon.edu/courses/ma342/python/diffeq.py
