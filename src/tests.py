@@ -7,8 +7,10 @@ import datetime
 import numpy as np
 from config import Configuration
 from otero_precipitation import Model
-from equations import diff_eqs
+from equations import diff_eqs,vR_D
+import equations
 from spatial_equations import diff_eqs as spatial_diff_eqs
+import pylab as pl
 
 def testModel(configuration, subplots=[],plot_start_date=None,title='',figure=True,color=None):
     model=Model(configuration)
@@ -132,6 +134,29 @@ def runCases(case):
             print('rkf: e=||Y-Y_rkf||=  %s'%(np.linalg.norm(Y-Y_rkf)))
             print('     e_rkf/e_rk=     %s'%(np.linalg.norm(Y-Y_rkf)/np.linalg.norm(Y-Y_rk) ) )
             print('<'*200)
+    if(case==5):
+        per_ovitrap=lambda lwE: lwE[:,0]/(BS_a*BS_d[0]) if(lwE.ndim==2) else lwE
+        BS_a=configuration.getFloat('breeding_site','amount')
+        BS_d=configuration.getArray('breeding_site','distribution')
+
+        temperatures=np.arange(278,303.5,0.5)
+        for j in np.arange(0,1.1,0.1):
+            equations.vR_D_298K=np.array([0.24,0.2088,0.384,0.216,0.372])#+j
+            equations.vDeltaH_A=np.array([10798.0,26018.0,14931.0,15725.0,15725.0])#+1e5*j
+            equations.vDeltaH_H=np.array([100000.0,55990.0,-472379.00,1756481.0,1756481.0]) #-472379 vs. -473379
+            equations.vT_1_2H=np.array([14184.0,304.6,148.0,447.2,447.2])
+            #for i,label in enumerate(['elr','lpr','par','ovr1(cycle1)','ovr2(cycle2)$\deltaH_A$ %s'%equations.vDeltaH_A[4]]):
+                #pl.plot(temperatures,[vR_D(T)[i] for T in temperatures],label=label)
+
+            #pl.plot(temperatures,[vR_D(T)[4] for T in temperatures],label='ovr2(cycle2)')
+            pl.plot(temperatures-273.15,[1/vR_D(T)[4] for T in temperatures],label='$ovr2^{-1}$')
+            #testModel(configuration,subplots=[['E','A1+A2',[utils.safeAdd]],{'lwE':'','O':[153,154,155],'f':[utils.replaceNegativesWithZeros,per_ovitrap]}],title='',figure=False)
+            break
+        pl.xlabel('Temperature (K)')
+        pl.ylabel('Development Rate ($days^{-1}$)')
+        pl.legend(loc=0)
+
+
 
     utils.showPlot()
 

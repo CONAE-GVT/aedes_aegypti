@@ -39,7 +39,7 @@ if(__name__ == '__main__'):
             min_temperature=summary['min_temperature']
             mean_temperature=summary['temperature']
             max_temperature=summary['max_temperature']
-            rain=summary['rain']
+            rain=summary['precip']
             relative_humidity=(summary['min_humidity']+summary['max_humidity'])/2.
             #Date,Minimum Temp (C),Mean Temperature (C),Maximum Temp (C),Rain (mm),Relative Humidity %,CloudCover,Mean Wind SpeedKm/h
             output='%s-%s-%s, %s,%s,%s,%s,%s,,,\n'%(year,month,day,min_temperature,mean_temperature,max_temperature,rain,relative_humidity)
