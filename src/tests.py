@@ -10,6 +10,7 @@ from otero_precipitation import Model
 from equations import diff_eqs,vR_D
 import equations
 from spatial_equations import diff_eqs as spatial_diff_eqs
+from equationsv2 import diff_eqs as diff_eqs_v2
 import pylab as pl
 
 def testModel(configuration, subplots=[],plot_start_date=None,title='',figure=True,color=None):
@@ -155,9 +156,51 @@ def runCases(case):
         pl.xlabel('Temperature (K)')
         pl.ylabel('Development Rate ($days^{-1}$)')
         pl.legend(loc=0)
+    utils.showPlot()
 
+def runModelv2(case):
+    configuration=Configuration('resources/otero_precipitation.cfg')
+    model=Model(configuration)
+    #modify some parameters to make them compatible with v2
+    parameters=model.parameters
+    n=parameters.n
+    parameters.BS_l=int(configuration.getFloat('breeding_site','levels'))#BS levels#TODO:by changing this value, we get a different number of adults, which looks too big. Check if there isn't an error somewhere, or a way to make it more stable
+    BS_l=parameters.BS_l
+    parameters.EGG=slice(0,n*BS_l)#in R^n
+    parameters.LARVAE=slice(n*BS_l,(1+BS_l)*n)#in R^n
+    parameters.PUPAE=slice((1+BS_l)*n,(2+BS_l)*n)#in R^n
+    parameters.ADULT1=(2+BS_l)*n#in R
+    parameters.ADULT2=(2+BS_l)*n+1#in R
+    #parameters.TODO:add the B matrix helper
+    parameters.mBS_l=np.repeat(range(0,BS_l),n).reshape((BS_l,n))
+    E0v2=parameters.initial_condition[:n].repeat(BS_l)/BS_l
+    parameters.initial_condition=np.insert(parameters.initial_condition[n:],0,E0v2)
 
+    if(case==1):
+        configuration=Configuration('resources/otero_precipitation.cfg')
+        BS_a=configuration.getFloat('breeding_site','amount')
+        BS_l=int(configuration.getFloat('breeding_site','levels'))
+        BS_d=configuration.getArray('breeding_site','distribution')
+        per_ovitrap=lambda lwE: lwE[:,0:BS_l].sum(axis=1)/(BS_a*BS_d[0]) if(lwE.ndim==2) else lwE#this seems to be off
 
+        time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs_v2,method='rk' )
+        utils.plot(model,subplots=[['E',[utils.safeAdd] ],['A1+A2'],['W'],['p']])
+        #,{'A1+A2':'','lwE':'','O':[153],'f':[utils.replaceNegativesWithZeros,per_ovitrap,utils.safeNormalize]}
+
+        start_date=configuration.getDate('simulation','start_date')
+        t0=(datetime.date(2017,11,1) - start_date).days
+        t1=(datetime.date(2018,11,1) - start_date).days
+        idx00=np.argmin(np.abs(time_range-t0))
+        idx01=np.argmin(np.abs(time_range-(t0+30) ))
+        idx10=np.argmin(np.abs(time_range-t1))
+        idx11=np.argmin(np.abs(time_range-(t1+30) ))
+        mean0=np.mean(Y[idx00:idx01,0])
+        mean1=np.mean(Y[idx10:idx11,0])
+        print(mean1/mean0)
+        #np.save('out/Y.old.npy')
+
+    for warning in model.warnings:
+        print('# WARNING: ' + warning)
     utils.showPlot()
 
 if(__name__ == '__main__'):
@@ -169,6 +212,8 @@ if(__name__ == '__main__'):
         runProject()
     elif(len(sys.argv)>1 and sys.argv[1]=='spatial'):
         runSpatial()
+    elif(len(sys.argv)>1 and sys.argv[1]=='v2'):
+        runModelv2(int(sys.argv[2]))
     else:#the default is just a number indicating which test case to run, or none (test case 1 will will be default)
         if(len(sys.argv)<2):
             case=1
