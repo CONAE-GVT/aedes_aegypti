@@ -236,12 +236,12 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
             time_range,RES,date_range=subData(time_range,RES,date_range,plot_start_date)
 
         #Amount of larvaes,pupaes and adults
-        if ('E' in subplot): pl.plot(date_range,applyFs(RES[:,EGG],subplot), '-k', label='E')
-        if ('L' in subplot): pl.plot(date_range,applyFs(RES[:,LARVAE],subplot), '-r', label='L')
-        if ('P' in subplot): pl.plot(date_range,applyFs(RES[:,PUPAE],subplot), '-g', label='P')
-        if ('A1' in subplot): pl.plot(date_range,applyFs(RES[:,ADULT1],subplot), '-b', label='A1')
-        if ('A2' in subplot): pl.plot(date_range,applyFs(RES[:,ADULT2],subplot), '-m', label='A2')
-        if ('A1+A2' in subplot): pl.plot(date_range,applyFs(RES[:,ADULT2]+RES[:,ADULT1],subplot), '-m',color=color, label='A1+A2'+title)
+        if ('E' in subplot): pl.plot(date_range,applyFs(RES[:,EGG],subplot), label='E')
+        if ('L' in subplot): pl.plot(date_range,applyFs(RES[:,LARVAE],subplot), label='L')
+        if ('P' in subplot): pl.plot(date_range,applyFs(RES[:,PUPAE],subplot), label='P')
+        if ('A1' in subplot): pl.plot(date_range,applyFs(RES[:,ADULT1],subplot), label='A1')
+        if ('A2' in subplot): pl.plot(date_range,applyFs(RES[:,ADULT2],subplot), label='A2')
+        if ('A1+A2' in subplot): pl.plot(date_range,applyFs(RES[:,ADULT2]+RES[:,ADULT1],subplot), color=color, label='A1+A2'+title)
 
         #derivate
         dY=np.zeros(RES.shape)
@@ -300,7 +300,7 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
 
         #precipitations(in mm.)
         if ('p' in subplot):
-            pl.plot(date_range,applyFs(np.array([p(t) for t in time_range]),subplot),'-b', label='p(t)')
+            pl.plot(date_range,applyFs(np.array([p(t+0.5) for t in time_range]),subplot),'-b', label='p(t+1/2)')
             pl.ylabel('mm./day')
 
         #relative Humidity

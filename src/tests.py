@@ -178,26 +178,9 @@ def runModelv2(case):
 
     if(case==1):
         configuration=Configuration('resources/otero_precipitation.cfg')
-        BS_a=configuration.getFloat('breeding_site','amount')
-        BS_l=int(configuration.getFloat('breeding_site','levels'))
-        BS_d=configuration.getArray('breeding_site','distribution')
-        per_ovitrap=lambda lwE: lwE[:,0:BS_l].sum(axis=1)/(BS_a*BS_d[0]) if(lwE.ndim==2) else lwE#this seems to be off
-
         time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs_v2,method='rk' )
         utils.plot(model,subplots=[['E',[utils.safeAdd] ],['A1+A2'],['W'],['p']])
         #,{'A1+A2':'','lwE':'','O':[153],'f':[utils.replaceNegativesWithZeros,per_ovitrap,utils.safeNormalize]}
-
-        start_date=configuration.getDate('simulation','start_date')
-        t0=(datetime.date(2017,11,1) - start_date).days
-        t1=(datetime.date(2018,11,1) - start_date).days
-        idx00=np.argmin(np.abs(time_range-t0))
-        idx01=np.argmin(np.abs(time_range-(t0+30) ))
-        idx10=np.argmin(np.abs(time_range-t1))
-        idx11=np.argmin(np.abs(time_range-(t1+30) ))
-        mean0=np.mean(Y[idx00:idx01,0])
-        mean1=np.mean(Y[idx10:idx11,0])
-        print(mean1/mean0)
-        #np.save('out/Y.old.npy')
 
     for warning in model.warnings:
         print('# WARNING: ' + warning)
