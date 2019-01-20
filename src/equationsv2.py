@@ -6,8 +6,8 @@ from equations import vR_D,dvP,dA1,dA2
 def ovsp(vW,vBS_d,vW_l,mBS_l):#OViposition Site Preference
     epsilon=1e-4
     vf=vW/(vW+epsilon) * vBS_d#check this method is not spontaneus generation of eggs.(like inventing adults.)
-    mf=np.where(mBS_l==np.floor(vW_l),1,0)*vf
-    return mf
+    if(np.all(vf)>epsilon): vf/=vf.sum()
+    return np.where(mBS_l==np.floor(vW_l),1,0)*vf
 
 def wetMask(vW_l,mBS_l):
     mask=np.where(mBS_l<vW_l,1,0)
@@ -35,7 +35,7 @@ def diff_eqs(Y,t,parameters):
 
     vW_t=parameters.vW(t)
     mE,vL,vP,A1,A2=Y[EGG].reshape((parameters.BS_l,n)),Y[LARVAE],Y[PUPAE],Y[ADULT1],Y[ADULT2]
-    vW_l=vW_t/vBS_h * (BS_l-1)
+    vW_l=vW_t/vBS_h * BS_l
     wet_mask=wetMask(vW_l,mBS_l)
 
     dY=np.empty( Y.shape )
