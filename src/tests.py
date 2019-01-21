@@ -176,14 +176,19 @@ def runModelv2(case):
     E0v2=parameters.initial_condition[:n].repeat(BS_l)/BS_l
     parameters.initial_condition=np.insert(parameters.initial_condition[n:],0,E0v2)
 
+    #experimental
+    p=configuration.getFloat('simulation','egn_corrector_p')#TODO:change p for something with meaning...
+    parameters.egnCorrector=utils.EgnCorrector(p,model.parameters.BS_a,model.start_date,model.end_date)
     if(case==1):
-        configuration=Configuration('resources/otero_precipitation.cfg')
-        time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs_v2,method='rk' )
-        utils.plot(model,subplots=[['E',[utils.safeAdd] ],['A1+A2'],['W'],['p']])
-        #,{'A1+A2':'','lwE':'','O':[153],'f':[utils.replaceNegativesWithZeros,per_ovitrap,utils.safeNormalize]}
+        for dis in [0.9,0.5,0.1]:#this test actually shows something meaningfull when you have just 2 types of identical BS, one with mf and one without.
+            n=model.parameters.n
+            model.parameters.vBS_d=np.array([dis]+ [(1-dis)/(n-1)]*(n-1))
+            time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs_v2,method='rk' )
+            utils.plot(model,subplots=[{'E':'','O':[153],'f':[utils.safeAdd,utils.replaceNegativesWithZeros,utils.safeNormalize]},['A1+A2',[utils.safeNormalize] ],['W'],['p']],title='BS_d: %s'%model.parameters.vBS_d.round(2))
 
     for warning in model.warnings:
         print('# WARNING: ' + warning)
+    print('egn Correction mean: %s'%np.mean(parameters.egnCorrector.egn_corrections))
     utils.showPlot()
 
 if(__name__ == '__main__'):

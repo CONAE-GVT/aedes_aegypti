@@ -14,11 +14,12 @@ def wetMask(vW_l,mBS_l):
     return np.where(mBS_l==np.floor(vW_l),vW_l%1,mask)
 
 
-def dvE(mE,A1,A2,vW_t,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l):
+def dvE(mE,A1,A2,vW_t,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l,egnCorrector,t):
     egn=63.0
     me=0.01#mortality of the egg, for T in [278,303]
     ovsp_t=ovsp(vW_t,vBS_d,vW_l,mBS_l)
-    return egn*( ovr1 *A1  + ovr2* A2)*ovsp_t - me * mE - elr * mE*wet_mask
+    egn_c=egnCorrector(egn,ovr1 *A1  + ovr2* A2, t)
+    return egn_c*( ovr1 *A1  + ovr2* A2)*ovsp_t - me * mE - elr * mE*wet_mask
 
 def dvL(mE,vL,vW,T_t,BS_a,vBS_d,elr,lpr,vAlpha0,wet_mask):
     ml=0.01 + 0.9725 * math.exp(-(T_t-278.0)/2.7035)#mortality of the larvae, for T in [278,303]
@@ -39,7 +40,7 @@ def diff_eqs(Y,t,parameters):
     wet_mask=wetMask(vW_l,mBS_l)
 
     dY=np.empty( Y.shape )
-    dY[EGG]    = dvE(mE,A1,A2,vW_t,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l).reshape((1,BS_l*n))
+    dY[EGG]    = dvE(mE,A1,A2,vW_t,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l,parameters.egnCorrector,t).reshape((1,BS_l*n))
     dY[LARVAE] = dvL(mE,vL,vW_t,T_t,BS_a,vBS_d,elr,lpr,vAlpha0,wet_mask)
     dY[PUPAE]  = dvP(vL,vP,T_t,lpr,par)
     dY[ADULT1] = dA1(vP,A1,T_t,par,ovr1)

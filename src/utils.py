@@ -171,6 +171,25 @@ class ProgressEquations:
         sys.stdout.write("Completed: %d%%   \r" % ( t/self.t_max *100.) )
         sys.stdout.flush()
         return self.diff_eqs(Y,t,parameters)
+
+class EgnCorrector:
+    def __init__(self,p,BS_a,start_date,end_date):
+        self.ovitrap_eggs=np.array(getOvitrapEggsFromCsv('data/private/ovitrampas_2017-2018.csv',start_date,end_date,153))
+        self.p=p
+        self.BS_a=BS_a
+        self.egn_corrections=[]
+
+    def __call__(self,egn,cycle_A,t):#TODO:take into account amount of containers
+        if(self.p==0): return egn
+        OE_week=self.ovitrap_eggs[int(t):int(t)+7]#TODO:check if int(t) is ok. maybe it's ceil.#also use an spline and derivative instead of /7
+        OE_week=OE_week[OE_week!=[None]]
+        if(len(OE_week)==0): return 19.#TODO:what should we return?
+        p,BS_A=self.p,self.BS_a
+        dOEdt=np.asscalar(OE_week)/7. * self.BS_a
+        self.egn_corrections.append(dOEdt/cycle_A)
+        p=self.p
+        return (dOEdt/cycle_A)*p + (1-p)*egn
+
 ###############################################################Plot################################################################
 def normalize(values):#TODO:change name.
     return (values-values.min())/(values.max()-values.min())
