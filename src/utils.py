@@ -260,7 +260,7 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
         if ('P' in subplot): pl.plot(date_range,applyFs(RES[:,PUPAE],subplot), label='P')
         if ('A1' in subplot): pl.plot(date_range,applyFs(RES[:,ADULT1],subplot), label='A1')
         if ('A2' in subplot): pl.plot(date_range,applyFs(RES[:,ADULT2],subplot), label='A2')
-        if ('A1+A2' in subplot): pl.plot(date_range,applyFs(RES[:,ADULT2]+RES[:,ADULT1],subplot), color=color, label='A1+A2'+title)
+        if ('A1+A2' in subplot): pl.plot(date_range,applyFs(RES[:,ADULT2]+RES[:,ADULT1],subplot), color=color, label='A1+A2')
 
         #derivate
         dY=np.zeros(RES.shape)
@@ -314,8 +314,8 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
 
         #Temperature in K
         if ('T' in subplot):
-            pl.plot(date_range,applyFs(np.array([T(t) for t in time_range]),subplot),color=color, label='Temperature'+title)
-            pl.ylabel('K')
+            pl.plot(date_range,applyFs(np.array([T(t)- 273.15 for t in time_range]),subplot),color=color, label='Temperature')
+            pl.ylabel('C')
 
         #precipitations(in mm.)
         if ('p' in subplot):

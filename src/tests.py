@@ -156,6 +156,13 @@ def runCases(case):
         pl.xlabel('Temperature (K)')
         pl.ylabel('Development Rate ($days^{-1}$)')
         pl.legend(loc=0)
+
+    if(case==6):
+        configuration=Configuration('resources/otero_precipitation.cfg')
+        model=Model(configuration)
+        time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs,method='rk' )
+        common(model,'v1')
+
     utils.showPlot()
 
 def runModelv2(case):
@@ -185,11 +192,21 @@ def runModelv2(case):
             model.parameters.vBS_d=np.array([dis]+ [(1-dis)/(n-1)]*(n-1))
             time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs_v2,method='rk' )
             utils.plot(model,subplots=[{'E':'','O':[153],'f':[utils.safeAdd,utils.replaceNegativesWithZeros,utils.safeNormalize]},['A1+A2',[utils.safeNormalize] ],['W'],['p']],title='BS_d: %s'%model.parameters.vBS_d.round(2))
+            print('egn Correction mean: %s'%np.mean(parameters.egnCorrector.egn_corrections))
+
+    if(case==6):
+        time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs_v2,method='rk' )
+        common(model,'v2')
 
     for warning in model.warnings:
         print('# WARNING: ' + warning)
-    print('egn Correction mean: %s'%np.mean(parameters.egnCorrector.egn_corrections))
     utils.showPlot()
+
+def common(model,title):
+    utils.plot(model,subplots=[
+        {'E':'',    'O':[153],'f':[utils.safeAdd,utils.replaceNegativesWithZeros,utils.safeNormalize]},
+        {'A1+A2':'','O':[153],'f':[utils.safeAdd,utils.replaceNegativesWithZeros,utils.safeNormalize]},
+        ['lwE',[utils.safeAdd,utils.replaceNegativesWithZeros,utils.safeNormalize]]  ,['W']],title=title)#, ['W'],['p'],['T']
 
 if(__name__ == '__main__'):
     if(len(sys.argv)>2 and sys.argv[1]=='show'):

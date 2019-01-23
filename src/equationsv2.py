@@ -35,12 +35,12 @@ def diff_eqs(Y,t,parameters):
     EGG,LARVAE,PUPAE,ADULT1,ADULT2=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.ADULT2
 
     vW_t=parameters.vW(t)
-    mE,vL,vP,A1,A2=Y[EGG].reshape((parameters.BS_l,n)),Y[LARVAE],Y[PUPAE],Y[ADULT1],Y[ADULT2]
+    mE,vL,vP,A1,A2=Y[EGG].reshape((n,parameters.BS_l)).transpose(),Y[LARVAE],Y[PUPAE],Y[ADULT1],Y[ADULT2]
     vW_l=vW_t/vBS_h * BS_l
     wet_mask=wetMask(vW_l,mBS_l)
 
     dY=np.empty( Y.shape )
-    dY[EGG]    = dvE(mE,A1,A2,vW_t,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l,parameters.egnCorrector,t).reshape((1,BS_l*n))
+    dY[EGG]    = dvE(mE,A1,A2,vW_t,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l,parameters.egnCorrector,t).transpose().reshape((1,BS_l*n))
     dY[LARVAE] = dvL(mE,vL,vW_t,T_t,BS_a,vBS_d,elr,lpr,vAlpha0,wet_mask)
     dY[PUPAE]  = dvP(vL,vP,T_t,lpr,par)
     dY[ADULT1] = dA1(vP,A1,T_t,par,ovr1)
