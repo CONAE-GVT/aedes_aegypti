@@ -165,10 +165,9 @@ def runCases(case):
 
     utils.showPlot()
 
-def runModelv2(case):
-    configuration=Configuration('resources/otero_precipitation.cfg')
-    model=Model(configuration)
+def getV2Model(model):
     #modify some parameters to make them compatible with v2
+    configuration=model.configuration
     parameters=model.parameters
     n=parameters.n
     parameters.BS_l=int(configuration.getFloat('breeding_site','levels'))#BS levels#TODO:by changing this value, we get a different number of adults, which looks too big. Check if there isn't an error somewhere, or a way to make it more stable
@@ -186,6 +185,12 @@ def runModelv2(case):
     #experimental
     p=configuration.getFloat('simulation','egn_corrector_p')#TODO:change p for something with meaning...
     parameters.egnCorrector=utils.EgnCorrector(p,model.parameters.BS_a,model.start_date,model.end_date)
+    return model
+
+def runModelv2(case):
+    configuration=Configuration('resources/otero_precipitation.cfg')
+    model=getV2Model(Model(configuration))
+
     if(case==1):
         for dis in [0.9,0.5,0.1]:#this test actually shows something meaningfull when you have just 2 types of identical BS, one with mf and one without.
             n=model.parameters.n
@@ -197,6 +202,12 @@ def runModelv2(case):
     if(case==6):
         time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs_v2,method='rk' )
         common(model,'v2')
+
+    if(case==7):
+        configuration=Configuration('resources/1c.cfg')#use this config.
+        model=getV2Model(Model(configuration))
+        time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs_v2,method='rk' )
+        utils.plot(model,subplots=[['E'],['W']])
 
     for warning in model.warnings:
         print('# WARNING: ' + warning)
