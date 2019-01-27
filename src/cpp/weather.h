@@ -23,6 +23,7 @@ public:
 	    s.set_points(X,Y);    // currently it is required that X is already sorted
         return s;
     }
+    Weather(){};
 
 	Weather(std::string filename, std::string start_date,std::string end_date){
         std::vector<double> precipitations=Utils::getPrecipitationsFromCsv(filename,start_date,end_date);
