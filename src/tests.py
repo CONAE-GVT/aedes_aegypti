@@ -163,6 +163,34 @@ def runCases(case):
         time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs,method='rk' )
         common(model,'v1')
 
+    if(case==7):
+        configuration=Configuration('resources/otero_precipitation.cfg')
+        model=Model(configuration)
+        time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs,method='rk' )
+        common(model,'v1 ucar')
+
+        configuration=Configuration('resources/otero_precipitation.cfg')
+        configuration.config_parser.set('location','name','wunderground')
+        model=Model(configuration)
+        time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs,method='rk' )
+        common(model,'v1 wunderground')
+
+        configuration=Configuration('resources/otero_precipitation.cfg')
+        configuration.config_parser.set('location','name','wunderground')
+        model=getV2Model(Model(configuration))
+        time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs_v2,method='rk' )
+        common(model,'v2 wunderground')
+
+        for h in [1,5,15,30]:
+            configuration=Configuration('resources/otero_precipitation.cfg')
+            configuration.config_parser.set('location','name','wunderground')
+            n=len(configuration.getArray('breeding_site','height'))
+            configuration.config_parser.set('breeding_site','height',','.join([str(h)]*n))
+            configuration.config_parser.set('location','name','wunderground')
+            model=getV2Model(Model(configuration))
+            time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs_v2,method='rk' )
+            common(model,'v2 wunderground h=%s'%h)
+
     utils.showPlot()
 
 def getV2Model(model):
@@ -214,6 +242,7 @@ def runModelv2(case):
     utils.showPlot()
 
 def common(model,title):
+    print('Max E: %s'%np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1)))
     utils.plot(model,subplots=[
         {'E':'',    'O':[153],'f':[utils.safeAdd,utils.replaceNegativesWithZeros,utils.safeNormalize]},
         {'A1+A2':'','O':[153],'f':[utils.safeAdd,utils.replaceNegativesWithZeros,utils.safeNormalize]},
