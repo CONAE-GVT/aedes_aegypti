@@ -57,6 +57,10 @@ class Utils{
     static std::vector<double> getRelativeHumidityFromCsv(std::string filename, std::string start_date, std::string end_date){//in percentage
         return getValuesFromCsv(filename,start_date,end_date,5);
     }
+
+    static unsigned int getDaysFromCsv(std::string filename, std::string start_date, std::string end_date){//convenience method to get amount of days between two dates
+        return getValuesFromCsv(filename,start_date,end_date,0).size();
+    }
 };
 
 #endif

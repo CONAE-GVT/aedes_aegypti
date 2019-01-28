@@ -23,22 +23,23 @@ class Model
         this->parameters.vBS_mf={0.,0.};//#in percentage of capacity
         this->parameters.n=this->parameters.vBS_d.size();
 
-        /* TODO:implement
-        self.parameters.EGG=slice(0,n)#in R^n
-        self.parameters.LARVAE=slice(n,2*n)#in R^n
-        self.parameters.PUPAE=slice(2*n,3*n)#in R^n
-        self.parameters.ADULT1=3*n#in R
-        self.parameters.ADULT2=3*n+1#in R
-        */
+        //TODO:implement
+        unsigned int n=this->parameters.n;
+        this->parameters.EGG=std::slice(0,n,1);//#in R^n
+        this->parameters.LARVAE=std::slice(n,n,1);//#in R^n
+        this->parameters.PUPAE=std::slice(2*n,n,1);//#in R^n
+        this->parameters.ADULT1=3*n;//#in R
+        this->parameters.ADULT2=3*n+1;//#in R
+
         this->parameters.vAlpha0={1.5,1.5};//#constant to be fitted
 
         this->start_date="2015-7-1";
-        this->end_date="2018-7-1";
-        //TODO:HARDCODED! find a better way of doing a timerange
-        double h=1/40.;
-        for(unsigned int i=0;i<60/h;i++) this->time_range.push_back(i*h);
+        this->end_date="2019-1-15";
         this->parameters.initial_condition={100.,100., 0,0, 0,0, 0, 0};
         this->parameters.weather=Weather("data/public/wunderground.csv", this->start_date ,this->end_date );
+        double h=1/2.;
+        unsigned int days=Utils::getDaysFromCsv("data/public/wunderground.csv", this->start_date ,this->end_date );
+        for(unsigned int i=0;i<days/h;i++) this->time_range.push_back(i*h);
 
         //TODO:implement water!!!
     }
@@ -47,7 +48,7 @@ class Model
     std::vector<std::valarray<double>> solveEquations(){
         std::vector<double> time_range= this->time_range;
         std::valarray<double> Y0=this->parameters.initial_condition;
-        std::vector<std::valarray<double>> Y=RK::solve(diff_eqs,Y0,time_range,20);
+        std::vector<std::valarray<double>> Y=RK::solve(diff_eqs,Y0,time_range,this->parameters,20);
         return Y;
     }
 

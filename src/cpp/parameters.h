@@ -19,6 +19,11 @@ struct Parameters{
     std::valarray<double> vAlpha0;
     //dynamic
     unsigned int n;
+    std::slice EGG;
+    std::slice LARVAE;
+    std::slice PUPAE;
+    unsigned int ADULT1;
+    unsigned int ADULT2;
     Weather weather;
 
 };

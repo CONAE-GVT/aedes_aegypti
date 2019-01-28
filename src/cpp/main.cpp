@@ -10,5 +10,9 @@ int main(){
   Model model=Model();
   std::vector<std::valarray<double>> Y=model.solveEquations();
   std::vector<double> time_range=model.time_range;
-  for(unsigned int i=0;i<time_range.size();i++) std::cout << time_range[i] << '\t' << Y[i][0] << '\t' << Y[i][1] << '\t' << Y[i][2] << std::endl;
+  for(unsigned int i=0;i<time_range.size();i++){
+    std::cout << time_range[i] << '\t';
+    for(unsigned int j=0;j<Y[i].size();j++) std::cout << Y[i][j] << '\t';
+    std::cout <<  std::endl;
+  }
 }
