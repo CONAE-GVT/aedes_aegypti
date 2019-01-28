@@ -165,6 +165,13 @@ def runCases(case):
 
     if(case==7):
         configuration=Configuration('resources/otero_precipitation.cfg')
+        n=len(configuration.getArray('breeding_site','height'))
+        configuration.config_parser.set('breeding_site','manually_filled',','.join([str(0.5)] + [str(0)]*(n-1)))
+        model=Model(configuration)
+        time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs,method='rk' )
+        common(model,'v1 ucar mf')
+
+        configuration=Configuration('resources/otero_precipitation.cfg')
         model=Model(configuration)
         time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs,method='rk' )
         common(model,'v1 ucar')
