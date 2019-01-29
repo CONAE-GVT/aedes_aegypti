@@ -19,34 +19,34 @@ tensor vR_D(scalar T_t){//#day^-1
 }
 
 //TODO:IMPLEMENT!!!
-tensor vGamma(tensor vL,tensor vBS_a,tensor vW){
+tensor vGamma(const tensor& vL,tensor vBS_a,const tensor& vW){
     return tensor(vW.size());
 }
-tensor ovsp(tensor vBS_d,tensor vW){
+tensor ovsp(const tensor& vBS_d,const tensor& vW){
     scalar epsilon=1e-4;
     tensor vf=vW/(vW+epsilon) * vBS_d;
     if(vf.max()<1e-20) return vf;
     else return vf/vf.sum();//#TODO: check this
 }
 
-tensor dvE(tensor vE,tensor vL,scalar A1,scalar A2,tensor vW, scalar T_t, scalar BS_a,tensor  vBS_d,scalar elr,scalar ovr1, scalar ovr2){
+tensor dvE(const tensor& vE,const tensor& vL,scalar A1,scalar A2,const tensor& vW, scalar T_t, scalar BS_a,const tensor&  vBS_d,scalar elr,scalar ovr1, scalar ovr2){
     scalar egn=63.0;
     scalar me=0.01;//#mortality of the egg, for T in [278,303]
     return egn*( ovr1 *A1  + ovr2* A2)*ovsp(vW,vBS_d) - me * vE - elr* (1.-vGamma(vL,BS_a*vBS_d,vW)) * vE;
 }
 
-tensor dvL(tensor vE,tensor vL,tensor vW,scalar T_t,scalar BS_a,tensor vBS_d,scalar elr,scalar lpr,tensor vAlpha0){
+tensor dvL(const tensor& vE,const tensor& vL,const tensor& vW,scalar T_t,scalar BS_a,const tensor& vBS_d,scalar elr,scalar lpr,const tensor& vAlpha0){
     scalar ml=0.01 + 0.9725 * std::exp(-(T_t-278.0)/2.7035);//#mortality of the larvae, for T in [278,303]
     tensor vAlpha=vAlpha0/(BS_a*vBS_d);
     return elr* (1.-vGamma(vL,BS_a*vBS_d,vW)) * vE - ml*vL - vAlpha* vL*vL - lpr *vL ;//#-35.6464*(1.-beta(vW,vBS_od,vBS_id))*L#-24.*(1.-beta(vW))*L# -log(1e-4/5502.)/(1.)=17.823207313460703
 }
 
-tensor dvP(tensor vL,tensor vP,scalar T_t, scalar lpr,scalar par){
+tensor dvP(const tensor& vL,const tensor& vP,scalar T_t, scalar lpr,scalar par){
     scalar mp=0.01 + 0.9725 * std::exp(-(T_t-278.0)/2.7035);//#death of pupae
     return lpr*vL - mp*vP  - par*vP;
 }
 
-scalar dA1(tensor vP,scalar A1,scalar T_t, scalar par,scalar ovr1){
+scalar dA1(const tensor& vP,scalar A1,scalar T_t, scalar par,scalar ovr1){
     scalar ef=0.83;//#emergence factor
     scalar ma=0.09;//#for T in [278,303]
     return (par*ef*vP/2.0).sum() - ma*A1 - ovr1*A1;

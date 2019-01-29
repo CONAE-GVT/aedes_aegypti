@@ -10,7 +10,7 @@
 
 class Utils{
   public:
-    static std::vector<scalar> getValuesFromCsv(std::string filename, std::string start_date, std::string end_date,int value_column){
+    static std::vector<scalar> getValuesFromCsv(const std::string& filename, const std::string& start_date, const std::string& end_date,int value_column){
       std::ifstream file = std::ifstream(filename,std::ifstream::in);
   		if( file.fail() ) std::cout << "Couldn't open the file";
       std::vector<scalar> values;
@@ -45,21 +45,21 @@ class Utils{
         return tokens;
     }
 
-    static std::vector<scalar> getAverageTemperaturesFromCsv(std::string filename, std::string start_date, std::string end_date){///#in Kelvin#TODO:change name to meanTemperature
+    static std::vector<scalar> getAverageTemperaturesFromCsv(const std::string& filename, const std::string& start_date, const std::string& end_date){///#in Kelvin#TODO:change name to meanTemperature
         std::vector<scalar> temperatures=getValuesFromCsv(filename,start_date,end_date,2);
         for(unsigned int i=0;i<temperatures.size();i++) temperatures[i]+=273.15;
         return temperatures;
     }
 
-    static std::vector<scalar> getPrecipitationsFromCsv(std::string filename, std::string start_date, std::string end_date){//in mm
+    static std::vector<scalar> getPrecipitationsFromCsv(const std::string& filename, const std::string& start_date, const std::string& end_date){//in mm
         return getValuesFromCsv(filename,start_date,end_date,4);
     }
 
-    static std::vector<scalar> getRelativeHumidityFromCsv(std::string filename, std::string start_date, std::string end_date){//in percentage
+    static std::vector<scalar> getRelativeHumidityFromCsv(const std::string& filename, const std::string& start_date, const std::string& end_date){//in percentage
         return getValuesFromCsv(filename,start_date,end_date,5);
     }
 
-    static unsigned int getDaysFromCsv(std::string filename, std::string start_date, std::string end_date){//convenience method to get amount of days between two dates
+    static unsigned int getDaysFromCsv(const std::string& filename, const std::string& start_date, const std::string& end_date){//convenience method to get amount of days between two dates
         return getValuesFromCsv(filename,start_date,end_date,0).size();
     }
 };
