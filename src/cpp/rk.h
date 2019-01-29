@@ -11,7 +11,7 @@ class RK{
     static std::vector<state_type> solve(state_type (*dYdt)(const state_type&, double,Parameters&),state_type& Y0,std::vector<double>& time_range,Parameters& parameters, int steps){//TODO:use c++ functor instead
         //main
         std::vector<state_type> Y=std::vector<state_type>();
-        //Y.reserve(time_range.size());//TODO:check if we need this.
+        Y.reserve(time_range.size());//small performance gain
         Y.push_back(Y0);//Y[0]=Y0<---initial conditions
 
         state_type Y_j=Y0;

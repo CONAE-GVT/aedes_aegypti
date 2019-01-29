@@ -20,6 +20,7 @@ public:
     //Convenience method
     tk::spline getSpline(std::vector<double> X,std::vector<double> Y){
         tk::spline s;
+        s.set_boundary(tk::spline::second_deriv, 0.0,tk::spline::second_deriv,0.0,false);//This is the default, just calling to avoid warning.
 	    s.set_points(X,Y);    // currently it is required that X is already sorted
         return s;
     }

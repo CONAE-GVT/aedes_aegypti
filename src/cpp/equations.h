@@ -70,7 +70,6 @@ state_type diff_eqs(const state_type& Y,double t,Parameters& parameters){
     double BS_a=parameters.BS_a;
     std::valarray<double> vBS_d=parameters.vBS_d;
     std::valarray<double> vAlpha0=parameters.vAlpha0;
-    unsigned int n=parameters.n;
 
     std::valarray<double> vW_t=std::valarray<double>(1,parameters.ADULT2);//parameters.vW(t)TODO:implement
     std::valarray<double> vE=Y[parameters.EGG];
