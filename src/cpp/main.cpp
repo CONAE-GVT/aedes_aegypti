@@ -2,6 +2,7 @@
 //>./a.out > lorenz.dat
 //gnuplot>plot "lorenz.dat" using 1:2 with lines
 //https://www.geeksforgeeks.org/std-valarray-class-c/
+//cppcheck --enable=all src/cpp/main.cpp
 #include<vector>
 #include <valarray>
 #include <iostream>
