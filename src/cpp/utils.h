@@ -6,13 +6,14 @@
 #include <string>
 #include <iostream>
 #include <cstring>
+#include "types.h"
 
 class Utils{
   public:
-    static std::vector<double> getValuesFromCsv(std::string filename, std::string start_date, std::string end_date,int value_column){
+    static std::vector<scalar> getValuesFromCsv(std::string filename, std::string start_date, std::string end_date,int value_column){
       std::ifstream file = std::ifstream(filename,std::ifstream::in);
   		if( file.fail() ) std::cout << "Couldn't open the file";
-      std::vector<double> values;
+      std::vector<scalar> values;
       bool in_range=false;
   		while(!file.eof()){
           std::string line;
@@ -44,17 +45,17 @@ class Utils{
         return tokens;
     }
 
-    static std::vector<double> getAverageTemperaturesFromCsv(std::string filename, std::string start_date, std::string end_date){///#in Kelvin#TODO:change name to meanTemperature
-        std::vector<double> temperatures=getValuesFromCsv(filename,start_date,end_date,2);
+    static std::vector<scalar> getAverageTemperaturesFromCsv(std::string filename, std::string start_date, std::string end_date){///#in Kelvin#TODO:change name to meanTemperature
+        std::vector<scalar> temperatures=getValuesFromCsv(filename,start_date,end_date,2);
         for(unsigned int i=0;i<temperatures.size();i++) temperatures[i]+=273.15;
         return temperatures;
     }
 
-    static std::vector<double> getPrecipitationsFromCsv(std::string filename, std::string start_date, std::string end_date){//in mm
+    static std::vector<scalar> getPrecipitationsFromCsv(std::string filename, std::string start_date, std::string end_date){//in mm
         return getValuesFromCsv(filename,start_date,end_date,4);
     }
 
-    static std::vector<double> getRelativeHumidityFromCsv(std::string filename, std::string start_date, std::string end_date){//in percentage
+    static std::vector<scalar> getRelativeHumidityFromCsv(std::string filename, std::string start_date, std::string end_date){//in percentage
         return getValuesFromCsv(filename,start_date,end_date,5);
     }
 
