@@ -1,6 +1,7 @@
 #ifndef ParametersH
 #define ParametersH
 
+#include <functional>
 #include "types.h"
 #include "weather.h"
 
@@ -26,6 +27,8 @@ struct Parameters{
     unsigned int ADULT1;
     unsigned int ADULT2;
     Weather weather;
+    std::function<scalar(scalar)> mf;
+    std::function<tensor(scalar)> vW;
 
 };
 

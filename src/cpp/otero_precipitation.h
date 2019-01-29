@@ -40,9 +40,15 @@ class Model
         this->parameters.weather=Weather("data/public/wunderground.csv", this->start_date ,this->end_date );
         scalar h=1/2.;
         unsigned int days=Utils::getDaysFromCsv("data/public/wunderground.csv", this->start_date ,this->end_date );
-        for(unsigned int i=0;i<days/h;i++) this->time_range.push_back(i*h);
+        for(unsigned int i=0;i<days/h;i++) this->time_range.push_back(i*h);//TODO:use iota?
 
         //TODO:implement water!!!
+        this->parameters.mf=[](scalar t) { return (1.-std::max(int(t)%7,1))* (sin(2.*M_PI*t + 3.*M_PI/2.) +1.); };//<---- this is implemented different in python////TODO:use function?
+        std::vector<tensor> W = RK::solve(waterEquations,this->parameters.vBS_W0,time_range,this->parameters,20);
+        std::vector<std::function<scalar(scalar)>> vWaux=std::vector<std::function<scalar(scalar)>>();
+        for(unsigned int j=0;j<n;j++) vWaux.push_back( Utils::getSpline(this->time_range,Utils::getColumn(W,j)) );
+        this->parameters.vW=[vWaux](scalar t){tensor vW_t=tensor(vWaux.size()); for(unsigned int i=0;i<vWaux.size();i++) vW_t[i]=vWaux[i](t); return vW_t;};//TODO:use function?
+
     }
 
 

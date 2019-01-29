@@ -7,6 +7,7 @@
 #include <iostream>
 #include <cstring>
 #include "types.h"
+#include "spline.h"
 
 class Utils{
   public:
@@ -61,6 +62,21 @@ class Utils{
 
     static unsigned int getDaysFromCsv(const std::string& filename, const std::string& start_date, const std::string& end_date){//convenience method to get amount of days between two dates
         return getValuesFromCsv(filename,start_date,end_date,0).size();
+    }
+
+    //Convenience method
+    static tk::spline getSpline(std::vector<scalar> X,std::vector<scalar> Y){
+        tk::spline s;
+        s.set_boundary(tk::spline::second_deriv, 0.0,tk::spline::second_deriv,0.0,false);//This is the default, just calling to avoid warning.
+        s.set_points(X,Y);    // currently it is required that X is already sorted
+        return s;
+    }
+
+
+    static std::vector<scalar> getColumn(std::vector<tensor> W, unsigned int j){
+        std::vector<scalar> W_j=std::vector<scalar>();
+        for(unsigned int i=0;i<W.size();i++) W_j.push_back(W[i][j]);
+        return W_j;
     }
 };
 

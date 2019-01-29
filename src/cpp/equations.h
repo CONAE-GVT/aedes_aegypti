@@ -13,15 +13,77 @@ tensor vDeltaH_A={10798.0,26018.0,14931.0,15725.0,15725.0};
 tensor vDeltaH_H={100000.0,55990.0,-472379.00,1756481.0,1756481.0};// #-472379 vs. -473379
 tensor vT_1_2H={14184.0,304.6,148.0,447.2,447.2};
 
+//<precipitation related functionality>
+//#Ivanov
+scalar QR(scalar RH_t,scalar T_t){//#in cm/day
+    return 6e-5* std::pow(25 + T_t-273.15, 2) * (100.-RH_t) * 0.1;//#cm
+}
+
+scalar QG(scalar p_t){//#Quantity gathered#in cm
+    return p_t*0.1;//#cm
+}
+
+/*
+    { QG(BS_s,t)-QR(BS_s,T(t))    if 0 < W < BS_h
+dW= { QG(BS_s,t)                  if W <= 0.0
+    { -QR(BS_s,T(t))               if W >= BS_h
+Note: in the implementation we needed to add functions to make function continuous, otherwise odeint breaks
+*/
+scalar dW(scalar W, scalar BS_h, scalar T_t, scalar p_t, scalar RH_t){//#in cm/day
+    scalar epsilon=1e-1;//#1mm
+    if(0+epsilon < W && W < BS_h-epsilon)
+        return QG(p_t)-QR(RH_t,T_t);
+    else if(W <= 0.0+epsilon)
+        return QG(p_t) - QR(RH_t,T_t)*(W/epsilon);
+    else// if( W >= BS_h-epsilon)//commented out to avoid warning(should have no effect)
+        return QG(p_t)*((BS_h-W)/epsilon) - QR(RH_t,T_t);
+}
+
+scalar a0(scalar W){
+    return 70.0* W;
+}
+
+scalar gamma(scalar L, scalar BS, scalar W);
+tensor vGamma(const tensor& vL, tensor vBS_a, const tensor& vW){
+    tensor vGamma_t=tensor(vW.size());
+    for(unsigned int i=0;i<vL.size();i++) vGamma_t[i]=gamma(vL[i],vBS_a[i],vW[i]);
+    return vGamma_t;
+}
+
+tensor waterEquations(const tensor& vW,scalar t, Parameters& parameters){
+    scalar T_t=parameters.weather.T(t);
+    scalar p_t=parameters.weather.p(t);
+    scalar RH_t=parameters.weather.RH(t);
+    tensor vmf_t=parameters.mf(t)*parameters.vBS_mf*parameters.vBS_h*10.;//#% -> cm -> mm
+    tensor vBS_h=parameters.vBS_h;
+    tensor dWdt=tensor(vW.size());
+    for(unsigned int i=0;i<vW.size();i++) dWdt=dW(vW[i],vBS_h[i],T_t,p_t+vmf_t[i],RH_t);
+    return dWdt;
+}
+//</precipitation related functionality v>
+
 tensor vR_D(scalar T_t){//#day^-1
     scalar R=1.987; //# universal gas constant
     return vR_D_298K * (T_t/298.0) * std::exp( (vDeltaH_A/R)* ((1.0/298.0)- (1.0/T_t)) ) / ( 1.0+ std::exp( (vDeltaH_H/R)* ((1.0/vT_1_2H)-(1.0/T_t)) ) );
 }
 
-//TODO:IMPLEMENT!!!
-tensor vGamma(const tensor& vL,tensor vBS_a,const tensor& vW){
-    return tensor(vW.size());
+scalar gamma(scalar L, scalar BS, scalar W){
+    scalar epsilon=1e-4;
+    if(BS==0 || W <epsilon)//#W *1000./BS_s <0.1
+        return 1.0;//#no water total inhibition#1960 Aedes aegypti (L.), The Yellow Fever Mosquito(Page 165)
+    if(L/BS<=a0(W)-epsilon)
+        return  0;
+    else if(a0(W)-epsilon < L/BS && L/BS<a0(W)+epsilon){
+        //#a (a0-e) + b=0 => b=-a (a0 -e)
+        //#a (a0 + e) + b=0.63 => a(a0+e) - a(a0-e) = 2 a e = 0.63 =>a=0.63/(2 e)
+        scalar a=0.63/(2.0*epsilon);
+        scalar b=-a*(a0(W)-epsilon);
+        return a * (L/BS) + b;
+    }
+    else// if(L/BS>=a0(W)+epsilon)//commented out to avoid warning(should have no effect)
+        return 0.63;
 }
+
 tensor ovsp(const tensor& vBS_d,const tensor& vW){
     scalar epsilon=1e-4;
     tensor vf=vW/(vW+epsilon) * vBS_d;
@@ -71,7 +133,7 @@ tensor diff_eqs(const tensor& Y,scalar t,Parameters& parameters){
     tensor vBS_d=parameters.vBS_d;
     tensor vAlpha0=parameters.vAlpha0;
 
-    tensor vW_t=tensor(1,parameters.ADULT2);//parameters.vW(t)TODO:implement
+    tensor vW_t=parameters.vW(t);
     tensor vE=Y[parameters.EGG];
     tensor vL=Y[parameters.LARVAE];
     tensor vP=Y[parameters.PUPAE];
