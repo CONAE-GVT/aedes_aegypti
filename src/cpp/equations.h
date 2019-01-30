@@ -57,7 +57,7 @@ tensor waterEquations(const tensor& vW,scalar t, Parameters& parameters){
     tensor vmf_t=parameters.mf(t)*parameters.vBS_mf*parameters.vBS_h*10.;//#% -> cm -> mm
     tensor vBS_h=parameters.vBS_h;
     tensor dWdt=tensor(vW.size());
-    for(unsigned int i=0;i<vW.size();i++) dWdt=dW(vW[i],vBS_h[i],T_t,p_t+vmf_t[i],RH_t);
+    for(unsigned int i=0;i<vW.size();i++) dWdt[i]=dW(vW[i],vBS_h[i],T_t,p_t+vmf_t[i],RH_t);
     return dWdt;
 }
 //</precipitation related functionality v>
