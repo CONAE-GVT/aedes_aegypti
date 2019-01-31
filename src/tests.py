@@ -95,6 +95,15 @@ def runSpatial():
         getTitle=lambda i: datetime.timedelta(days=time_range[i])+start_date
         utils.createAnimation('out/%s'%key,matrix,getTitle,time_range.max())# 1 day : 1 second
 
+import equation_fitter
+import scipy.stats as stats
+def calculateMetrics(V,ovitrap_eggs_i):
+    V/=np.max(V)
+    ovitrap_eggs_i/=np.nanmax(ovitrap_eggs_i)
+    d=np.nansum((ovitrap_eggs_i-V)**2 )/ np.where(~np.isnan(ovitrap_eggs_i),1,0).sum()
+    rho,p_value=stats.spearmanr(ovitrap_eggs_i[~np.isnan(ovitrap_eggs_i)], V[~np.isnan(ovitrap_eggs_i)])
+    return d,rho,p_value
+
 def runCases(case):
     if(case==1):
         testModel(Configuration('resources/otero_precipitation.cfg'),subplots=[['E'],['A1+A2'], ['W']])
@@ -198,6 +207,48 @@ def runCases(case):
             time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs_v2,method='rk' )
             common(model,'v2 wunderground h=%s'%h)
 
+    if(case==8):
+        configuration=Configuration('resources/otero_precipitation.cfg')#Configuration('resources/1c.cfg')
+        configuration.config_parser.set('location','name','wunderground')
+        model=getV2Model(Model(configuration))
+        time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs_v2,method='rk' )
+
+        error_E0,error_lwE0,error_OV0=[],[],[]
+        for ovitrap_id in range(1,151):
+            OVITRAP_FILENAME='data/private/ovitrampas_2017-2018.csv'
+            ovitrap_eggs_i=utils.getOvitrapEggsFromCsv(OVITRAP_FILENAME,start_date,end_date,ovitrap_id)
+            ovitrap_eggs_i=equation_fitter.populate(model.time_range,ovitrap_eggs_i)
+            ovitrap_eggs_i=np.array(ovitrap_eggs_i,dtype=np.float)#this change None for np.nan
+
+            BS_l=model.parameters.BS_l
+            E0=Y[:,0:BS_l].sum(axis=1)
+            lwE0=np.array([Y[(np.abs(time_range-t)).argmin(),BS_l]-Y[(np.abs(time_range-(t-7))).argmin(),BS_l] for t in time_range])
+
+            OV0=[]
+            vBS_d=model.parameters.vBS_d
+            for i,t in enumerate(time_range):
+                T_t=model.parameters.weather.T(t)
+                vW_t=model.parameters.vW(t)
+                egn,ovr1,ovr2,A1,A2=63.,equations.vR_D(T_t)[0],equations.vR_D(T_t)[0],Y[i,-2],Y[i,-1]
+                OV_t= egn*( ovr1 *A1  + ovr2* A2)*equations.f(vW_t,vBS_d)
+                OV0=OV0 + [OV_t[0]]
+            OV0=np.array(OV0)
+
+            square,rho,p_value=calculateMetrics(E0,ovitrap_eggs_i)
+            error_E0=error_E0+[[square,rho,p_value]]
+            square,rho,p_value=calculateMetrics(lwE0,ovitrap_eggs_i)
+            error_lwE0=error_lwE0+[[square,rho,p_value]]
+            square,rho,p_value=calculateMetrics(OV0,ovitrap_eggs_i)
+            error_OV0=error_OV0+[[square,rho,p_value]]
+            #print('ovitrap %s Error: %s rho: %s p-value: %s'%(ovitrap_id,error,rho,p_value) )
+
+        for error in [error_E0,error_lwE0,error_OV0]:
+            pl.figure()
+            error=np.array(error)
+            error[:,0]=error[:,0]/error[:,0].max()
+            for i,label in enumerate(['square','rho','p_value']):
+                pl.plot(range(1,151),error[:,i],label=label)
+                pl.legend(loc=0)
     utils.showPlot()
 
 def getV2Model(model):
