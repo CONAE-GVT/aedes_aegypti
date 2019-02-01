@@ -249,6 +249,23 @@ def runCases(case):
             for i,label in enumerate(['square','rho','p_value']):
                 pl.plot(range(1,151),error[:,i],label=label)
                 pl.legend(loc=0)
+
+    if (case==9):
+        classes=[line.replace('\n','').split(',') for line in open('data/private/dtw_results.csv','r').readlines()]
+        for method in [1,2]:
+            pl.figure()
+            for class_number in [1,2,3]:
+                pl.title('method %s class%s, (1:dtw,2:kmeans)'%(method,class_number))
+                pl.subplot(300 + 10 + class_number)
+                for ovitrap_id in range(1,151):
+                    OVITRAP_FILENAME='data/private/ovitrampas_2017-2018.csv'
+                    start_date,end_date=utils.getStartEndDates(OVITRAP_FILENAME)
+                    ovitrap_eggs_i=utils.getOvitrapEggsFromCsv(OVITRAP_FILENAME,start_date,end_date,ovitrap_id)
+                    #take away Nones
+                    ovitrap_eggs=[e for e in ovitrap_eggs_i if e!=None]
+                    ovitrap_days=[datetime.timedelta(days=d)+datetime.datetime.combine(start_date,datetime.time()) for d in range(0,len(ovitrap_eggs_i)) if ovitrap_eggs_i[d]!=None]
+                    if(int(classes[ovitrap_id][method])==class_number):
+                        pl.plot(ovitrap_days, ovitrap_eggs, '-')
     utils.showPlot()
 
 def getV2Model(model):
