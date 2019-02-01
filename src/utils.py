@@ -81,6 +81,27 @@ def  getMeanWindSpeedFromCsv(filename,start_date,end_date):#in km/h
 def  getOvitrapEggsFromCsv(filename,start_date,end_date,ovitrap):#amount
     return [x for x in getValuesFromCsv(filename,start_date,end_date,ovitrap,False)]
 
+def getOvitrapEggsFromCsv2(filename,start_date,end_date,column):#amount
+    lines=[line.strip().split(',') for line in open(filename).readlines()[1:]]
+    values={}
+    last_date_str=None
+    for line in lines:
+        if(line[0]):
+            last_date_str=date_str=datetime.datetime.strptime(line[0], '%Y-%m-%d')
+        else:
+            date_str=last_date_str
+
+        if(line[column]):
+            value=float(line[column])
+        else:
+            value=None
+
+        if(date_str in values):
+            values[date_str].append(value)
+        else:
+            values[date_str]=[value]
+    return values
+
 def getStartEndDates(filename):
     dates=[line.split(',')[0] for line in open(filename,'r').readlines()]
     return datetime.datetime.strptime(dates[1], '%Y-%m-%d').date(),datetime.datetime.strptime(dates[-1], '%Y-%m-%d').date()
