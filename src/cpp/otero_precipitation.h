@@ -21,7 +21,7 @@ class Model
         this->parameters.vBS_s={50,50};//#in cm^2
         this->parameters.vBS_d={0.5,0.5};//#distribution of BS. Sum must be equals to 1
         this->parameters.vBS_W0={0,0};
-        this->parameters.vBS_mf={0.3,0.};//#in percentage of capacity
+        this->parameters.vBS_mf={0.1,0.};//#in percentage of capacity
         this->parameters.n=this->parameters.vBS_d.size();
 
 
@@ -47,7 +47,7 @@ class Model
         std::vector<tensor> W = RK::solve(waterEquations,this->parameters.vBS_W0,time_range,this->parameters,20);
         std::vector<std::function<scalar(scalar)>> vWaux=std::vector<std::function<scalar(scalar)>>();
         for(unsigned int j=0;j<n;j++) vWaux.push_back( Utils::getSpline(this->time_range,Utils::getColumn(W,j)) );
-        this->parameters.vW=[vWaux](scalar t){tensor vW_t=tensor(vWaux.size()); for(unsigned int i=0;i<vWaux.size();i++) vW_t[i]=vWaux[i](t); return vW_t;};
+        this->parameters.vW=[vWaux](scalar t){tensor vW_t=tensor(vWaux.size()); for(unsigned int i=0;i<vWaux.size();i++) vW_t[i]=std::max(vWaux[i](t),0.0); return vW_t;};
 
     }
 
