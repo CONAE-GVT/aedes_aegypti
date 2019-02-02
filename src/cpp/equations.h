@@ -91,7 +91,7 @@ tensor ovsp(const tensor& vBS_d,const tensor& vW){
     else return vf/vf.sum();//#TODO: check this
 }
 
-tensor dvE(const tensor& vE,const tensor& vL,scalar A1,scalar A2,const tensor& vW, scalar T_t, scalar BS_a,const tensor&  vBS_d,scalar elr,scalar ovr1, scalar ovr2){
+tensor dvE(const tensor& vE,const tensor& vL,scalar A1,scalar A2,const tensor& vW, scalar BS_a,const tensor&  vBS_d,scalar elr,scalar ovr1, scalar ovr2){
     scalar egn=63.0;
     scalar me=0.01;//#mortality of the egg, for T in [278,303]
     return egn*( ovr1 *A1  + ovr2* A2)*ovsp(vW,vBS_d) - me * vE - elr* (1.-vGamma(vL,BS_a*vBS_d,vW)) * vE;
@@ -108,13 +108,13 @@ tensor dvP(const tensor& vL,const tensor& vP,scalar T_t, scalar lpr,scalar par){
     return lpr*vL - mp*vP  - par*vP;
 }
 
-scalar dA1(const tensor& vP,scalar A1,scalar T_t, scalar par,scalar ovr1){
+scalar dA1(const tensor& vP,scalar A1, scalar par,scalar ovr1){
     scalar ef=0.83;//#emergence factor
     scalar ma=0.09;//#for T in [278,303]
     return (par*ef*vP/2.0).sum() - ma*A1 - ovr1*A1;
 }
 
-scalar dA2(scalar A1,scalar A2,scalar T_t,scalar ovr1){
+scalar dA2(scalar A1,scalar A2,scalar ovr1){
     scalar ma=0.09;//#for T in [278,303]
     return ovr1*A1 - ma*A2;
 }
@@ -141,11 +141,11 @@ tensor diff_eqs(const tensor& Y,scalar t,Parameters& parameters){
     scalar A2=Y[parameters.ADULT2];
 
     tensor dY=tensor(Y.size());
-    dY[parameters.EGG]    = dvE(vE,vL,A1,A2,vW_t,T_t,BS_a,vBS_d,elr,ovr1,ovr2);
+    dY[parameters.EGG]    = dvE(vE,vL,A1,A2,vW_t,BS_a,vBS_d,elr,ovr1,ovr2);
     dY[parameters.LARVAE] = dvL(vE,vL,vW_t,T_t,      BS_a,vBS_d,elr,lpr,vAlpha0);
     dY[parameters.PUPAE]  = dvP(vL,vP,T_t,lpr,par);
-    dY[parameters.ADULT1] = dA1(vP,A1,T_t,par,ovr1);
-    dY[parameters.ADULT2] = dA2(A1,A2,T_t,ovr1);
+    dY[parameters.ADULT1] = dA1(vP,A1,par,ovr1);
+    dY[parameters.ADULT2] = dA2(A1,A2,ovr1);
 
     return dY;//   # For odeint
 }
