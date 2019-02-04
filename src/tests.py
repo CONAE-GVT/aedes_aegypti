@@ -268,9 +268,7 @@ def runCases(case):
                         pl.plot(ovitrap_days, ovitrap_eggs, '-')
 
     if (case==10):
-        std_min=1e20
-        std_max=0
-        id_min=id_max=None
+        vStd_accum=[1e10]*152
         for ovitrap_id in range(1,151):
             OVITRAP_FILENAME='data/private/ovitrampas_2017-2018.full.csv'
             values=utils.getOvitrapEggsFromCsv2(OVITRAP_FILENAME,None,None,ovitrap_id)
@@ -281,17 +279,14 @@ def runCases(case):
             #pl.plot(ovitrap_days, ovi_a, '-')
             #pl.plot(ovitrap_days, ovi_b, '-')
             pl.plot(ovitrap_days, ovi_std, '-')
-            ovi_std_safe=[e for e in ovi_std if e is not None]
+            ovi_std_safe=[ovi_std[i] for i in range(len(ovitrap_days)) if ovi_a[i] is not None and ovi_b[i] is not None]
             if(len(ovi_std_safe) != len(ovi_std)): continue
-            if(sum(ovi_std_safe)<std_min):
-                std_min=sum(ovi_std_safe)
-                id_min=ovitrap_id
-            if(sum(ovi_std_safe)>std_max):
-                std_max=sum(ovi_std_safe)
-                id_max=ovitrap_id
+            vStd_accum[ovitrap_id]=sum(ovi_std_safe);
 
-        print("Min std %s on ovi %s"%(std_min,id_min))
-        print("Max std %s on ovi %s"%(std_max,id_max))
+
+        sorted_ovi=np.argsort(vStd_accum)
+        for ovitrap_id in sorted_ovi:
+            print('Ovitrap id:%s, Accumulated std:%s'%(ovitrap_id,vStd_accum[ovitrap_id]))
             #TODO:find the one with min std and max std, and compare those to model.
 
 
