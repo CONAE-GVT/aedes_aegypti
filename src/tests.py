@@ -268,14 +268,31 @@ def runCases(case):
                         pl.plot(ovitrap_days, ovitrap_eggs, '-')
 
     if (case==10):
-        for ovitrap_id in range(1,2):
+        std_min=1e20
+        std_max=0
+        id_min=id_max=None
+        for ovitrap_id in range(1,151):
             OVITRAP_FILENAME='data/private/ovitrampas_2017-2018.full.csv'
             values=utils.getOvitrapEggsFromCsv2(OVITRAP_FILENAME,None,None,ovitrap_id)
             ovitrap_days=values.keys()
             ovi_a=[values[date][0] for date in ovitrap_days]
             ovi_b=[values[date][1] if len(values[date])>1 else values[date][0] for date in ovitrap_days]
-            pl.plot(ovitrap_days, ovi_a, '-')
-            pl.plot(ovitrap_days, ovi_b, '-')
+            ovi_std=[np.std([ovi_a[i],ovi_b[i]]) if (ovi_a[i]!= None and ovi_b[i]!= None) else None for i in range(0,len(ovi_a))]
+            #pl.plot(ovitrap_days, ovi_a, '-')
+            #pl.plot(ovitrap_days, ovi_b, '-')
+            pl.plot(ovitrap_days, ovi_std, '-')
+            ovi_std_safe=[e for e in ovi_std if e is not None]
+            if(len(ovi_std_safe) != len(ovi_std)): continue
+            if(sum(ovi_std_safe)<std_min):
+                std_min=sum(ovi_std_safe)
+                id_min=ovitrap_id
+            if(sum(ovi_std_safe)>std_max):
+                std_max=sum(ovi_std_safe)
+                id_max=ovitrap_id
+
+        print("Min std %s on ovi %s"%(std_min,id_min))
+        print("Max std %s on ovi %s"%(std_max,id_max))
+            #TODO:find the one with min std and max std, and compare those to model.
 
 
     utils.showPlot()
