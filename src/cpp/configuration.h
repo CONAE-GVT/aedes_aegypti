@@ -1,8 +1,8 @@
 #ifndef ConfigurationH
 #define ConfigurationH
 
-#include "types.h"
 #include <fstream>
+#include "types.h"
 #include "utils.h"
 class Configuration
 {
