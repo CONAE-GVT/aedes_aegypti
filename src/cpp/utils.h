@@ -2,6 +2,7 @@
 #define UtilsH
 
 #include <vector>
+#include <map>
 #include <fstream>
 #include <string>
 #include <iostream>
@@ -9,31 +10,41 @@
 #include "types.h"
 #include "spline.h"
 
+typedef std::vector<int> date;
+
 class Utils{
   public:
-    static std::vector<scalar> getValuesFromCsv(const std::string& filename, const std::string& start_date, const std::string& end_date,int value_column){
+    static std::vector<scalar> getValuesFromCsv(const std::string& filename, const std::string& start_date_str, const std::string& end_date_str,int value_column){
       std::ifstream file = std::ifstream(filename,std::ifstream::in);
-  		if( file.fail() ) std::cout << "Couldn't open the file";
-      std::vector<scalar> values;
-      bool in_range=false;
+      if( file.fail() ){
+        std::cout << "Couldn't open the file"<<std::endl;
+        exit(0);
+      }
+      std::map<date,scalar> date_values;
+      date start_date=stringToDate(start_date_str);
+      date end_date=stringToDate(end_date_str);
   		while(!file.eof()){
           std::string line;
   		    std::getline(file,line);
           if(line=="") continue;
           std::vector<std::string> tokens=parseLine(line.c_str(),",");
-          std::string date=tokens[0];
-          if(date==start_date) in_range=true;
-          if(date==end_date) in_range=false;
-          if(in_range){
-            values.push_back(std::stod(tokens[value_column]));
+          date current_date=stringToDate(tokens[0]);
+          if(start_date<=current_date && current_date<end_date){
+            date_values.emplace(current_date,std::stod(tokens[value_column]));
           }
   		}
       file.close();
-
+      std::vector<scalar> values=std::vector<scalar>();
+      for(auto it=date_values.begin(); it != date_values.end(); it++) values.push_back(it->second);
       return values;
     }
 
-
+    static date stringToDate(std::string date_str){
+      if(date_str.find("-")==std::string::npos) return date();
+      std::vector<std::string> tokens=parseLine(date_str.c_str(),"-");
+      date the_date={std::stoi(tokens[0]),std::stoi(tokens[1]),std::stoi(tokens[2])};//year,month,day
+      return the_date;
+    }
     static std::vector<std::string> parseLine(const char* constLine,const char* delimiter){
         char* line=strdup(constLine);
         std::vector<std::string> tokens;
