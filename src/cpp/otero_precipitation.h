@@ -2,6 +2,7 @@
 #define ModelH
 
 #include "types.h"
+#include "configuration.h"
 #include "parameters.h"
 #include "weather.h"
 #include "equations.h"
@@ -15,13 +16,15 @@ class Model
     std::string end_date;
     std::vector<scalar> time_range;
 
-    Model(){
-        this->parameters.BS_a=50.;
-        this->parameters.vBS_h={10.,10.};//#in cm
-        this->parameters.vBS_s={50,50};//#in cm^2
-        this->parameters.vBS_d={0.5,0.5};//#distribution of BS. Sum must be equals to 1
-        this->parameters.vBS_W0={0,0};
-        this->parameters.vBS_mf={0.1,0.};//#in percentage of capacity
+    Model():Model(Configuration("resources/otero_precipitation.cfg")){}
+
+    Model(Configuration configuration){
+        this->parameters.BS_a=configuration.getScalar("breeding_site","amount");
+        this->parameters.vBS_h=configuration.getTensor("breeding_site","height");//#in cm
+        this->parameters.vBS_s=configuration.getTensor("breeding_site","surface");//#in cm^2
+        this->parameters.vBS_d=configuration.getTensor("breeding_site","distribution");//#distribution of BS. Sum must be equals to 1
+        this->parameters.vBS_W0=configuration.getTensor("breeding_site","initial_water");
+        this->parameters.vBS_mf=configuration.getTensor("breeding_site","manually_filled");//#in percentage of capacity
         this->parameters.n=this->parameters.vBS_d.size();
 
 
@@ -32,14 +35,16 @@ class Model
         this->parameters.ADULT1=3*n;//#in R
         this->parameters.ADULT2=3*n+1;//#in R
 
-        this->parameters.vAlpha0={1.5,1.5};//#constant to be fitted
+        this->parameters.vAlpha0=configuration.getTensor("biology","alpha0");//#constant to be fitted
 
-        this->start_date="2015-7-1";
-        this->end_date="2019-1-15";
-        this->parameters.initial_condition={100.,100., 0,0, 0,0, 0, 0};
-        this->parameters.weather=Weather("data/public/wunderground.csv", this->start_date ,this->end_date );
+        this->parameters.location=configuration.get("location","name");
+        this->start_date=configuration.get("simulation","start_date");
+        this->end_date=configuration.get("simulation","end_date");
+        this->parameters.initial_condition=configuration.getTensor("simulation","initial_condition");
+        std::string WEATHER_DATA_FILENAME="data/public/"+this->parameters.location+".csv";
+        this->parameters.weather=Weather(WEATHER_DATA_FILENAME, this->start_date ,this->end_date );
         scalar h=1/2.;
-        unsigned int days=Utils::getDaysFromCsv("data/public/wunderground.csv", this->start_date ,this->end_date );
+        unsigned int days=Utils::getDaysFromCsv(WEATHER_DATA_FILENAME, this->start_date ,this->end_date );
         for(unsigned int i=0;i<days/h;i++) this->time_range.push_back(i*h);
 
 

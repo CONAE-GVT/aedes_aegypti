@@ -14,6 +14,8 @@ struct Parameters{
     tensor vBS_W0;
     tensor vBS_mf;
 
+    std::string location;
+
     std::string start_date;
     std::string end_date;
     tensor initial_condition;
