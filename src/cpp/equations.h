@@ -84,7 +84,7 @@ scalar gamma(scalar L, scalar BS, scalar W){
         return 0.63;
 }
 
-tensor ovsp(const tensor& vBS_d,const tensor& vW){
+tensor ovsp(const tensor& vW,const tensor& vBS_d){
     scalar epsilon=1e-4;
     tensor vf=vW/(vW+epsilon) * vBS_d;
     if(vf.max()<1e-20) return vf;

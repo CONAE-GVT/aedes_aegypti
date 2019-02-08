@@ -43,9 +43,8 @@ class Model
         this->parameters.initial_condition=configuration.getTensor("simulation","initial_condition");
         std::string WEATHER_DATA_FILENAME="data/public/"+this->parameters.location+".csv";
         this->parameters.weather=Weather(WEATHER_DATA_FILENAME, this->start_date ,this->end_date );
-        scalar h=1/2.;
         unsigned int days=Utils::getDaysFromCsv(WEATHER_DATA_FILENAME, this->start_date ,this->end_date );
-        for(unsigned int i=0;i<days/h;i++) this->time_range.push_back(i*h);
+        for(unsigned int i=0;i<days;i++) this->time_range.push_back(i);
 
 
         this->parameters.mf=[](scalar t) { return (1.-std::min(int(t)%7,1))* (sin(2.*M_PI*t + 3.*M_PI/2.) +1.); };//<---- this is implemented different in python
