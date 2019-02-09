@@ -338,11 +338,12 @@ def runModelv2(case):
                     'levels':BS_l
                 }
                 })
-                model=getV2Model(Model(configuration))
-                time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs_v2,method='rk' )
+                model=Model(configuration)
+                time_range,initial_condition,Y=model.solveEquations(method='rk' )
                 filename='data/tmp/%s_%s'%(configuration_filename.split('/')[1].split('.')[0],BS_l)
-                model.save(filename+'.csv')
-                np.save(filename+'.npy',Y)
+                Y2=np.load(filename+'.npy')
+                print('%s : %s'%(filename,np.linalg.norm(Y-Y2)) )
+
         #utils.plot(model,subplots=[['E'],['W']])
 
     for warning in model.warnings:

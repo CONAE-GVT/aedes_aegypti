@@ -16,6 +16,7 @@ class Model:
 
         self.parameters=Bunch()
         self.parameters.BS_a=configuration.getFloat('breeding_site','amount')
+        self.parameters.BS_l=int(configuration.getFloat('breeding_site','levels'))#BS levels#TODO:by changing this value, we get a different number of adults, which looks too big. Check if there isn't an error somewhere, or a way to make it more stable
         self.parameters.vBS_h=configuration.getArray('breeding_site','height')#in cm
         self.parameters.vBS_s=configuration.getArray('breeding_site','surface')#in cm^2
         self.parameters.vBS_d=configuration.getArray('breeding_site','distribution')#distribution of BS. Sum must be equals to 1
@@ -23,12 +24,12 @@ class Model:
         self.parameters.vBS_mf=configuration.getArray('breeding_site','manually_filled')#in percentage of capacity
         self.parameters.n=len(self.parameters.vBS_d)
 
-        n=self.parameters.n
-        self.parameters.EGG=slice(0,n)#in R^n
-        self.parameters.LARVAE=slice(n,2*n)#in R^n
-        self.parameters.PUPAE=slice(2*n,3*n)#in R^n
-        self.parameters.ADULT1=3*n#in R
-        self.parameters.ADULT2=3*n+1#in R
+        n,BS_l=self.parameters.n,self.parameters.BS_l
+        self.parameters.EGG=slice(0,n*BS_l)#in R^(nxBS_l)
+        self.parameters.LARVAE=slice(n*BS_l,(1+BS_l)*n)#in R^(nxBS_l)
+        self.parameters.PUPAE=slice((1+BS_l)*n,(2+BS_l)*n)#in R^(nxBS_l)
+        self.parameters.ADULT1=(2+BS_l)*n#in R
+        self.parameters.ADULT2=(2+BS_l)*n+1#in R
         self.parameters.vAlpha0=configuration.getArray('biology','alpha0')#constant to be fitted
 
         #Cordoba
@@ -36,7 +37,13 @@ class Model:
         self.start_date=configuration.getDate('simulation','start_date')
         self.end_date=configuration.getDate('simulation','end_date')
         self.time_range = np.linspace(0, (self.end_date - self.start_date).days-1, (self.end_date - self.start_date).days )
-        self.parameters.initial_condition=configuration.getArray('simulation','initial_condition')
+        initial_condition=configuration.getArray('simulation','initial_condition')
+        self.parameters.mBS_l=np.repeat(range(0,BS_l),n).reshape((BS_l,n))#level helper matrix
+        self.parameters.initial_condition=np.insert(initial_condition[n:],0, initial_condition[:n].repeat(BS_l)/BS_l)
+
+        #experimental
+        p=configuration.getFloat('simulation','egn_corrector_p')#TODO:change p for something with meaning...
+        self.parameters.egnCorrector=utils.EgnCorrector(p,self.parameters.BS_a,self.start_date,self.end_date)
 
         WEATHER_DATA_FILENAME='data/public/'+self.parameters.location['name']+'.csv'
         self.parameters.weather=Weather(WEATHER_DATA_FILENAME,self.start_date,self.end_date)

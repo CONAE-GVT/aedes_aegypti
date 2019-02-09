@@ -1,5 +1,5 @@
 from configparser import ConfigParser
-from equations import f,diff_eqs
+from equations import diff_eqs
 import matplotlib.dates
 import collections
 import numpy as np

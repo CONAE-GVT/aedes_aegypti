@@ -70,34 +70,38 @@ def gamma(L,BS,W):
         return 0.63
 
 
-def f(vW,vBS_d):#TODO:change name to something with meaning
+def ovsp(vW,vBS_d,vW_l,mBS_l):#OViposition Site Preference
     epsilon=1e-4
-    vf=vW/(vW+epsilon) * vBS_d
-    if(vf.max()<1e-20):
-        return vf
-    else:
-        return vf/np.sum(vf)#TODO: check this
+    vf=vW/(vW+epsilon) * vBS_d#check this method is not spontaneus generation of eggs.(like inventing adults.)
+    if(np.all(vf)>epsilon): vf/=vf.sum()
+    return np.where(mBS_l==np.floor(vW_l),1,0)*vf
 
-def dvE(vE,vL,A1,A2,vW,T_t,BS_a,vBS_d,elr,ovr1,ovr2):
+def wetMask(vW_l,mBS_l):
+    mask=np.where(mBS_l<vW_l,1,0)
+    return np.where(mBS_l==np.floor(vW_l),vW_l%1,mask)
+
+def dvE(mE,A1,A2,vW_t,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l,egnCorrector,t):
     egn=63.0
     me=0.01#mortality of the egg, for T in [278,303]
-    return egn*( ovr1 *A1  + ovr2* A2)*f(vW,vBS_d) - me * vE - elr* (1-vGamma(vL,BS_a*vBS_d,vW)) * vE
+    ovsp_t=ovsp(vW_t,vBS_d,vW_l,mBS_l)
+    egn_c=egnCorrector(egn,ovr1 *A1  + ovr2* A2, t)
+    return egn_c*( ovr1 *A1  + ovr2* A2)*ovsp_t - me * mE - elr * mE*wet_mask
 
-def dvL(vE,vL,vW,T_t,BS_a,vBS_d,elr,lpr,vAlpha0):
+def dvL(mE,vL,vW,T_t,BS_a,vBS_d,elr,lpr,vAlpha0,wet_mask):
     ml=0.01 + 0.9725 * math.exp(-(T_t-278.0)/2.7035)#mortality of the larvae, for T in [278,303]
     vAlpha=vAlpha0/(BS_a*vBS_d)
-    return elr* (1-vGamma(vL,BS_a*vBS_d,vW)) * vE - ml*vL - vAlpha* vL*vL - lpr *vL #-35.6464*(1.-beta(vW,vBS_od,vBS_id))*L#-24.*(1.-beta(vW))*L# -log(1e-4/5502.)/(1.)=17.823207313460703
+    return elr * np.sum(mE*wet_mask,axis=0) - ml*vL - vAlpha* vL*vL - lpr *vL#-35.6464*(1.-beta(vW,vBS_od,vBS_id))*L#-24.*(1.-beta(vW))*L# -log(1e-4/5502.)/(1.)=17.823207313460703
 
 def dvP(vL,vP,T_t,lpr,par):
     mp=0.01 + 0.9725 * math.exp(-(T_t-278.0)/2.7035)#death of pupae
     return lpr*vL - mp*vP  - par*vP
 
-def dA1(vP,A1,T_t,par,ovr1):
+def dA1(vP,A1,par,ovr1):
     ef=0.83#emergence factor
     ma=0.09#for T in [278,303]
     return np.sum(par*ef*vP/2.0) - ma*A1 - ovr1*A1
 
-def dA2(A1,A2,T_t,ovr1):
+def dA2(A1,A2,ovr1):
     ma=0.09#for T in [278,303]
     return ovr1*A1 - ma*A2
 
@@ -105,17 +109,19 @@ def diff_eqs(Y,t,parameters):
     '''The main set of equations'''
     T_t=parameters.weather.T(t)
     elr,lpr,par,ovr1,ovr2=vR_D(T_t)
-    BS_a,vBS_d,vAlpha0,n=parameters.BS_a,parameters.vBS_d,parameters.vAlpha0,parameters.n
+    BS_a,vBS_h,vBS_d,vAlpha0,n,BS_l,mBS_l=parameters.BS_a,parameters.vBS_h,parameters.vBS_d,parameters.vAlpha0,parameters.n,parameters.BS_l,parameters.mBS_l
     EGG,LARVAE,PUPAE,ADULT1,ADULT2=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.ADULT2
 
     vW_t=parameters.vW(t)
-    vE,vL,vP,A1,A2=Y[EGG],Y[LARVAE],Y[PUPAE],Y[ADULT1],Y[ADULT2]
+    vE,vL,vP,A1,A2=Y[EGG].reshape((n,parameters.BS_l)).transpose(),Y[LARVAE],Y[PUPAE],Y[ADULT1],Y[ADULT2]
+    vW_l=vW_t/vBS_h * BS_l
+    wet_mask=wetMask(vW_l,mBS_l)
 
-    dY=np.empty((3*n + 2 ))
-    dY[EGG]    = dvE(vE,vL,A1,A2,vW_t,T_t,BS_a,vBS_d,elr,ovr1,ovr2)
-    dY[LARVAE] = dvL(vE,vL,vW_t,T_t,      BS_a,vBS_d,elr,lpr,vAlpha0)
+    dY=np.empty(Y.shape)
+    dY[EGG]    = dvE(vE,A1,A2,vW_t,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l,parameters.egnCorrector,t).transpose().reshape((1,BS_l*n))
+    dY[LARVAE] = dvL(vE,vL,vW_t,T_t,BS_a,vBS_d,elr,lpr,vAlpha0,wet_mask)
     dY[PUPAE]  = dvP(vL,vP,T_t,lpr,par)
-    dY[ADULT1] = dA1(vP,A1,T_t,par,ovr1)
-    dY[ADULT2] = dA2(A1,A2,T_t,ovr1)
+    dY[ADULT1] = dA1(vP,A1,par,ovr1)
+    dY[ADULT2] = dA2(A1,A2,ovr1)
 
     return dY   # For odeint
