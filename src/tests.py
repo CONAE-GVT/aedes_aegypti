@@ -331,10 +331,19 @@ def runModelv2(case):
         common(model,'v2')
 
     if(case==7):
-        configuration=Configuration('resources/1c.cfg')#use this config.
-        model=getV2Model(Model(configuration))
-        time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs_v2,method='rk' )
-        utils.plot(model,subplots=[['E'],['W']])
+        for configuration_filename in ['resources/1c.cfg','resources/7c.cfg','resources/otero_precipitation.cfg']:
+            for BS_l in range(1,50):
+                configuration=Configuration(configuration_filename,
+                {'breeding_site':{
+                    'levels':BS_l
+                }
+                })
+                model=getV2Model(Model(configuration))
+                time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs_v2,method='rk' )
+                filename='data/tmp/%s_%s'%(configuration_filename.split('/')[1].split('.')[0],BS_l)
+                model.save(filename+'.csv')
+                np.save(filename+'.npy',Y)
+        #utils.plot(model,subplots=[['E'],['W']])
 
     for warning in model.warnings:
         print('# WARNING: ' + warning)
