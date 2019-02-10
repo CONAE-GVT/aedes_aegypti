@@ -296,7 +296,28 @@ def runCases(case):
                 Y2=np.load(filename+'.npy')
                 print('%s : %s'%(filename,np.linalg.norm(Y-Y2)) )
 
+    if(case==12):
+        for ovitrap_id in range(1,151):
+            OVITRAP_FILENAME='data/private/ovitrampas_2017-2018.full.csv'
+            values=utils.getOvitrapEggsFromCsv2(OVITRAP_FILENAME,None,None,ovitrap_id)
+            ovitrap_days=values.keys()
+            ovi_a=[values[date][0] for date in ovitrap_days]
+            ovi_b=[values[date][1] if len(values[date])>1 else values[date][0] for date in ovitrap_days]
+            p=ovitrap_id/151.
+            color=p*np.array([1,0,0]) + (1-p)*np.array([0,1,0])
+            pl.plot(ovitrap_days, ovi_a, '-',color=color)
+            pl.plot(ovitrap_days, ovi_b, '-',color=color)
+            pl.title('Oct-Nov-Dic just prom available')
 
+        for h in [1,5,15,30]:
+            configuration=Configuration('resources/1c.cfg')
+            configuration.config_parser.set('location','name','cordoba')
+            n=len(configuration.getArray('breeding_site','height'))
+            configuration.config_parser.set('breeding_site','height',','.join([str(h)]*n))
+            model=Model(configuration)
+            time_range,initial_condition,Y=model.solveEquations(method='rk' )
+            utils.plot(model,subplots=[['E','A1+A2','lwE',[utils.safeAdd,utils.replaceNegativesWithZeros,utils.safeNormalize]]])
+            print('Max E: %s'%np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1)))
 
     utils.showPlot()
 
