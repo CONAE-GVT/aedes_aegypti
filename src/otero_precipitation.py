@@ -26,8 +26,8 @@ class Model:
 
         n,BS_l=self.parameters.n,self.parameters.BS_l
         self.parameters.EGG=slice(0,n*BS_l)#in R^(nxBS_l)
-        self.parameters.LARVAE=slice(n*BS_l,(1+BS_l)*n)#in R^(nxBS_l)
-        self.parameters.PUPAE=slice((1+BS_l)*n,(2+BS_l)*n)#in R^(nxBS_l)
+        self.parameters.LARVAE=slice(n*BS_l,(1+BS_l)*n)#in R^n
+        self.parameters.PUPAE=slice((1+BS_l)*n,(2+BS_l)*n)#in R^n
         self.parameters.ADULT1=(2+BS_l)*n#in R
         self.parameters.ADULT2=(2+BS_l)*n+1#in R
         self.parameters.vAlpha0=configuration.getArray('biology','alpha0')#constant to be fitted
