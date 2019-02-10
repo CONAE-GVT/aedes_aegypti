@@ -10,7 +10,6 @@ from otero_precipitation import Model
 from equations import diff_eqs,vR_D
 import equations
 from spatial_equations import diff_eqs as spatial_diff_eqs
-from equationsv2 import diff_eqs as diff_eqs_v2
 import pylab as pl
 
 def testModel(configuration, subplots=[],plot_start_date=None,title='',figure=True,color=None):
@@ -178,24 +177,18 @@ def runCases(case):
         configuration.config_parser.set('breeding_site','manually_filled',','.join([str(0.5)] + [str(0)]*(n-1)))
         model=Model(configuration)
         time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs,method='rk' )
-        common(model,'v1 ucar mf')
+        common(model,'ucar mf')
 
         configuration=Configuration('resources/otero_precipitation.cfg')
         model=Model(configuration)
         time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs,method='rk' )
-        common(model,'v1 ucar')
+        common(model,'ucar')
 
         configuration=Configuration('resources/otero_precipitation.cfg')
         configuration.config_parser.set('location','name','wunderground')
         model=Model(configuration)
         time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs,method='rk' )
-        common(model,'v1 wunderground')
-
-        configuration=Configuration('resources/otero_precipitation.cfg')
-        configuration.config_parser.set('location','name','wunderground')
-        model=getV2Model(Model(configuration))
-        time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs_v2,method='rk' )
-        common(model,'v2 wunderground')
+        common(model,'wunderground')
 
         for h in [1,5,15,30]:
             configuration=Configuration('resources/otero_precipitation.cfg')
@@ -203,15 +196,15 @@ def runCases(case):
             n=len(configuration.getArray('breeding_site','height'))
             configuration.config_parser.set('breeding_site','height',','.join([str(h)]*n))
             configuration.config_parser.set('location','name','wunderground')
-            model=getV2Model(Model(configuration))
-            time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs_v2,method='rk' )
-            common(model,'v2 wunderground h=%s'%h)
+            model=Model(configuration)
+            time_range,initial_condition,Y=model.solveEquations(method='rk' )
+            common(model,'wunderground h=%s'%h)
 
     if(case==8):
         configuration=Configuration('resources/otero_precipitation.cfg')#Configuration('resources/1c.cfg')
         configuration.config_parser.set('location','name','wunderground')
-        model=getV2Model(Model(configuration))
-        time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs_v2,method='rk' )
+        model=Model(configuration)
+        time_range,initial_condition,Y=model.solveEquations(method='rk' )
 
         error_E0,error_lwE0,error_OV0=[],[],[]
         for ovitrap_id in range(1,151):
@@ -289,48 +282,7 @@ def runCases(case):
             print('Ovitrap id:%s, Accumulated std:%s'%(ovitrap_id,vStd_accum[ovitrap_id]))
             #TODO:find the one with min std and max std, and compare those to model.
 
-
-    utils.showPlot()
-
-def getV2Model(model):
-    #modify some parameters to make them compatible with v2
-    configuration=model.configuration
-    parameters=model.parameters
-    n=parameters.n
-    parameters.BS_l=int(configuration.getFloat('breeding_site','levels'))#BS levels#TODO:by changing this value, we get a different number of adults, which looks too big. Check if there isn't an error somewhere, or a way to make it more stable
-    BS_l=parameters.BS_l
-    parameters.EGG=slice(0,n*BS_l)#in R^n
-    parameters.LARVAE=slice(n*BS_l,(1+BS_l)*n)#in R^n
-    parameters.PUPAE=slice((1+BS_l)*n,(2+BS_l)*n)#in R^n
-    parameters.ADULT1=(2+BS_l)*n#in R
-    parameters.ADULT2=(2+BS_l)*n+1#in R
-    #parameters.TODO:add the B matrix helper
-    parameters.mBS_l=np.repeat(range(0,BS_l),n).reshape((BS_l,n))
-    E0v2=parameters.initial_condition[:n].repeat(BS_l)/BS_l
-    parameters.initial_condition=np.insert(parameters.initial_condition[n:],0,E0v2)
-
-    #experimental
-    p=configuration.getFloat('simulation','egn_corrector_p')#TODO:change p for something with meaning...
-    parameters.egnCorrector=utils.EgnCorrector(p,model.parameters.BS_a,model.start_date,model.end_date)
-    return model
-
-def runModelv2(case):
-    configuration=Configuration('resources/otero_precipitation.cfg')
-    model=getV2Model(Model(configuration))
-
-    if(case==1):
-        for dis in [0.9,0.5,0.1]:#this test actually shows something meaningfull when you have just 2 types of identical BS, one with mf and one without.
-            n=model.parameters.n
-            model.parameters.vBS_d=np.array([dis]+ [(1-dis)/(n-1)]*(n-1))
-            time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs_v2,method='rk' )
-            utils.plot(model,subplots=[{'E':'','O':[153],'f':[utils.safeAdd,utils.replaceNegativesWithZeros,utils.safeNormalize]},['A1+A2',[utils.safeNormalize] ],['W'],['p']],title='BS_d: %s'%model.parameters.vBS_d.round(2))
-            print('egn Correction mean: %s'%np.mean(parameters.egnCorrector.egn_corrections))
-
-    if(case==6):
-        time_range,initial_condition,Y=model.solveEquations(equations=diff_eqs_v2,method='rk' )
-        common(model,'v2')
-
-    if(case==7):
+    if(case==11):
         for configuration_filename in ['resources/1c.cfg','resources/7c.cfg','resources/otero_precipitation.cfg']:
             for BS_l in range(1,50):
                 configuration=Configuration(configuration_filename,
@@ -344,10 +296,8 @@ def runModelv2(case):
                 Y2=np.load(filename+'.npy')
                 print('%s : %s'%(filename,np.linalg.norm(Y-Y2)) )
 
-        #utils.plot(model,subplots=[['E'],['W']])
 
-    for warning in model.warnings:
-        print('# WARNING: ' + warning)
+
     utils.showPlot()
 
 def common(model,title):
@@ -366,8 +316,6 @@ if(__name__ == '__main__'):
         runProject()
     elif(len(sys.argv)>1 and sys.argv[1]=='spatial'):
         runSpatial()
-    elif(len(sys.argv)>1 and sys.argv[1]=='v2'):
-        runModelv2(int(sys.argv[2]))
     else:#the default is just a number indicating which test case to run, or none (test case 1 will will be default)
         if(len(sys.argv)<2):
             case=1
