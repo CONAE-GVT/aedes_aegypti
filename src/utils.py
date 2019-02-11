@@ -302,6 +302,20 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
                 ovitrap_eggs=np.array(getOvitrapEggsFromCsv('data/private/ovitrampas_2017-2018.csv',model.start_date,model.end_date,i))
                 pl.plot([datetime.timedelta(days=d)+datetime.datetime.combine(model.start_date,datetime.time()) for d in range(0,len(ovitrap_eggs))], applyFs(ovitrap_eggs,subplot), '^', label='Ovitrap %s eggs'%i,clip_on=False, zorder=100,markersize=8)
 
+        if('Oab' in subplot):
+            for ovitrap_id in subplot['Oab']:
+                values=getOvitrapEggsFromCsv2('data/private/ovitrampas_2017-2018.full.csv',model.start_date,model.end_date,ovitrap_id)
+                ovitrap_dates=values.keys()
+                ovi_a=np.array([values[date][0] for date in ovitrap_dates])
+                ovi_b=np.array([values[date][1] if len(values[date])>1 else None for date in ovitrap_dates])
+                p=ovitrap_id/151.
+                color=p*np.array([1,0,0]) + (1-p)*np.array([0,1,0])
+                #pl.plot(ovitrap_days, ovi_a, '-',color=color)
+                #pl.plot(ovitrap_days, ovi_b, '-',color=color)
+                pl.plot(ovitrap_dates, applyFs(ovi_a,subplot), '-', label='Ovitrap %s A eggs'%ovitrap_id,color=color)
+                pl.plot(ovitrap_dates, applyFs(ovi_b,subplot), '-', label='Ovitrap %s B eggs'%ovitrap_id,color=color)
+                pl.title('Oct-Nov-Dic just prom available')
+
         #delta Eggs
         if('lwE' in subplot):
             lwE=np.array([RES[(np.abs(time_range-t)).argmin(),EGG]-RES[(np.abs(time_range-(t-7))).argmin(),EGG] for t in time_range])
