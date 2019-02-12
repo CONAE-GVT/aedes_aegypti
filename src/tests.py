@@ -220,11 +220,14 @@ def runCases(case):
             OV0=[]
             vBS_d=model.parameters.vBS_d
             for i,t in enumerate(time_range):
-                T_t=model.parameters.weather.T(t)
-                vW_t=model.parameters.vW(t)
-                egn,ovr1,ovr2,A1,A2=63.,equations.vR_D(T_t)[0],equations.vR_D(T_t)[0],Y[i,-2],Y[i,-1]
-                OV_t= egn*( ovr1 *A1  + ovr2* A2)*equations.f(vW_t,vBS_d)
-                OV0=OV0 + [OV_t[0]]
+                parameters=model.parameters
+                T_t=parameters.weather.T(t)
+                vW_t=parameters.vW(t)
+                vBS_h,BS_l,mBS_l=parameters.vBS_h,parameters.BS_l,parameters.mBS_l
+                vW_l=vW_t/vBS_h * BS_l
+                egn,ovr1,ovr2,A1,A2=63.,equations.vR_D(T_t)[-2],equations.vR_D(T_t)[-1],Y[i,-2],Y[i,-1]
+                OV_t= egn*( ovr1 *A1  + ovr2* A2)*equations.ovsp(vW_t,vBS_d,vW_l,mBS_l)
+                OV0=OV0 + [sum(OV_t[:][0])]#TODO:check this
             OV0=np.array(OV0)
 
             square,rho,p_value=calculateMetrics(E0,ovitrap_eggs_i)
@@ -297,7 +300,7 @@ def runCases(case):
                 print('%s : %s'%(filename,np.linalg.norm(Y-Y2)) )
 
     if(case==12):
-        for h in [1,5,15,30]:
+        for h in [1,5,10,15,30]:
             configuration=Configuration('resources/1c.cfg')
             #configuration.config_parser.set('location','name','cordoba.full')#TODO:fix data and
             #configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(30)))# uncomment these two
@@ -305,7 +308,7 @@ def runCases(case):
             configuration.config_parser.set('breeding_site','height',','.join([str(h)]*n))
             model=Model(configuration)
             time_range,initial_condition,Y=model.solveEquations(method='rk' )
-            utils.plot(model,subplots=[{'E':'','A1+A2':'','lwE':'','Oab':list(range(1,151)),'f':[utils.safeAdd,utils.replaceNegativesWithZeros,utils.safeNormalize]}],title='Height: %scm.(Oct-Nov-Dic just prom available)'%h)
+            utils.plot(model,subplots=[{'E':'','A1+A2':'','lwE':'','Oab':list(range(1,151)),'f':[utils.safeAdd,utils.replaceNegativesWithZeros,utils.safeNormalize]}],title='Height: %scm.(Oct-Nov-Dic just prom available)'%h,plot_start_date=datetime.date(2017,10,1))
             print('Max E: %s'%np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1)))
 
     utils.showPlot()

@@ -310,8 +310,8 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
                 ovi_b=np.array([values[date][1] if len(values[date])>1 else None for date in ovitrap_dates])
                 p=ovitrap_id/151.
                 color=p*np.array([1,0,0]) + (1-p)*np.array([0,1,0])
-                pl.plot(ovitrap_dates, applyFs(ovi_a,subplot), '-', label='Ovitrap %s A eggs'%ovitrap_id,color=color,zorder=-1)
-                pl.plot(ovitrap_dates, applyFs(ovi_b,subplot), '-', label='Ovitrap %s B eggs'%ovitrap_id,color=color,zorder=-1)
+                pl.plot(ovitrap_dates, applyFs(ovi_a,subplot), '*', label='Ovitrap %s A eggs'%ovitrap_id,color=color,zorder=-1)
+                pl.plot(ovitrap_dates, applyFs(ovi_b,subplot), '*', label='Ovitrap %s B eggs'%ovitrap_id,color=color,zorder=-1)
 
         #delta Eggs
         if('lwE' in subplot):
