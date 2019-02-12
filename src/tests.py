@@ -297,15 +297,15 @@ def runCases(case):
                 print('%s : %s'%(filename,np.linalg.norm(Y-Y2)) )
 
     if(case==12):
-        #TODO:chnage model curves color and zorder so it doesn't get lost with the ovitrap curves
         for h in [1,5,15,30]:
             configuration=Configuration('resources/1c.cfg')
-            configuration.config_parser.set('location','name','cordoba')
+            #configuration.config_parser.set('location','name','cordoba.full')#TODO:fix data and
+            #configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(30)))# uncomment these two
             n=len(configuration.getArray('breeding_site','height'))
             configuration.config_parser.set('breeding_site','height',','.join([str(h)]*n))
             model=Model(configuration)
             time_range,initial_condition,Y=model.solveEquations(method='rk' )
-            utils.plot(model,subplots=[{'E':'','A1+A2':'','lwE':'','Oab':list(range(1,151)),'f':[utils.safeAdd,utils.replaceNegativesWithZeros,utils.safeNormalize]}])
+            utils.plot(model,subplots=[{'E':'','A1+A2':'','lwE':'','Oab':list(range(1,151)),'f':[utils.safeAdd,utils.replaceNegativesWithZeros,utils.safeNormalize]}],title='Height: %scm.(Oct-Nov-Dic just prom available)'%h)
             print('Max E: %s'%np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1)))
 
     utils.showPlot()

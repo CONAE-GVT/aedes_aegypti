@@ -310,16 +310,13 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
                 ovi_b=np.array([values[date][1] if len(values[date])>1 else None for date in ovitrap_dates])
                 p=ovitrap_id/151.
                 color=p*np.array([1,0,0]) + (1-p)*np.array([0,1,0])
-                #pl.plot(ovitrap_days, ovi_a, '-',color=color)
-                #pl.plot(ovitrap_days, ovi_b, '-',color=color)
-                pl.plot(ovitrap_dates, applyFs(ovi_a,subplot), '-', label='Ovitrap %s A eggs'%ovitrap_id,color=color)
-                pl.plot(ovitrap_dates, applyFs(ovi_b,subplot), '-', label='Ovitrap %s B eggs'%ovitrap_id,color=color)
-                pl.title('Oct-Nov-Dic just prom available')
+                pl.plot(ovitrap_dates, applyFs(ovi_a,subplot), '-', label='Ovitrap %s A eggs'%ovitrap_id,color=color,zorder=-1)
+                pl.plot(ovitrap_dates, applyFs(ovi_b,subplot), '-', label='Ovitrap %s B eggs'%ovitrap_id,color=color,zorder=-1)
 
         #delta Eggs
         if('lwE' in subplot):
             lwE=np.array([RES[(np.abs(time_range-t)).argmin(),EGG]-RES[(np.abs(time_range-(t-7))).argmin(),EGG] for t in time_range])
-            pl.plot(date_range, applyFs(lwE,subplot), '-', label='E(t)-E(t-7)')
+            pl.plot(date_range, applyFs(lwE,subplot), '-m', label='E(t)-E(t-7)')
         pl.ylabel('')
         if('lwL' in subplot):
             lwL=np.array([RES[(np.abs(time_range-t)).argmin(),LARVAE]-RES[(np.abs(time_range-(t-7))).argmin(),LARVAE] for t in time_range])
