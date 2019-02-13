@@ -308,7 +308,7 @@ def runCases(case):
             configuration.config_parser.set('breeding_site','height',','.join([str(h)]*n))
             model=Model(configuration)
             time_range,initial_condition,Y=model.solveEquations(method='rk' )
-            utils.plot(model,subplots=[{'E':'','A1+A2':'','lwE':'','Oab':list(range(1,151)),'f':[utils.safeAdd,utils.replaceNegativesWithZeros,utils.safeNormalize]}],title='Height: %scm.(Oct-Nov-Dic just prom available)'%h,plot_start_date=datetime.date(2017,10,1))
+            utils.plot(model,subplots=[{'E':'','A1+A2':'','lwE':'','Oab':list(range(1,151)),'W':'','f':[utils.safeAdd,utils.replaceNegativesWithZeros,utils.safeNormalize]}],title='Height: %scm.(Oct-Nov-Dic just prom available)'%h,plot_start_date=datetime.date(2017,10,1))
             print('Max E: %s'%np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1)))
 
     utils.showPlot()

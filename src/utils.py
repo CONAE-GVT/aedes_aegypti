@@ -1,5 +1,7 @@
 from configparser import ConfigParser
+import plotly.graph_objs as go
 from equations import diff_eqs
+import plotly.offline as ply
 import matplotlib.dates
 import collections
 import numpy as np
@@ -258,6 +260,7 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
     vBS_mf,mf=parameters.vBS_mf,parameters.mf
     BS_a,vBS_h,vBS_s,vBS_d,n=parameters.BS_a,parameters.vBS_h,parameters.vBS_s,parameters.vBS_d,parameters.n
     EGG,LARVAE,PUPAE,ADULT1,ADULT2=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.ADULT2
+    data=[]
 
     if(figure): pl.figure()
     ax1=None
@@ -276,12 +279,16 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
             time_range,RES,date_range=subData(time_range,RES,date_range,plot_start_date)
 
         #Amount of larvaes,pupaes and adults
-        if ('E' in subplot): pl.plot(date_range,applyFs(RES[:,EGG],subplot), label='E')
+        if ('E' in subplot):
+            pl.plot(date_range,applyFs(RES[:,EGG],subplot), label='E')
+            data.append(go.Scatter(x=date_range,y=applyFs(RES[:,EGG],subplot), name='E'))
         if ('L' in subplot): pl.plot(date_range,applyFs(RES[:,LARVAE],subplot), label='L')
         if ('P' in subplot): pl.plot(date_range,applyFs(RES[:,PUPAE],subplot), label='P')
         if ('A1' in subplot): pl.plot(date_range,applyFs(RES[:,ADULT1],subplot), label='A1')
         if ('A2' in subplot): pl.plot(date_range,applyFs(RES[:,ADULT2],subplot), label='A2')
-        if ('A1+A2' in subplot): pl.plot(date_range,applyFs(RES[:,ADULT2]+RES[:,ADULT1],subplot), color=color, label='A1+A2')
+        if ('A1+A2' in subplot):
+            pl.plot(date_range,applyFs(RES[:,ADULT2]+RES[:,ADULT1],subplot), color=color, label='A1+A2')
+            data.append(go.Scatter(x=date_range,y=applyFs(RES[:,ADULT2]+RES[:,ADULT1],subplot), name='A1+A2'))
 
         #derivate
         dY=np.zeros(RES.shape)
@@ -296,27 +303,11 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
         if ('dA2' in subplot): pl.plot(date_range,applyFs(dY[:,ADULT2],subplot), '-m', label='dA2')
         if ('dW' in subplot): pl.plot(date_range,applyFs(dY[:,WATER],subplot), '-b', label='dW')
 
-        #ovitraps
-        if('O' in subplot):
-            for i in subplot['O']:
-                ovitrap_eggs=np.array(getOvitrapEggsFromCsv('data/private/ovitrampas_2017-2018.csv',model.start_date,model.end_date,i))
-                pl.plot([datetime.timedelta(days=d)+datetime.datetime.combine(model.start_date,datetime.time()) for d in range(0,len(ovitrap_eggs))], applyFs(ovitrap_eggs,subplot), '^', label='Ovitrap %s eggs'%i,clip_on=False, zorder=100,markersize=8)
-
-        if('Oab' in subplot):
-            for ovitrap_id in subplot['Oab']:
-                values=getOvitrapEggsFromCsv2('data/private/ovitrampas_2017-2018.full.csv',model.start_date,model.end_date,ovitrap_id)
-                ovitrap_dates=values.keys()
-                ovi_a=np.array([values[date][0] for date in ovitrap_dates])
-                ovi_b=np.array([values[date][1] if len(values[date])>1 else None for date in ovitrap_dates])
-                p=ovitrap_id/151.
-                color=p*np.array([1,0,0]) + (1-p)*np.array([0,1,0])
-                pl.plot(ovitrap_dates, applyFs(ovi_a,subplot), '*', label='Ovitrap %s A eggs'%ovitrap_id,color=color,zorder=-1)
-                pl.plot(ovitrap_dates, applyFs(ovi_b,subplot), '*', label='Ovitrap %s B eggs'%ovitrap_id,color=color,zorder=-1)
-
         #delta Eggs
         if('lwE' in subplot):
             lwE=np.array([RES[(np.abs(time_range-t)).argmin(),EGG]-RES[(np.abs(time_range-(t-7))).argmin(),EGG] for t in time_range])
             pl.plot(date_range, applyFs(lwE,subplot), '-m', label='E(t)-E(t-7)')
+            data.append(go.Scatter(x=date_range, y=applyFs(lwE,subplot), name='E(t)-E(t-7)'))
         pl.ylabel('')
         if('lwL' in subplot):
             lwL=np.array([RES[(np.abs(time_range-t)).argmin(),LARVAE]-RES[(np.abs(time_range-(t-7))).argmin(),LARVAE] for t in time_range])
@@ -331,6 +322,7 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
         if ('W' in subplot):
             mW=parameters.vW(time_range)
             pl.plot(date_range,applyFs(mW,subplot), label='W(t)')
+            data.append(go.Scatter(x=date_range,y=applyFs(mW,subplot), name='W(t)'))
             pl.ylabel('cm.')
 
         #manually_filled(in mm.)
@@ -347,17 +339,38 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
         #Temperature in K
         if ('T' in subplot):
             pl.plot(date_range,applyFs(np.array([T(t)- 273.15 for t in time_range]),subplot),color=color, label='Temperature')
+            data.append(go.Scatter(x=date_range,y=applyFs(np.array([T(t)- 273.15 for t in time_range]),subplot),name='Temperature'))
             pl.ylabel('C')
 
         #precipitations(in mm.)
         if ('p' in subplot):
             pl.plot(date_range,applyFs(np.array([p(t+0.5) for t in time_range]),subplot),'-b', label='p(t+1/2)')
+            data.append(go.Scatter(x=date_range,y=applyFs(np.array([p(t+0.5) for t in time_range]),subplot), name='p(t+1/2)'))
             pl.ylabel('mm./day')
 
         #relative Humidity
         if ('RH' in subplot):
             pl.plot(date_range,applyFs(np.array([RH(t) for t in time_range]),subplot), label='RH(t)')
             pl.ylabel('%')
+
+        #ovitraps
+        if('O' in subplot):
+            for i in subplot['O']:
+                ovitrap_eggs=np.array(getOvitrapEggsFromCsv('data/private/ovitrampas_2017-2018.csv',model.start_date,model.end_date,i))
+                pl.plot([datetime.timedelta(days=d)+datetime.datetime.combine(model.start_date,datetime.time()) for d in range(0,len(ovitrap_eggs))], applyFs(ovitrap_eggs,subplot), '^', label='Ovitrap %s eggs'%i,clip_on=False, zorder=100,markersize=8)
+
+        if('Oab' in subplot):
+            for ovitrap_id in subplot['Oab']:
+                values=getOvitrapEggsFromCsv2('data/private/ovitrampas_2017-2018.full.csv',model.start_date,model.end_date,ovitrap_id)
+                ovitrap_dates=np.array([k for k in values.keys()])
+                ovi_a=np.array([values[date][0] for date in ovitrap_dates])
+                ovi_b=np.array([values[date][1] if len(values[date])>1 else None for date in ovitrap_dates])
+                p=ovitrap_id/151.
+                color=p*np.array([1,0,0]) + (1-p)*np.array([0,1,0])
+                pl.plot(ovitrap_dates, applyFs(ovi_a,subplot), '*', label='Ovitrap %s A eggs'%ovitrap_id,color=color,zorder=-1)
+                pl.plot(ovitrap_dates, applyFs(ovi_b,subplot), '*', label='Ovitrap %s B eggs'%ovitrap_id,color=color,zorder=-1)
+                data.append(go.Scatter(x=ovitrap_dates[ovi_a!=[None]], y=applyFs(ovi_a,subplot)[ovi_a!=[None]], name='Ovitrap %s A eggs'%ovitrap_id))
+                data.append(go.Scatter(x=ovitrap_dates[ovi_b!=[None]], y=applyFs(ovi_b,subplot)[ovi_b!=[None]], name='Ovitrap %s A eggs'%ovitrap_id))
 
         #f
         if ('b' in subplot):
@@ -385,6 +398,7 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
         pl.draw()
         pl.pause(0.001)
 
+    ply.plot(data, filename=title)
 def showPlot():
     return pl.show()
 
