@@ -300,16 +300,18 @@ def runCases(case):
                 print('%s : %s'%(filename,np.linalg.norm(Y-Y2)) )
 
     if(case==12):
-        for h in [1,5,10,15,30]:
-            configuration=Configuration('resources/1c.cfg')
-            #configuration.config_parser.set('location','name','cordoba.full')#TODO:fix data and
-            #configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(30)))# uncomment these two
-            n=len(configuration.getArray('breeding_site','height'))
-            configuration.config_parser.set('breeding_site','height',','.join([str(h)]*n))
-            model=Model(configuration)
-            time_range,initial_condition,Y=model.solveEquations(method='rk' )
-            utils.plot(model,subplots=[{'E':'','A1+A2':'','lwE':'','Oab':list(range(1,151)),'W':'','f':[utils.safeAdd,utils.replaceNegativesWithZeros,utils.safeNormalize]}],title='Height: %scm.(Oct-Nov-Dic just prom available)'%h,plot_start_date=datetime.date(2017,10,1))
-            print('Max E: %s'%np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1)))
+        for mf in [0.0,0.1,0.3,0.5,0.8]:
+            for h in [1,5,10,15,30]:
+                configuration=Configuration('resources/2c.cfg')
+                configuration.config_parser.set('location','name','cordoba.full')#TODO:fix data and
+                configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(30)))# uncomment these two
+                n=len(configuration.getArray('breeding_site','height'))
+                configuration.config_parser.set('breeding_site','height',','.join([str(h)]*n))
+                configuration.config_parser.set('breeding_site','manually_filled',','.join([str(mf)]+[str(0)]*(n-1)))
+                model=Model(configuration)
+                time_range,initial_condition,Y=model.solveEquations(method='rk' )
+                utils.plot(model,subplots=[{'E':'','A1+A2':'','lwE':'','Oab':list(range(1,151)),'W':'','f':[utils.safeAdd,utils.replaceNegativesWithZeros,utils.safeNormalize]}],title='Manually Filled:%s%% Height: %scm.(Oct-Nov-Dic just prom available)'%(mf*100,h),plot_start_date=datetime.date(2017,10,1))
+                print('Max E: %s'%np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1)))
 
     utils.showPlot()
 

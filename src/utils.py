@@ -8,6 +8,7 @@ import numpy as np
 import pylab as pl
 import matplotlib
 import datetime
+import tempfile
 import sys
 
 ###############################################################I/O###############################################################
@@ -258,7 +259,7 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
     p=parameters.weather.p
     RH=parameters.weather.RH
     vBS_mf,mf=parameters.vBS_mf,parameters.mf
-    BS_a,vBS_h,vBS_s,vBS_d,n=parameters.BS_a,parameters.vBS_h,parameters.vBS_s,parameters.vBS_d,parameters.n
+    BS_a,BS_l,vBS_h,vBS_s,vBS_d,n=parameters.BS_a,parameters.BS_l,parameters.vBS_h,parameters.vBS_s,parameters.vBS_d,parameters.n
     EGG,LARVAE,PUPAE,ADULT1,ADULT2=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.ADULT2
     data=[]
 
@@ -281,7 +282,7 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
         #Amount of larvaes,pupaes and adults
         if ('E' in subplot):
             pl.plot(date_range,applyFs(RES[:,EGG],subplot), label='E')
-            data.append(go.Scatter(x=date_range,y=applyFs(RES[:,EGG],subplot), name='E'))
+            data.append(go.Scatter(x=date_range,y=applyFs(RES[:,:BS_l],subplot), name='E'))
         if ('L' in subplot): pl.plot(date_range,applyFs(RES[:,LARVAE],subplot), label='L')
         if ('P' in subplot): pl.plot(date_range,applyFs(RES[:,PUPAE],subplot), label='P')
         if ('A1' in subplot): pl.plot(date_range,applyFs(RES[:,ADULT1],subplot), label='A1')
@@ -307,7 +308,7 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
         if('lwE' in subplot):
             lwE=np.array([RES[(np.abs(time_range-t)).argmin(),EGG]-RES[(np.abs(time_range-(t-7))).argmin(),EGG] for t in time_range])
             pl.plot(date_range, applyFs(lwE,subplot), '-m', label='E(t)-E(t-7)')
-            data.append(go.Scatter(x=date_range, y=applyFs(lwE,subplot), name='E(t)-E(t-7)'))
+            data.append(go.Scatter(x=date_range, y=applyFs(lwE[:BS_l],subplot), name='E(t)-E(t-7)'))
         pl.ylabel('')
         if('lwL' in subplot):
             lwL=np.array([RES[(np.abs(time_range-t)).argmin(),LARVAE]-RES[(np.abs(time_range-(t-7))).argmin(),LARVAE] for t in time_range])
@@ -398,7 +399,8 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
         pl.draw()
         pl.pause(0.001)
 
-    ply.plot(data, filename=title)
+    layout=go.Layout(title=title)
+    ply.plot(go.Figure(data=data,layout=layout), filename=tempfile.NamedTemporaryFile().name)
 def showPlot():
     return pl.show()
 
