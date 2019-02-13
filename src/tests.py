@@ -313,7 +313,7 @@ def runCases(case):
                 utils.plot(model,subplots=[{'E':'','A1+A2':'','lwE':'','Oab':list(range(1,151)),'W':'','f':[utils.safeAdd,utils.replaceNegativesWithZeros,utils.safeNormalize]}],title='Manually Filled:%s%% Height: %scm.(Oct-Nov-Dic just prom available)'%(mf*100,h),plot_start_date=datetime.date(2017,10,1))
                 print('Max E: %s'%np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1)))
 
-    utils.showPlot()
+    #utils.showPlot()
 
 def common(model,title):
     print('Max E: %s'%np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1)))

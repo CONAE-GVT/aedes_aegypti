@@ -282,7 +282,7 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
         #Amount of larvaes,pupaes and adults
         if ('E' in subplot):
             pl.plot(date_range,applyFs(RES[:,EGG],subplot), label='E')
-            data.append(go.Scatter(x=date_range,y=applyFs(RES[:,:BS_l],subplot), name='E'))
+            data.append(go.Scatter(x=date_range,y=applyFs(RES[:,EGG],subplot), name='E'))
         if ('L' in subplot): pl.plot(date_range,applyFs(RES[:,LARVAE],subplot), label='L')
         if ('P' in subplot): pl.plot(date_range,applyFs(RES[:,PUPAE],subplot), label='P')
         if ('A1' in subplot): pl.plot(date_range,applyFs(RES[:,ADULT1],subplot), label='A1')
@@ -308,7 +308,7 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
         if('lwE' in subplot):
             lwE=np.array([RES[(np.abs(time_range-t)).argmin(),EGG]-RES[(np.abs(time_range-(t-7))).argmin(),EGG] for t in time_range])
             pl.plot(date_range, applyFs(lwE,subplot), '-m', label='E(t)-E(t-7)')
-            data.append(go.Scatter(x=date_range, y=applyFs(lwE[:BS_l],subplot), name='E(t)-E(t-7)'))
+            data.append(go.Scatter(x=date_range, y=applyFs(lwE,subplot), name='E(t)-E(t-7)'))
         pl.ylabel('')
         if('lwL' in subplot):
             lwL=np.array([RES[(np.abs(time_range-t)).argmin(),LARVAE]-RES[(np.abs(time_range-(t-7))).argmin(),LARVAE] for t in time_range])
@@ -371,7 +371,7 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
                 pl.plot(ovitrap_dates, applyFs(ovi_a,subplot), '*', label='Ovitrap %s A eggs'%ovitrap_id,color=color,zorder=-1)
                 pl.plot(ovitrap_dates, applyFs(ovi_b,subplot), '*', label='Ovitrap %s B eggs'%ovitrap_id,color=color,zorder=-1)
                 data.append(go.Scatter(x=ovitrap_dates[ovi_a!=[None]], y=applyFs(ovi_a,subplot)[ovi_a!=[None]], name='Ovitrap %s A eggs'%ovitrap_id))
-                data.append(go.Scatter(x=ovitrap_dates[ovi_b!=[None]], y=applyFs(ovi_b,subplot)[ovi_b!=[None]], name='Ovitrap %s A eggs'%ovitrap_id))
+                data.append(go.Scatter(x=ovitrap_dates[ovi_b!=[None]], y=applyFs(ovi_b,subplot)[ovi_b!=[None]], name='Ovitrap %s B eggs'%ovitrap_id))
 
         #f
         if ('b' in subplot):
@@ -396,8 +396,8 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
         pl.xticks(rotation='vertical')
         pl.title(title)
         #https://stackoverflow.com/questions/28269157/plotting-in-a-non-blocking-way-with-matplotlib/42674363
-        pl.draw()
-        pl.pause(0.001)
+        #pl.draw()
+        #pl.pause(0.001)
 
     layout=go.Layout(title=title)
     ply.plot(go.Figure(data=data,layout=layout), filename=tempfile.NamedTemporaryFile().name)
