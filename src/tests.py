@@ -313,6 +313,21 @@ def runCases(case):
                 utils.plot(model,subplots=[{'E':'','A1+A2':'','lwE':'','Oab':list(range(1,151)),'W':'','f':[utils.safeAdd,utils.replaceNegativesWithZeros,utils.safeNormalize]}],title='Manually Filled:%s%% Height: %scm.(Oct-Nov-Dic just prom available)'%(mf*100,h),plot_start_date=datetime.date(2017,10,1))
                 print('Max E: %s'%np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1)))
 
+    if(case==13):
+        for mf in [0.0,0.1]:
+            for h in [1,10]:
+                configuration=Configuration('resources/2c.cfg')
+                configuration.config_parser.set('location','name','cordoba.full')#TODO:fix data and
+                configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(30)))# uncomment these two
+                n=len(configuration.getArray('breeding_site','height'))
+                configuration.config_parser.set('breeding_site','height',','.join([str(h)]*n))
+                configuration.config_parser.set('breeding_site','manually_filled',','.join([str(mf)]+[str(0)]*(n-1)))
+                model=Model(configuration)
+                time_range,initial_condition,Y=model.solveEquations(equations=utils.MetricsEquations(model,diff_eqs),method='rk' )
+                utils.plot(model,subplots=[{'lwE':'','Oab':list([87,88,106]),'f':[utils.safeAdd,utils.replaceNegativesWithZeros,utils.safeNormalize]}],title='Manually Filled:%s%% Height: %scm.(Oct-Nov-Dic just prom available)'%(mf*100,h),plot_start_date=datetime.date(2017,10,1))
+                print('Max E: %s, Negatives: %s'%(np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1)),np.sum(model.parameters.negatives)))
+
+
     #utils.showPlot()
 
 def common(model,title):
