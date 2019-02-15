@@ -16,20 +16,21 @@ class Model:
 
         self.parameters=Bunch()
         self.parameters.BS_a=configuration.getFloat('breeding_site','amount')
-        self.parameters.BS_l=int(configuration.getFloat('breeding_site','levels'))#BS levels#TODO:by changing this value, we get a different number of adults, which looks too big. Check if there isn't an error somewhere, or a way to make it more stable
+        self.parameters.BS_lh=configuration.getFloat('breeding_site','level_height')#in cm
         self.parameters.vBS_h=configuration.getArray('breeding_site','height')#in cm
         self.parameters.vBS_s=configuration.getArray('breeding_site','surface')#in cm^2
         self.parameters.vBS_d=configuration.getArray('breeding_site','distribution')#distribution of BS. Sum must be equals to 1
         self.parameters.vBS_W0=configuration.getArray('breeding_site','initial_water')
         self.parameters.vBS_mf=configuration.getArray('breeding_site','manually_filled')#in percentage of capacity
         self.parameters.n=len(self.parameters.vBS_d)
+        self.parameters.m=int(np.max(np.ceil(self.parameters.vBS_h/self.parameters.BS_lh)))
 
-        n,BS_l=self.parameters.n,self.parameters.BS_l
-        self.parameters.EGG=slice(0,n*BS_l)#in R^(nxBS_l)
-        self.parameters.LARVAE=slice(n*BS_l,(1+BS_l)*n)#in R^n
-        self.parameters.PUPAE=slice((1+BS_l)*n,(2+BS_l)*n)#in R^n
-        self.parameters.ADULT1=(2+BS_l)*n#in R
-        self.parameters.ADULT2=(2+BS_l)*n+1#in R
+        m,n=self.parameters.m,self.parameters.n
+        self.parameters.EGG=slice(0,m*n)#in R^(mxn)
+        self.parameters.LARVAE=slice(m*n,(1+m)*n)#in R^n
+        self.parameters.PUPAE=slice((1+m)*n,(2+m)*n)#in R^n
+        self.parameters.ADULT1=(2+m)*n#in R
+        self.parameters.ADULT2=(2+m)*n+1#in R
         self.parameters.vAlpha0=configuration.getArray('biology','alpha0')#constant to be fitted
 
         #Cordoba
@@ -38,8 +39,13 @@ class Model:
         self.end_date=configuration.getDate('simulation','end_date')
         self.time_range = np.linspace(0, (self.end_date - self.start_date).days-1, (self.end_date - self.start_date).days )
         initial_condition=configuration.getArray('simulation','initial_condition')
-        self.parameters.mBS_l=np.repeat(range(0,BS_l),n).reshape((BS_l,n))#level helper matrix
-        self.parameters.initial_condition=np.insert(initial_condition[n:],0, initial_condition[:n].repeat(BS_l)/BS_l)
+        self.parameters.mBS_l=np.repeat(range(0,m),n).reshape((m,n))#level helper matrix
+        E0=np.zeros((m,n))
+        E0[0,:]=(initial_condition[0]*self.parameters.vBS_d)
+        E0=E0.transpose().reshape((1,m*n)).flatten()
+        L0=initial_condition[1]*self.parameters.vBS_d
+        P0=initial_condition[2]*self.parameters.vBS_d
+        self.parameters.initial_condition=np.concatenate( (E0,L0,P0,initial_condition[-2:]) )
 
         #experimental
         p=configuration.getFloat('simulation','egn_corrector_p')#TODO:change p for something with meaning...

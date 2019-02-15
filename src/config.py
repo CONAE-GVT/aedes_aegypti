@@ -46,7 +46,7 @@ class Configuration:
     assert len(vBS_d) == len(vBS_h) == len(vBS_s) == len(vBS_W0) == len(vBS_mf) == len(alpha0),'vBS_d, vBS_h, vBS_s, vBS_W0, vBS_mf and alpha0 must have the same dimension!'
     assert abs(1.-np.sum(vBS_d))<1e-10,'sum(vBS_d)=%s!=1'%(np.sum(vBS_d))
     n=len(vBS_d)
-    assert len(initial_condition)==3*n+1+1 or len(initial_condition)==3*n+1+1+1#(vE+vL+vP)+A1+A2 or #(vE+vL+vP)+A1+A2+F
+    assert len(initial_condition)==5 or len(initial_condition)==6#(E+L+P)+A1+A2 or #(E+L+P)+A1+A2+F
 
 
   def save(self,filename):

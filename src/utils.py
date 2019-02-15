@@ -259,7 +259,7 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
     p=parameters.weather.p
     RH=parameters.weather.RH
     vBS_mf,mf=parameters.vBS_mf,parameters.mf
-    BS_a,BS_l,vBS_h,vBS_s,vBS_d,n=parameters.BS_a,parameters.BS_l,parameters.vBS_h,parameters.vBS_s,parameters.vBS_d,parameters.n
+    BS_a,BS_lh,vBS_h,vBS_s,vBS_d,m,n=parameters.BS_a,parameters.BS_lh,parameters.vBS_h,parameters.vBS_s,parameters.vBS_d,parameters.m,parameters.n
     EGG,LARVAE,PUPAE,ADULT1,ADULT2=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.ADULT2
     data=[]
 
@@ -282,7 +282,9 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
         #Amount of larvaes,pupaes and adults
         if ('E' in subplot):
             pl.plot(date_range,applyFs(RES[:,EGG],subplot), label='E')
-            data.append(go.Scatter(x=date_range,y=applyFs(RES[:,EGG],subplot), name='E'))
+            for i,y in enumerate(applyFs(RES[:,EGG],subplot).transpose()):
+                bs_i=i%m
+                data.append(go.Scatter(x=date_range,y=y, name='E in [%.1f,%.1f)cm'%(bs_i*BS_lh,(bs_i+1)*BS_lh)))
         if ('L' in subplot): pl.plot(date_range,applyFs(RES[:,LARVAE],subplot), label='L')
         if ('P' in subplot): pl.plot(date_range,applyFs(RES[:,PUPAE],subplot), label='P')
         if ('A1' in subplot): pl.plot(date_range,applyFs(RES[:,ADULT1],subplot), label='A1')
@@ -323,7 +325,8 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
         if ('W' in subplot):
             mW=parameters.vW(time_range)
             pl.plot(date_range,applyFs(mW,subplot), label='W(t)')
-            data.append(go.Scatter(x=date_range,y=applyFs(mW,subplot), name='W(t)'))
+            for y in applyFs(mW,subplot).transpose():
+                data.append(go.Scatter(x=date_range,y=y, name='W(t)'))
             pl.ylabel('cm.')
 
         #manually_filled(in mm.)

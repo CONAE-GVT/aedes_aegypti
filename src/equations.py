@@ -73,12 +73,11 @@ def gamma(L,BS,W):
 def ovsp(vW,vBS_d,vW_l,mBS_l):#OViposition Site Preference
     epsilon=1e-4
     vf=vW/(vW+epsilon) * vBS_d#check this method is not spontaneus generation of eggs.(like inventing adults.)
-    if(np.all(vf)>epsilon): vf/=vf.sum()
+    if(vf.max()>epsilon): vf/=vf.sum()
     return np.where(mBS_l==np.floor(vW_l),1,0)*vf
 
 def wetMask(vW_l,mBS_l):
-    mask=np.where(mBS_l<vW_l,1,0)
-    return np.where(mBS_l==np.floor(vW_l),vW_l%1,mask)
+    return np.where(mBS_l<=vW_l,1,0)
 
 def dvE(mE,vL,A1,A2,vW_t,BS_a,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l,egnCorrector,t):
     egn=63.0
@@ -111,16 +110,16 @@ def diff_eqs(Y,t,parameters):
     '''The main set of equations'''
     T_t=parameters.weather.T(t)
     elr,lpr,par,ovr1,ovr2=vR_D(T_t)
-    BS_a,vBS_h,vBS_d,vAlpha0,n,BS_l,mBS_l=parameters.BS_a,parameters.vBS_h,parameters.vBS_d,parameters.vAlpha0,parameters.n,parameters.BS_l,parameters.mBS_l
+    BS_a,BS_lh,vBS_d,vAlpha0,m,n,mBS_l=parameters.BS_a,parameters.BS_lh,parameters.vBS_d,parameters.vAlpha0,parameters.m,parameters.n,parameters.mBS_l
     EGG,LARVAE,PUPAE,ADULT1,ADULT2=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.ADULT2
 
     vW_t=parameters.vW(t)
-    vE,vL,vP,A1,A2=Y[EGG].reshape((n,parameters.BS_l)).transpose(),Y[LARVAE],Y[PUPAE],Y[ADULT1],Y[ADULT2]
-    vW_l=vW_t/vBS_h * BS_l
+    vE,vL,vP,A1,A2=Y[EGG].reshape((n,m)).transpose(),Y[LARVAE],Y[PUPAE],Y[ADULT1],Y[ADULT2]
+    vW_l=vW_t/BS_lh
     wet_mask=wetMask(vW_l,mBS_l)
 
     dY=np.empty(Y.shape)
-    dY[EGG]    = dvE(vE,vL,A1,A2,vW_t,BS_a,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l,parameters.egnCorrector,t).transpose().reshape((1,BS_l*n))
+    dY[EGG]    = dvE(vE,vL,A1,A2,vW_t,BS_a,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l,parameters.egnCorrector,t).transpose().reshape((1,m*n))
     dY[LARVAE] = dvL(vE,vL,vW_t,T_t,BS_a,vBS_d,elr,lpr,vAlpha0,wet_mask)
     dY[PUPAE]  = dvP(vL,vP,T_t,lpr,par)
     dY[ADULT1] = dA1(vP,A1,par,ovr1)

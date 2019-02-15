@@ -309,9 +309,9 @@ def runCases(case):
                 configuration.config_parser.set('breeding_site','height',','.join([str(h)]*n))
                 configuration.config_parser.set('breeding_site','manually_filled',','.join([str(mf)]+[str(0)]*(n-1)))
                 model=Model(configuration)
-                time_range,initial_condition,Y=model.solveEquations(method='rk' )
+                time_range,initial_condition,Y=model.solveEquations(equations=utils.MetricsEquations(model,diff_eqs),method='rk' )
                 utils.plot(model,subplots=[{'E':'','A1+A2':'','lwE':'','Oab':list(range(1,151)),'W':'','f':[utils.safeAdd,utils.replaceNegativesWithZeros,utils.safeNormalize]}],title='Manually Filled:%s%% Height: %scm.(Oct-Nov-Dic just prom available)'%(mf*100,h),plot_start_date=datetime.date(2017,10,1))
-                print('Max E: %s'%np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1)))
+                print('mf:%s h:%s Max E: %s, Negatives: %s'%(mf,h,np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1)),np.sum(model.parameters.negatives)))
 
     if(case==13):
         for mf in [0.0,0.1]:
@@ -323,9 +323,36 @@ def runCases(case):
                 configuration.config_parser.set('breeding_site','height',','.join([str(h)]*n))
                 configuration.config_parser.set('breeding_site','manually_filled',','.join([str(mf)]+[str(0)]*(n-1)))
                 model=Model(configuration)
-                time_range,initial_condition,Y=model.solveEquations(equations=utils.MetricsEquations(model,diff_eqs),method='rk' )
+                time_range,initial_condition,Y=model.solveEquations(method='rk')
                 utils.plot(model,subplots=[{'lwE':'','Oab':list([87,88,106]),'f':[utils.safeAdd,utils.replaceNegativesWithZeros,utils.safeNormalize]}],title='Manually Filled:%s%% Height: %scm.(Oct-Nov-Dic just prom available)'%(mf*100,h),plot_start_date=datetime.date(2017,10,1))
-                print('Max E: %s, Negatives: %s'%(np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1)),np.sum(model.parameters.negatives)))
+                print('mf:%s h:%s Max E: %s'%(mf,h,np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1))))
+
+    if(case==14):
+        configuration=Configuration('resources/2c.cfg')
+        configuration.config_parser.set('location','name','cordoba.full')#TODO:fix data and
+        configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(30)))# uncomment these two
+        n=len(configuration.getArray('breeding_site','height'))
+        model=Model(configuration)
+        time_range,initial_condition,Y=model.solveEquations(method='rk')
+        utils.plot(model,subplots=[{'E':'','W':'','f':[utils.replaceNegativesWithZeros]}])
+        vW=model.parameters.vW(time_range)
+        print('vW:%s +/- %s,  Max E:%s'%(vW.mean(axis=0),vW.std(axis=0), np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1))) )
+
+    if(case==15):
+        last_Y=None
+        for BS_lh in [0.01,0.02,0.05,0.1,0.2,0.5,1,2]:
+            configuration=Configuration('resources/2c.cfg')
+            configuration.config_parser.set('location','name','cordoba.full')#TODO:fix data and
+            configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(30)))# uncomment these two
+            configuration.config_parser.set('breeding_site','level_height',str(BS_lh))
+            n=len(configuration.getArray('breeding_site','height'))
+            model=Model(configuration)
+            time_range,initial_condition,Y=model.solveEquations(method='rk')
+            utils.plot(model,subplots=[{'E':'','W':'','f':[utils.replaceNegativesWithZeros]}])
+            vW=model.parameters.vW(time_range)
+            if(last_Y is None): last_Y=Y#just for the first case
+            print('vW:%s +/- %s,  Max E:%s, ||Y-Y2||:%s'%(vW.mean(axis=0),vW.std(axis=0), np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1)),np.linalg.norm(Y[:,-2:]-last_Y[:,-2:])/np.linalg.norm(Y[:,-2:])) )
+            last_Y=Y
 
 
     #utils.showPlot()
