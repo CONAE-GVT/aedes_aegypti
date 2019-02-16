@@ -201,50 +201,40 @@ def runCases(case):
             common(model,'wunderground h=%s'%h)
 
     if(case==8):
-        configuration=Configuration('resources/otero_precipitation.cfg')#Configuration('resources/1c.cfg')
-        configuration.config_parser.set('location','name','wunderground')
-        model=Model(configuration)
-        time_range,initial_condition,Y=model.solveEquations(method='rk' )
+        for mf in [0.0,0.1]:
+            for h in [1,10]:
+                configuration=Configuration('resources/2c.cfg')
+                configuration.config_parser.set('location','name','cordoba.full')#TODO:fix data and
+                configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(30)))# uncomment these two
+                n=len(configuration.getArray('breeding_site','height'))
+                configuration.config_parser.set('breeding_site','height',','.join([str(h)]*n))
+                configuration.config_parser.set('breeding_site','manually_filled',','.join([str(mf)]+[str(0)]*(n-1)))
+                model=Model(configuration)
+                time_range,initial_condition,Y=model.solveEquations(method='rk')
 
-        error_E0,error_lwE0,error_OV0=[],[],[]
-        for ovitrap_id in range(1,151):
-            OVITRAP_FILENAME='data/private/ovitrampas_2017-2018.csv'
-            ovitrap_eggs_i=utils.getOvitrapEggsFromCsv(OVITRAP_FILENAME,start_date,end_date,ovitrap_id)
-            ovitrap_eggs_i=equation_fitter.populate(model.time_range,ovitrap_eggs_i)
-            ovitrap_eggs_i=np.array(ovitrap_eggs_i,dtype=np.float)#this change None for np.nan
+                error_lwE=[]
+                for ovitrap_id in range(1,151):
+                    OVITRAP_FILENAME='data/private/ovitrampas_2017-2018.csv'
+                    ovitrap_eggs_i=utils.getOvitrapEggsFromCsv(OVITRAP_FILENAME,start_date,end_date,ovitrap_id)
+                    ovitrap_eggs_i=equation_fitter.populate(model.time_range,ovitrap_eggs_i)
+                    ovitrap_eggs_i=np.array(ovitrap_eggs_i,dtype=np.float)#this change None for np.nan
 
-            BS_l=model.parameters.BS_l
-            E0=Y[:,0:BS_l].sum(axis=1)
-            lwE0=np.array([Y[(np.abs(time_range-t)).argmin(),BS_l]-Y[(np.abs(time_range-(t-7))).argmin(),BS_l] for t in time_range])
+                    EGG=model.parameters.EGG
+                    lwE=np.sum(np.array([Y[(np.abs(time_range-t)).argmin(),EGG]-Y[(np.abs(time_range-(t-7))).argmin(),EGG] for t in time_range]), axis=1)
 
-            OV0=[]
-            vBS_d=model.parameters.vBS_d
-            for i,t in enumerate(time_range):
-                parameters=model.parameters
-                T_t=parameters.weather.T(t)
-                vW_t=parameters.vW(t)
-                vBS_h,BS_l,mBS_l=parameters.vBS_h,parameters.BS_l,parameters.mBS_l
-                vW_l=vW_t/vBS_h * BS_l
-                egn,ovr1,ovr2,A1,A2=63.,equations.vR_D(T_t)[-2],equations.vR_D(T_t)[-1],Y[i,-2],Y[i,-1]
-                OV_t= egn*( ovr1 *A1  + ovr2* A2)*equations.ovsp(vW_t,vBS_d,vW_l,mBS_l)
-                OV0=OV0 + [sum(OV_t[:][0])]#TODO:check this
-            OV0=np.array(OV0)
+                    square,rho,p_value=calculateMetrics(lwE,ovitrap_eggs_i)
+                    error_lwE=error_lwE+[[square,rho,p_value]]
+                    #print('ovitrap %s Error: %s rho: %s p-value: %s'%(ovitrap_id,error,rho,p_value) )
 
-            square,rho,p_value=calculateMetrics(E0,ovitrap_eggs_i)
-            error_E0=error_E0+[[square,rho,p_value]]
-            square,rho,p_value=calculateMetrics(lwE0,ovitrap_eggs_i)
-            error_lwE0=error_lwE0+[[square,rho,p_value]]
-            square,rho,p_value=calculateMetrics(OV0,ovitrap_eggs_i)
-            error_OV0=error_OV0+[[square,rho,p_value]]
-            #print('ovitrap %s Error: %s rho: %s p-value: %s'%(ovitrap_id,error,rho,p_value) )
-
-        for error in [error_E0,error_lwE0,error_OV0]:
-            pl.figure()
-            error=np.array(error)
-            error[:,0]=error[:,0]/error[:,0].max()
-            for i,label in enumerate(['square','rho','p_value']):
-                pl.plot(range(1,151),error[:,i],label=label)
-                pl.legend(loc=0)
+                error=np.array(error_lwE)
+                error[:,0]=error[:,0]/error[:,0].max()
+                pl.figure()
+                for i,label in enumerate(['square','rho','p_value']):
+                    pl.plot(range(1,151),error[:,i],label=label)
+                    pl.legend(loc=0)
+                    pl.title('Manually Filled:%s%% Height: %scm.'%(mf*100,h))
+                print('Manually Filled:%s%% Height: %scm.----> Max: %s Min:%s '%(mf*100,h,np.argmax(error[:,0]), np.argmin(error[:,0])) )
+        pl.show()
 
     if (case==9):
         classes=[line.strip().split(',') for line in open('data/private/dtw_results.csv','r').readlines()]
