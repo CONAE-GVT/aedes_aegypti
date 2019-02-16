@@ -284,6 +284,7 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
             pl.plot(date_range,applyFs(RES[:,EGG],subplot), label='E')
             for i,y in enumerate(applyFs(RES[:,EGG],subplot).transpose()):
                 bs_i=i%m
+                #data.append(go.Bar(x=date_range,y=y, name='E in [%.1f,%.1f)cm'%(bs_i*BS_lh,(bs_i+1)*BS_lh)))
                 data.append(go.Scatter(x=date_range,y=y, name='E in [%.1f,%.1f)cm'%(bs_i*BS_lh,(bs_i+1)*BS_lh)))
         if ('L' in subplot): pl.plot(date_range,applyFs(RES[:,LARVAE],subplot), label='L')
         if ('P' in subplot): pl.plot(date_range,applyFs(RES[:,PUPAE],subplot), label='P')
@@ -401,7 +402,7 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
         #https://stackoverflow.com/questions/28269157/plotting-in-a-non-blocking-way-with-matplotlib/42674363
         #pl.draw()
         #pl.pause(0.001)
-
+    #layout=go.Layout(title=title,barmode='stack')
     layout=go.Layout(title=title)
     ply.plot(go.Figure(data=data,layout=layout), filename=tempfile.NamedTemporaryFile().name)
 def showPlot():

@@ -328,7 +328,7 @@ def runCases(case):
                 print('mf:%s h:%s Max E: %s'%(mf,h,np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1))))
 
     if(case==14):
-        configuration=Configuration('resources/2c.cfg')
+        configuration=Configuration('resources/1c.cfg')
         configuration.config_parser.set('location','name','cordoba.full')#TODO:fix data and
         configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(30)))# uncomment these two
         n=len(configuration.getArray('breeding_site','height'))
