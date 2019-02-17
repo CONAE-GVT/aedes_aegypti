@@ -310,8 +310,13 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
         #delta Eggs
         if('lwE' in subplot):
             lwE=np.array([RES[(np.abs(time_range-t)).argmin(),EGG]-RES[(np.abs(time_range-(t-7))).argmin(),EGG] for t in time_range])
+            lwE_mean=np.array([lwE[(np.abs(time_range-(t-7))).argmin():(np.abs(time_range-(t+7))).argmin()].mean(axis=0) for t in time_range])
+            lwE_std =np.array([lwE[(np.abs(time_range-(t-7))).argmin():(np.abs(time_range-(t+7))).argmin()].std(axis=0) for t in time_range])
             pl.plot(date_range, applyFs(lwE,subplot), '-m', label='E(t)-E(t-7)')
             data.append(go.Scatter(x=date_range, y=applyFs(lwE,subplot), name='E(t)-E(t-7)'))
+            data.append(go.Scatter(x=date_range, y=applyFs(lwE_mean,subplot), name='E(t)-E(t-7) mean'))
+            #data.append(go.Scatter(x=date_range, y=applyFs(lwE_mean+lwE_std,subplot), name='E(t)-E(t-7) +std'))#for these to make sense
+            #data.append(go.Scatter(x=date_range, y=applyFs(lwE_mean-lwE_std,subplot), name='E(t)-E(t-7) -std'))#, avoid normalize
         pl.ylabel('')
         if('lwL' in subplot):
             lwL=np.array([RES[(np.abs(time_range-t)).argmin(),LARVAE]-RES[(np.abs(time_range-(t-7))).argmin(),LARVAE] for t in time_range])
