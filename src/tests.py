@@ -100,7 +100,7 @@ def calculateMetrics(V,ovitrap_eggs_i):
     V/=np.max(V)
     ovitrap_eggs_i/=np.nanmax(ovitrap_eggs_i)
     d=np.nansum((ovitrap_eggs_i-V)**2 )/ np.where(~np.isnan(ovitrap_eggs_i),1,0).sum()
-    rho,p_value=stats.spearmanr(ovitrap_eggs_i[~np.isnan(ovitrap_eggs_i)], V[~np.isnan(ovitrap_eggs_i)])
+    rho,p_value=stats.pearsonr(ovitrap_eggs_i[~np.isnan(ovitrap_eggs_i)], V[~np.isnan(ovitrap_eggs_i)])
     return d,rho,p_value
 
 def runCases(case):
@@ -214,16 +214,26 @@ def runCases(case):
 
                 error_lwE=[]
                 for ovitrap_id in range(1,151):
-                    OVITRAP_FILENAME='data/private/ovitrampas_2017-2018.csv'
-                    ovitrap_eggs_i=utils.getOvitrapEggsFromCsv(OVITRAP_FILENAME,start_date,end_date,ovitrap_id)
-                    ovitrap_eggs_i=equation_fitter.populate(model.time_range,ovitrap_eggs_i)
-                    ovitrap_eggs_i=np.array(ovitrap_eggs_i,dtype=np.float)#this change None for np.nan
+                    OVITRAP_FILENAME='data/private/ovitrampas_2017-2018.full.csv'
+                    values=utils.getOvitrapEggsFromCsv2(OVITRAP_FILENAME,None,None,ovitrap_id)
+                    ovitrap_days=values.keys()
+                    dates=[model.start_date + datetime.timedelta(t) for t in time_range]
+                    ovi_a=[values[date][0] if date in values else None for date in dates]#TODO:WARNING!this will repeat values if model granularity is not 1 value per day.
+                    ovi_a=np.array(equation_fitter.populate(model.time_range,ovi_a))
+                    ovi_a=np.array(ovi_a,dtype=np.float)#this change None for np.nan
+                    #ovi_b=[values[date][1] if date in values else None for date in dates]#TODO:WARNING!this will repeat values if model granularity is not 1 value per day.Also this is different than test 13
+                    ##ovi_b=[values[date][1] if len(values[date])>1 else values[date][0] for date in ovitrap_days]
+                    #ovi_b=np.array(equation_fitter.populate(model.time_range,ovi_b))
+                    #ovi_b=np.array(ovi_b,dtype=np.float)#this change None for np.nan
 
                     EGG=model.parameters.EGG
-                    lwE=np.sum(np.array([Y[(np.abs(time_range-t)).argmin(),EGG]-Y[(np.abs(time_range-(t-7))).argmin(),EGG] for t in time_range]), axis=1)
+                    lwE=np.array([Y[(np.abs(time_range-t)).argmin(),EGG]-Y[(np.abs(time_range-(t-7))).argmin(),EGG] for t in time_range])
+                    lwE_mean=np.array([lwE[(np.abs(time_range-(t-7))).argmin():(np.abs(time_range-(t+7))).argmin()].mean(axis=0) for t in time_range])
+                    lwE_mean=np.sum(lwE_mean,axis=1)
 
-                    square,rho,p_value=calculateMetrics(lwE,ovitrap_eggs_i)
-                    error_lwE=error_lwE+[[square,rho,p_value]]
+                    square_a,rho_a,p_value_a=calculateMetrics(lwE_mean,ovi_a)
+                    #square_b,rho_b,p_value_b=calculateMetrics(lwE,ovi_b)
+                    error_lwE=error_lwE+[[square_a,rho_a,p_value_a]]
                     #print('ovitrap %s Error: %s rho: %s p-value: %s'%(ovitrap_id,error,rho,p_value) )
 
                 error=np.array(error_lwE)
@@ -233,7 +243,7 @@ def runCases(case):
                     pl.plot(range(1,151),error[:,i],label=label)
                     pl.legend(loc=0)
                     pl.title('Manually Filled:%s%% Height: %scm.'%(mf*100,h))
-                print('Manually Filled:%s%% Height: %scm.----> Max: %s Min:%s '%(mf*100,h,np.argmax(error[:,0]), np.argmin(error[:,0])) )
+                print('Manually Filled:%s%% Height: %scm.---->(min to max) \n square sort: %s \n rho sort:%s '%(mf*100,h,np.argsort(error[:,0]), np.argsort(error[:,1])) )
         pl.show()
 
     if (case==9):
@@ -314,7 +324,7 @@ def runCases(case):
                 configuration.config_parser.set('breeding_site','manually_filled',','.join([str(mf)]+[str(0)]*(n-1)))
                 model=Model(configuration)
                 time_range,initial_condition,Y=model.solveEquations(method='rk')
-                utils.plot(model,subplots=[{'lwE':'','Oab':list([87,88,106]),'f':[utils.safeAdd,utils.replaceNegativesWithZeros,utils.safeNormalize]}],title='Manually Filled:%s%% Height: %scm.(Oct-Nov-Dic just prom available)'%(mf*100,h),plot_start_date=datetime.date(2017,10,1))
+                utils.plot(model,subplots=[{'lwE':'','Oab':list([131,128,54,122,95]),'f':[utils.safeAdd,utils.replaceNegativesWithZeros,utils.safeNormalize]}],title='Manually Filled:%s%% Height: %scm.(Oct-Nov-Dic just prom available)'%(mf*100,h),plot_start_date=datetime.date(2017,10,1))
                 print('mf:%s h:%s Max E: %s'%(mf,h,np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1))))
 
     if(case==14):

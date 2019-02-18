@@ -87,22 +87,22 @@ def  getOvitrapEggsFromCsv(filename,start_date,end_date,ovitrap):#amount
 def getOvitrapEggsFromCsv2(filename,start_date,end_date,column):#amount
     lines=[line.strip().split(',') for line in open(filename).readlines()[1:]]
     values={}
-    last_date_str=None
+    last_date=None
     for line in lines:
         if(line[0]):
-            last_date_str=date_str=datetime.datetime.strptime(line[0], '%Y-%m-%d')
+            last_date=date=datetime.datetime.strptime(line[0], '%Y-%m-%d').date()
         else:
-            date_str=last_date_str
+            date=last_date
 
         if(line[column]):
             value=float(line[column])
         else:
             value=None
 
-        if(date_str in values):
-            values[date_str].append(value)
+        if(date in values):
+            values[date].append(value)
         else:
-            values[date_str]=[value]
+            values[date]=[value]
     return values
 
 def getStartEndDates(filename):
