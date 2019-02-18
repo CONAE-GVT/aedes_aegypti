@@ -201,6 +201,7 @@ def runCases(case):
             common(model,'wunderground h=%s'%h)
 
     if(case==8):
+        ovi_range=range(1,151)
         for mf in [0.0,0.1]:
             for h in [1,10]:
                 configuration=Configuration('resources/2c.cfg')
@@ -212,8 +213,8 @@ def runCases(case):
                 model=Model(configuration)
                 time_range,initial_condition,Y=model.solveEquations(method='rk')
 
-                error_lwE=[]
-                for ovitrap_id in range(1,151):
+                error_lwE=[[0,0,0]]#initialize to math id
+                for ovitrap_id in ovi_range:
                     OVITRAP_FILENAME='data/private/ovitrampas_2017-2018.full.csv'
                     values=utils.getOvitrapEggsFromCsv2(OVITRAP_FILENAME,None,None,ovitrap_id)
                     ovitrap_days=values.keys()
@@ -240,10 +241,10 @@ def runCases(case):
                 error[:,0]=error[:,0]/error[:,0].max()
                 pl.figure()
                 for i,label in enumerate(['square','rho','p_value']):
-                    pl.plot(range(1,151),error[:,i],label=label)
+                    pl.plot(ovi_range,error[ovi_range,i],label=label)
                     pl.legend(loc=0)
                     pl.title('Manually Filled:%s%% Height: %scm.'%(mf*100,h))
-                print('Manually Filled:%s%% Height: %scm.---->(min to max) \n square sort: %s \n rho sort:%s '%(mf*100,h,np.argsort(error[:,0]), np.argsort(error[:,1])) )
+                print('Manually Filled:%s%% Height: %scm.---->(min to max) \n square sort: %s \n rho sort:%s '%(mf*100,h,np.argsort(error[ovi_range,0])+1, np.argsort(error[ovi_range,1])+1) )#n->n+1
         pl.show()
 
     if (case==9):
@@ -324,7 +325,7 @@ def runCases(case):
                 configuration.config_parser.set('breeding_site','manually_filled',','.join([str(mf)]+[str(0)]*(n-1)))
                 model=Model(configuration)
                 time_range,initial_condition,Y=model.solveEquations(method='rk')
-                utils.plot(model,subplots=[{'lwE':'','Oab':list([131,128,54,122,95]),'f':[utils.safeAdd,utils.replaceNegativesWithZeros,utils.safeNormalize]}],title='Manually Filled:%s%% Height: %scm.(Oct-Nov-Dic just prom available)'%(mf*100,h),plot_start_date=datetime.date(2017,10,1))
+                utils.plot(model,subplots=[{'lwE':'','Oab':list([61,140,143,46,34,55]),'f':[utils.safeAdd,utils.replaceNegativesWithZeros]}],title='Manually Filled:%s%% Height: %scm.(Oct-Nov-Dic just prom available)'%(mf*100,h),plot_start_date=datetime.date(2017,10,1))
                 print('mf:%s h:%s Max E: %s'%(mf,h,np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1))))
 
     if(case==14):
