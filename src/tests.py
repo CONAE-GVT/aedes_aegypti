@@ -355,7 +355,19 @@ def runCases(case):
             print('vW:%s +/- %s,  Max E:%s, ||Y-Y2||:%s'%(vW.mean(axis=0),vW.std(axis=0), np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1)),np.linalg.norm(Y[:,-2:]-last_Y[:,-2:])/np.linalg.norm(Y[:,-2:])) )
             last_Y=Y
 
-
+    if(case==16):
+        for mf in [0.0,0.1]:
+            h=1.
+            configuration=Configuration('resources/2c.cfg')
+            configuration.config_parser.set('location','name','cordoba.full')
+            configuration.config_parser.set('simulation','end_date',str(datetime.date.today()))
+            n=len(configuration.getArray('breeding_site','height'))
+            configuration.config_parser.set('breeding_site','height',','.join([str(h)]*n))
+            configuration.config_parser.set('breeding_site','manually_filled',','.join([str(mf)]+[str(0)]*(n-1)))
+            model=Model(configuration)
+            time_range,initial_condition,Y=model.solveEquations(method='rk')
+            utils.plot(model,subplots=[{'lwE':'','Oab':list([99,140,143]),'f':[utils.safeAdd,utils.replaceNegativesWithZeros]}],title='Manually Filled:%s%% Height: %scm.(Oct-Nov-Dic just prom available)'%(mf*100,h),plot_start_date=datetime.date(2017,10,1))
+            print('mf:%s h:%s Max E: %s'%(mf,h,np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1))))
     #utils.showPlot()
 
 def common(model,title):

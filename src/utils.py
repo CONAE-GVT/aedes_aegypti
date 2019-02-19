@@ -313,10 +313,10 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
             lwE_mean=np.array([lwE[(np.abs(time_range-(t-7))).argmin():(np.abs(time_range-(t+7))).argmin()].mean(axis=0) for t in time_range])/15.
             lwE_std =np.array([lwE[(np.abs(time_range-(t-7))).argmin():(np.abs(time_range-(t+7))).argmin()].std(axis=0) for t in time_range])/15.
             pl.plot(date_range, applyFs(lwE,subplot), '-m', label='E(t)-E(t-7)')
-            data.append(go.Scatter(x=date_range, y=applyFs(lwE,subplot), name='E(t)-E(t-7)'))
+            #data.append(go.Scatter(x=date_range, y=applyFs(lwE,subplot), name='E(t)-E(t-7)'))
             data.append(go.Scatter(x=date_range, y=applyFs(lwE_mean,subplot), name='E(t)-E(t-7) mean'))
-            data.append(go.Scatter(x=date_range, y=applyFs(lwE_mean+lwE_std,subplot), name='E(t)-E(t-7) +std'))#for these to make sense
-            data.append(go.Scatter(x=date_range, y=applyFs(lwE_mean-lwE_std,subplot), name='E(t)-E(t-7) -std'))#, avoid normalize
+            #data.append(go.Scatter(x=date_range, y=applyFs(lwE_mean+lwE_std,subplot), name='E(t)-E(t-7) +std'))#for these to make sense
+            #data.append(go.Scatter(x=date_range, y=applyFs(lwE_mean-lwE_std,subplot), name='E(t)-E(t-7) -std'))#, avoid normalize
         pl.ylabel('')
         if('lwL' in subplot):
             lwL=np.array([RES[(np.abs(time_range-t)).argmin(),LARVAE]-RES[(np.abs(time_range-(t-7))).argmin(),LARVAE] for t in time_range])
@@ -379,8 +379,8 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
                 color=p*np.array([1,0,0]) + (1-p)*np.array([0,1,0])
                 pl.plot(ovitrap_dates, applyFs(ovi_a,subplot), '*', label='Ovitrap %s A eggs'%ovitrap_id,color=color,zorder=-1)
                 pl.plot(ovitrap_dates, applyFs(ovi_b,subplot), '*', label='Ovitrap %s B eggs'%ovitrap_id,color=color,zorder=-1)
-                data.append(go.Scatter(x=ovitrap_dates[ovi_a!=[None]], y=applyFs(ovi_a,subplot)[ovi_a!=[None]], name='Ovitrap %s A eggs'%ovitrap_id))
-                data.append(go.Scatter(x=ovitrap_dates[ovi_b!=[None]], y=applyFs(ovi_b,subplot)[ovi_b!=[None]], name='Ovitrap %s B eggs'%ovitrap_id))
+                data.append(go.Scatter(x=ovitrap_dates[ovi_a!=[None]], y=applyFs(ovi_a,subplot)[ovi_a!=[None]], name='Ovitrap %s A eggs'%ovitrap_id, mode = 'markers'))
+                data.append(go.Scatter(x=ovitrap_dates[ovi_b!=[None]], y=applyFs(ovi_b,subplot)[ovi_b!=[None]], name='Ovitrap %s B eggs'%ovitrap_id, mode = 'markers'))
 
         #f
         if ('b' in subplot):
