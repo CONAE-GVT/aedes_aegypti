@@ -8,11 +8,13 @@
 struct Parameters{
     //config
     scalar BS_a;
+    scalar BS_lh;
     tensor vBS_d;
     tensor vBS_s;
     tensor vBS_h;
     tensor vBS_W0;
     tensor vBS_mf;
+    matrix mBS_l;
 
     std::string location;
 
@@ -22,6 +24,7 @@ struct Parameters{
 
     tensor vAlpha0;
     //dynamic
+    unsigned int m;
     unsigned int n;
     std::slice EGG;
     std::slice LARVAE;

@@ -4,6 +4,7 @@
 //TODO:make this a class?
 #include "types.h"
 #include "parameters.h"
+#include "utils.h"
 
 
 
@@ -84,23 +85,40 @@ scalar gamma(scalar L, scalar BS, scalar W){
         return 0.63;
 }
 
-tensor ovsp(const tensor& vW,const tensor& vBS_d){
+matrix ovsp(const tensor& vW,const tensor& vBS_d,const tensor& vW_l,const matrix& mBS_l){
     scalar epsilon=1e-4;
     tensor vf=vW/(vW+epsilon) * vBS_d;
-    if(vf.max()<1e-20) return vf;
-    else return vf/vf.sum();//#TODO: check this
+    if(vf.max()>epsilon) vf=vf/vf.sum();
+    matrix ovsp_t=matrix(tensor(vW_l.size()),mBS_l.size());
+    for(unsigned int i=0;i<mBS_l.size();i++)
+        for(unsigned int j=0;j<mBS_l[i].size();j++)
+            if(mBS_l[i][j]==std::floor(vW_l[j])) ovsp_t[i][j]=1.;
+            else ovsp_t[i][j]=0.;
+    return ovsp_t*vf;//#TODO: check this
 }
 
-tensor dvE(const tensor& vE,const tensor& vL,scalar A1,scalar A2,const tensor& vW, scalar BS_a,const tensor&  vBS_d,scalar elr,scalar ovr1, scalar ovr2){
+matrix wetMask(tensor vW_l, matrix mBS_l){
+    matrix mask=matrix(tensor(vW_l.size()),mBS_l.size());
+    for(unsigned int i=0;i<mBS_l.size();i++)
+        for(unsigned int j=0;j<mBS_l[i].size();j++)
+            if(mBS_l[i][j]<=vW_l[j]) mask[i][j]=1.;
+            else mask[i][j]=0.;
+    return mask;
+}
+
+matrix dvE(const matrix& mE,const tensor& vL,scalar A1,scalar A2,const tensor& vW_t, scalar BS_a,const tensor&  vBS_d,scalar elr,scalar ovr1, scalar ovr2,const matrix& wet_mask,const tensor& vW_l,const matrix& mBS_l){
     scalar egn=63.0;
     scalar me=0.01;//#mortality of the egg, for T in [278,303]
-    return egn*( ovr1 *A1  + ovr2* A2)*ovsp(vW,vBS_d) - me * vE - elr* (1.-vGamma(vL,BS_a*vBS_d,vW)) * vE;
+    matrix ovsp_t=ovsp(vW_t,vBS_d,vW_l,mBS_l);
+    return egn  *( ovr1 *A1  + ovr2* A2)*ovsp_t - me * mE - tensor(elr* (1.-vGamma(vL,BS_a*vBS_d,vW_t))) * mE*wet_mask;
 }
 
-tensor dvL(const tensor& vE,const tensor& vL,const tensor& vW,scalar T_t,scalar BS_a,const tensor& vBS_d,scalar elr,scalar lpr,const tensor& vAlpha0){
+tensor dvL(const matrix& mE,const tensor& vL,const tensor& vW,scalar T_t,scalar BS_a,const tensor& vBS_d,scalar elr,scalar lpr,const tensor& vAlpha0,const matrix& wet_mask){
     scalar ml=0.01 + 0.9725 * std::exp(-(T_t-278.0)/2.7035);//#mortality of the larvae, for T in [278,303]
+    scalar mdl=2.;//#mortality of dry larvae.TODO:Unjustified!
     tensor vAlpha=vAlpha0/(BS_a*vBS_d);
-    return elr* (1.-vGamma(vL,BS_a*vBS_d,vW)) * vE - ml*vL - vAlpha* vL*vL - lpr *vL ;//#-35.6464*(1.-beta(vW,vBS_od,vBS_id))*L#-24.*(1.-beta(vW))*L# -log(1e-4/5502.)/(1.)=17.823207313460703
+    scalar epsilon=1e-4;
+    return elr* (1.-vGamma(vL,BS_a*vBS_d,vW)) * Utils::sumAxis0(mE*wet_mask) - ml*vL - vAlpha* vL*vL - lpr *vL - mdl*(1.- vW/(vW+epsilon))*vL;
 }
 
 tensor dvP(const tensor& vL,const tensor& vP,scalar T_t, scalar lpr,scalar par){
@@ -130,19 +148,25 @@ tensor diff_eqs(const tensor& Y,scalar t,Parameters& parameters){
     scalar ovr2=vR_D_t[4];
 
     scalar BS_a=parameters.BS_a;
+    scalar BS_lh=parameters.BS_lh;
     tensor vBS_d=parameters.vBS_d;
     tensor vAlpha0=parameters.vAlpha0;
+    unsigned int m=parameters.m;
+    unsigned int n=parameters.n;
+    matrix mBS_l=parameters.mBS_l;
 
     tensor vW_t=parameters.vW(t);
-    tensor vE=Y[parameters.EGG];
+    matrix vE=Utils::tensorToMatrix(Y[parameters.EGG],m,n);//equivalent to reshape and transpose
     tensor vL=Y[parameters.LARVAE];
     tensor vP=Y[parameters.PUPAE];
     scalar A1=Y[parameters.ADULT1];
     scalar A2=Y[parameters.ADULT2];
+    tensor vW_l=vW_t/BS_lh;
+    matrix wet_mask=wetMask(vW_l,mBS_l);
 
     tensor dY=tensor(Y.size());
-    dY[parameters.EGG]    = dvE(vE,vL,A1,A2,vW_t,BS_a,vBS_d,elr,ovr1,ovr2);
-    dY[parameters.LARVAE] = dvL(vE,vL,vW_t,T_t,      BS_a,vBS_d,elr,lpr,vAlpha0);
+    dY[parameters.EGG]    = Utils::matrixToTensor(dvE(vE,vL,A1,A2,vW_t,BS_a,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l));
+    dY[parameters.LARVAE] = dvL(vE,vL,vW_t,T_t,      BS_a,vBS_d,elr,lpr,vAlpha0,wet_mask);
     dY[parameters.PUPAE]  = dvP(vL,vP,T_t,lpr,par);
     dY[parameters.ADULT1] = dA1(vP,A1,par,ovr1);
     dY[parameters.ADULT2] = dA2(A1,A2,ovr1);
