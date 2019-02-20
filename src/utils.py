@@ -1,6 +1,6 @@
 from configparser import ConfigParser
 import plotly.graph_objs as go
-from equations import diff_eqs
+from equations import diff_eqs,ovsp,vR_D
 import plotly.offline as ply
 import collections
 import numpy as np
@@ -276,6 +276,32 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
         if ('A1' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,ADULT1],subplot), label='A1'))
         if ('A2' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,ADULT2],subplot), label='A2'))
         if ('A1+A2' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,ADULT2]+RES[:,ADULT1],subplot), name='A1+A2'))
+
+        if('ovp'):
+            Y=RES#it should be Y everywhere....
+            dOvp=np.empty(Y[:,EGG].shape)
+            for i,t in enumerate(time_range):
+                T_t=parameters.weather.T(t)
+                elr,lpr,par,ovr1,ovr2=vR_D(T_t)
+                BS_a,BS_lh,vBS_d,vAlpha0,m,n,mBS_l=parameters.BS_a,parameters.BS_lh,parameters.vBS_d,parameters.vAlpha0,parameters.m,parameters.n,parameters.mBS_l
+                vW_t=parameters.vW(t)
+                A1,A2=Y[i,ADULT1],Y[i,ADULT2]
+                vW_l=vW_t/BS_lh
+                egn=63.0
+                me=0.01#mortality of the egg, for T in [278,303]
+                ovsp_t=ovsp(vW_t,vBS_d,vW_l,mBS_l)
+                egn_c=parameters.egnCorrector(egn,ovr1 *A1  + ovr2* A2, t)
+                dOvp_t=egn_c*( ovr1 *A1  + ovr2* A2)*ovsp_t
+                dOvp[i,:]=dOvp_t.transpose().reshape((1,m*n))
+
+            indexOf=lambda t: (np.abs(time_range-t)).argmin()
+            ovp=np.array([np.sum(dOvp[indexOf(t-7):indexOf(t)]) for t in time_range])/BS_a
+            ovp_mean=np.array([ovp[indexOf(t-7):indexOf(t+7)].mean(axis=0) for t in time_range])
+            ovp_std =np.array([ovp[indexOf(t-7):indexOf(t+7)].std(axis=0) for t in time_range])
+            data.append(go.Scatter(x=date_range, y=applyFs(ovp,subplot), name='ovp'))
+            data.append(go.Scatter(x=date_range, y=applyFs(ovp_mean,subplot), name='ovp mean'))
+            data.append(go.Scatter(x=date_range, y=applyFs(ovp_mean+ovp_std,subplot), name='ovp + std'))
+            data.append(go.Scatter(x=date_range, y=applyFs(ovp_mean-ovp_std,subplot), name='ovp - std'))
 
         #delta Eggs
         if('lwE' in subplot):

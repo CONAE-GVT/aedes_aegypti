@@ -162,7 +162,7 @@ def runCases(case):
             configuration.config_parser.set('breeding_site','manually_filled',','.join([str(mf)]+[str(0)]*(n-1)))
             model=Model(configuration)
             time_range,initial_condition,Y=model.solveEquations(method='rk')
-            utils.plot(model,subplots=[{'lwE':'','O':list([99,140,143]),'f':[utils.safeAdd,utils.replaceNegativesWithZeros]}],title='Manually Filled:%s%% Height: %scm.(Oct-Nov-Dic just prom available)'%(mf*100,h),plot_start_date=datetime.date(2017,10,1))
+            utils.plot(model,subplots=[{'lwE':'','ovp':'','O':list([99,140,143]),'f':[utils.safeAdd,utils.replaceNegativesWithZeros]}],title='Manually Filled:%s%% Height: %scm.(Oct-Nov-Dic just prom available)'%(mf*100,h),plot_start_date=datetime.date(2017,10,1))
             print('mf:%s h:%s Max E: %s'%(mf,h,np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1))))
 
 
