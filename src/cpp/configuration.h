@@ -8,11 +8,9 @@ class Configuration
 {
     public:
     std::string filename;
-    Configuration(std::string filename){
-        this->filename=filename;
-    }
+    explicit Configuration(const std::string& filename):filename(filename){}//explicit is just to avoid a cpp check warning
 
-    std::string get(std::string section,std::string option){
+    std::string get(const std::string& section, const std::string& option){
         std::ifstream file = std::ifstream(this->filename,std::ifstream::in);
         bool in_section=false;
         while(!file.eof()){
@@ -33,11 +31,11 @@ class Configuration
         return "";
     }
 
-    scalar getScalar(std::string section,std::string option){
+    scalar getScalar(const std::string& section, const std::string& option){
         std::string value=get(section,option);
         return std::stod(value);//TODO: here we have an implicit double->scalar conversion
     }
-    tensor getTensor(std::string section,std::string option){
+    tensor getTensor(const std::string& section, const std::string& option){
         std::string value=get(section,option);
         std::vector<std::string> tokens=Utils::parseLine(value.c_str(),",");
         std::vector<scalar> values=std::vector<scalar>();

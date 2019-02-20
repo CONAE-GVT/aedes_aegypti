@@ -97,7 +97,7 @@ matrix ovsp(const tensor& vW,const tensor& vBS_d,const tensor& vW_l,const matrix
     return ovsp_t*vf;//#TODO: check this
 }
 
-matrix wetMask(tensor vW_l, matrix mBS_l){
+matrix wetMask(const tensor& vW_l, const matrix& mBS_l){
     matrix mask=matrix(tensor(vW_l.size()),mBS_l.size());
     for(unsigned int i=0;i<mBS_l.size();i++)
         for(unsigned int j=0;j<mBS_l[i].size();j++)

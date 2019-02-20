@@ -18,7 +18,7 @@ class Model
 
     Model():Model(Configuration("resources/otero_precipitation.cfg")){}
 
-    Model(Configuration configuration){
+    explicit Model(Configuration configuration){//explicit is just to avoid a cpp check warning
         this->parameters.BS_a=configuration.getScalar("breeding_site","amount");
         this->parameters.BS_lh=configuration.getScalar("breeding_site","level_height");//#in cm
         this->parameters.vBS_h=configuration.getTensor("breeding_site","height");//#in cm
