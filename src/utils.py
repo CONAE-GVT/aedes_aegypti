@@ -2,11 +2,8 @@ from configparser import ConfigParser
 import plotly.graph_objs as go
 from equations import diff_eqs
 import plotly.offline as ply
-import matplotlib.dates
 import collections
 import numpy as np
-import pylab as pl
-import matplotlib
 import datetime
 import tempfile
 import sys
@@ -263,155 +260,77 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
     EGG,LARVAE,PUPAE,ADULT1,ADULT2=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.ADULT2
     data=[]
 
-    if(figure): pl.figure()
-    ax1=None
+    date_range=[datetime.timedelta(days=d)+datetime.datetime.combine(model.start_date,datetime.time()) for d in time_range]
     for i,subplot in enumerate(subplots):
-        subplot_id=len(subplots)*100 + 10 + (i+1)
-        if(i==0):
-            ax1=pl.subplot(subplot_id)
-            date_range=[datetime.timedelta(days=d)+datetime.datetime.combine(model.start_date,datetime.time()) for d in time_range]
-            ax1.xaxis.set_major_locator( matplotlib.dates.MonthLocator() )
-            ax1.xaxis.set_major_formatter( matplotlib.dates.DateFormatter('%Y-%m-%d') )
-            ax1.xaxis.set_minor_locator( matplotlib.dates.WeekdayLocator(byweekday=matplotlib.dates.MO) )
-        else:
-            pl.subplot(subplot_id,sharex=ax1)#sharex to zoom all subplots if one is zoomed
-
         if(plot_start_date):
             time_range,RES,date_range=subData(time_range,RES,date_range,plot_start_date)
 
         #Amount of larvaes,pupaes and adults
         if ('E' in subplot):
-            pl.plot(date_range,applyFs(RES[:,EGG],subplot), label='E')
             for i,y in enumerate(applyFs(RES[:,EGG],subplot).transpose()):
                 bs_i=i%m
                 #data.append(go.Bar(x=date_range,y=y, name='E in [%.1f,%.1f)cm'%(bs_i*BS_lh,(bs_i+1)*BS_lh)))
                 data.append(go.Scatter(x=date_range,y=y, name='E in [%.1f,%.1f)cm'%(bs_i*BS_lh,(bs_i+1)*BS_lh)))
-        if ('L' in subplot): pl.plot(date_range,applyFs(RES[:,LARVAE],subplot), label='L')
-        if ('P' in subplot): pl.plot(date_range,applyFs(RES[:,PUPAE],subplot), label='P')
-        if ('A1' in subplot): pl.plot(date_range,applyFs(RES[:,ADULT1],subplot), label='A1')
-        if ('A2' in subplot): pl.plot(date_range,applyFs(RES[:,ADULT2],subplot), label='A2')
-        if ('A1+A2' in subplot):
-            pl.plot(date_range,applyFs(RES[:,ADULT2]+RES[:,ADULT1],subplot), color=color, label='A1+A2')
-            data.append(go.Scatter(x=date_range,y=applyFs(RES[:,ADULT2]+RES[:,ADULT1],subplot), name='A1+A2'))
-
-        #derivate
-        dY=np.zeros(RES.shape)
-        if(np.any([a==b for a in subplot for b in ['dE','dL','dP','dA1','dA1','dW']])):#if any of dE,...,dA2 is asked, calculate the whole dY
-            for i,t in enumerate(time_range):
-                dY[i,:]=diff_eqs(RES[i,:],t,model.parameters)
-
-        if ('dE' in subplot): pl.plot(date_range,applyFs(dY[:,EGG],subplot), '-k', label='dE')
-        if ('dL' in subplot): pl.plot(date_range,applyFs(dY[:,LARVAE],subplot), '-r', label='dL')
-        if ('dP' in subplot): pl.plot(date_range,applyFs(dY[:,PUPAE],subplot), '-g', label='dP')
-        if ('dA1' in subplot): pl.plot(date_range,applyFs(dY[:,ADULT1],subplot), '-b', label='dA1')
-        if ('dA2' in subplot): pl.plot(date_range,applyFs(dY[:,ADULT2],subplot), '-m', label='dA2')
-        if ('dW' in subplot): pl.plot(date_range,applyFs(dY[:,WATER],subplot), '-b', label='dW')
+        if ('L' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,LARVAE],subplot), label='L'))
+        if ('P' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,PUPAE],subplot), label='P'))
+        if ('A1' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,ADULT1],subplot), label='A1'))
+        if ('A2' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,ADULT2],subplot), label='A2'))
+        if ('A1+A2' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,ADULT2]+RES[:,ADULT1],subplot), name='A1+A2'))
 
         #delta Eggs
         if('lwE' in subplot):
             lwE=np.array([RES[(np.abs(time_range-t)).argmin(),EGG]-RES[(np.abs(time_range-(t-7))).argmin(),EGG] for t in time_range])
-            lwE_mean=np.array([lwE[(np.abs(time_range-(t-7))).argmin():(np.abs(time_range-(t+7))).argmin()].mean(axis=0) for t in time_range])/15.
-            lwE_std =np.array([lwE[(np.abs(time_range-(t-7))).argmin():(np.abs(time_range-(t+7))).argmin()].std(axis=0) for t in time_range])/15.
-            pl.plot(date_range, applyFs(lwE,subplot), '-m', label='E(t)-E(t-7)')
+            lwE_mean=np.array([lwE[(np.abs(time_range-(t-7))).argmin():(np.abs(time_range-(t+7))).argmin()].mean(axis=0) for t in time_range])/BS_a
+            lwE_std =np.array([lwE[(np.abs(time_range-(t-7))).argmin():(np.abs(time_range-(t+7))).argmin()].std(axis=0) for t in time_range])/BS_a
             #data.append(go.Scatter(x=date_range, y=applyFs(lwE,subplot), name='E(t)-E(t-7)'))
             data.append(go.Scatter(x=date_range, y=applyFs(lwE_mean,subplot), name='E(t)-E(t-7) mean'))
             #data.append(go.Scatter(x=date_range, y=applyFs(lwE_mean+lwE_std,subplot), name='E(t)-E(t-7) +std'))#for these to make sense
             #data.append(go.Scatter(x=date_range, y=applyFs(lwE_mean-lwE_std,subplot), name='E(t)-E(t-7) -std'))#, avoid normalize
-        pl.ylabel('')
-        if('lwL' in subplot):
-            lwL=np.array([RES[(np.abs(time_range-t)).argmin(),LARVAE]-RES[(np.abs(time_range-(t-7))).argmin(),LARVAE] for t in time_range])
-            pl.plot(date_range, applyFs(lwL,subplot), '-', label='L(t)-L(t-7)')
-        pl.ylabel('')
 
         #Complete lifecycle
         if('clc' in subplot):
-            pl.plot(date_range,[sum([1./model.R_D(stage,model.T(t)) for stage in [EGG,LARVAE,PUPAE,ADULT1,ADULT2]]) for  t in time_range],label='Complete life cicle(from being an egg to the second oviposition)')
-            pl.ylabel('days')
+            data.append(go.Scatter(x=date_range,y=[sum([1./model.R_D(stage,model.T(t)) for stage in [EGG,LARVAE,PUPAE,ADULT1,ADULT2]]) for  t in time_range],label='Complete life cicle(from being an egg to the second oviposition) in days'))
         #Water in containers(in L)
         if ('W' in subplot):
             mW=parameters.vW(time_range)
-            pl.plot(date_range,applyFs(mW,subplot), label='W(t)')
             for y in applyFs(mW,subplot).transpose():
-                data.append(go.Scatter(x=date_range,y=y, name='W(t)'))
-            pl.ylabel('cm.')
-
-        #manually_filled(in mm.)
-        if ('mf' in subplot):
-            pl.plot(date_range,applyFs(np.array([mf(t)*vBS_mf*vBS_h*10. for t in time_range]),subplot), label='mf(t)')
-            pl.ylabel('mm./day')
-
-        #spaa vs cimsim
-        if ('spaavscimsim' in subplot):
-            for i in range(0,n):
-                pl.plot(time_range,RES[:,WATER[i] ], label='W(t) for %scm, %scm^2, %s%%'%(vBS_h[i],vBS_s[i],vBS_d[i]*100.) )#L->ml->mm->cm
-            pl.plot(getValuesFromCsv('data/test/cimsim_containers_2015_se09.csv',model.start_date,model.end_date,1,verbose=False),label='CIMSiM')
+                data.append(go.Scatter(x=date_range,y=y, name='W(t) in cm.'))
 
         #Temperature in K
         if ('T' in subplot):
-            pl.plot(date_range,applyFs(np.array([T(t)- 273.15 for t in time_range]),subplot),color=color, label='Temperature')
-            data.append(go.Scatter(x=date_range,y=applyFs(np.array([T(t)- 273.15 for t in time_range]),subplot),name='Temperature'))
-            pl.ylabel('C')
+            data.append(go.Scatter(x=date_range,y=applyFs(np.array([T(t)- 273.15 for t in time_range]),subplot),name='Temperature in C'))
 
         #precipitations(in mm.)
         if ('p' in subplot):
-            pl.plot(date_range,applyFs(np.array([p(t+0.5) for t in time_range]),subplot),'-b', label='p(t+1/2)')
-            data.append(go.Scatter(x=date_range,y=applyFs(np.array([p(t+0.5) for t in time_range]),subplot), name='p(t+1/2)'))
-            pl.ylabel('mm./day')
+            data.append(go.Scatter(x=date_range,y=applyFs(np.array([p(t+0.5) for t in time_range]),subplot), name='p(t+1/2) in mm./day'))
+
 
         #relative Humidity
         if ('RH' in subplot):
-            pl.plot(date_range,applyFs(np.array([RH(t) for t in time_range]),subplot), label='RH(t)')
-            pl.ylabel('%')
+            data.append(go.Scatter(x=date_range,y=applyFs(np.array([RH(t) for t in time_range]),subplot), label='RH(t) in %'))
 
-        #ovitraps
         if('O' in subplot):
-            for i in subplot['O']:
-                ovitrap_eggs=np.array(getOvitrapEggsFromCsv('data/private/ovitrampas_2017-2018.csv',model.start_date,model.end_date,i))
-                pl.plot([datetime.timedelta(days=d)+datetime.datetime.combine(model.start_date,datetime.time()) for d in range(0,len(ovitrap_eggs))], applyFs(ovitrap_eggs,subplot), '^', label='Ovitrap %s eggs'%i,clip_on=False, zorder=100,markersize=8)
-
-        if('Oab' in subplot):
-            for ovitrap_id in subplot['Oab']:
+            for ovitrap_id in subplot['O']:
                 values=getOvitrapEggsFromCsv2('data/private/ovitrampas_2017-2018.full.csv',model.start_date,model.end_date,ovitrap_id)
                 ovitrap_dates=np.array([k for k in values.keys()])
                 ovi_a=np.array([values[date][0] for date in ovitrap_dates])
                 ovi_b=np.array([values[date][1] if len(values[date])>1 else None for date in ovitrap_dates])
-                p=ovitrap_id/151.
-                color=p*np.array([1,0,0]) + (1-p)*np.array([0,1,0])
-                pl.plot(ovitrap_dates, applyFs(ovi_a,subplot), '*', label='Ovitrap %s A eggs'%ovitrap_id,color=color,zorder=-1)
-                pl.plot(ovitrap_dates, applyFs(ovi_b,subplot), '*', label='Ovitrap %s B eggs'%ovitrap_id,color=color,zorder=-1)
                 data.append(go.Scatter(x=ovitrap_dates[ovi_a!=[None]], y=applyFs(ovi_a,subplot)[ovi_a!=[None]], name='Ovitrap %s A eggs'%ovitrap_id, mode = 'markers'))
                 data.append(go.Scatter(x=ovitrap_dates[ovi_b!=[None]], y=applyFs(ovi_b,subplot)[ovi_b!=[None]], name='Ovitrap %s B eggs'%ovitrap_id, mode = 'markers'))
-
-        #f
-        if ('b' in subplot):
-            pl.plot(date_range,[f( RES[(np.abs(time_range-t)).argmin(),WATER] , vBS_d ) for t in time_range], label='f(vW,vBS_d)')
-            pl.ylabel('')
 
         #debugging plots
         #Calls
         if ('c' in subplot):
-            pl.plot(date_range,model.parameters.calls, label='calls')
-            pl.ylabel('')
+            data.append(go.Scatter(xdate_range,y=model.parameters.calls, label='calls'))
             print('Calls: %s'%sum(model.parameters.calls))
         #Negatives
         if ('n' in subplot):
-            pl.plot(date_range,model.parameters.negatives, label='negatives')
-            pl.ylabel('')
+            data.append(go.Scatter(x=date_range,y=model.parameters.negatives, label='negatives'))
             print('Negatives: %s'%sum(model.parameters.negatives))
 
-        #common to all subplots
-        pl.xlabel('Time(in days starting in July)')
-        #pl.legend(loc=0)
-        pl.xticks(rotation='vertical')
-        pl.title(title)
-        #https://stackoverflow.com/questions/28269157/plotting-in-a-non-blocking-way-with-matplotlib/42674363
-        #pl.draw()
-        #pl.pause(0.001)
     #layout=go.Layout(title=title,barmode='stack')
     layout=go.Layout(title=title)
     ply.plot(go.Figure(data=data,layout=layout), filename=tempfile.NamedTemporaryFile().name)
-def showPlot():
-    return pl.show()
 
 ###############################################################Animation################################################################
 from PIL import ImageFont, ImageDraw,Image
