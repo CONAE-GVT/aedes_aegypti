@@ -224,11 +224,11 @@ class OEquations:
         dY=self.diff_eqs(Y,t,parameters)
         T_t=parameters.weather.T(t)
         elr,lpr,par,ovr1,ovr2=vR_D(T_t)
-        BS_a,BS_lh,vBS_d,vAlpha0,m,n,mBS_l=parameters.BS_a,parameters.BS_lh,parameters.vBS_d,parameters.vAlpha0,parameters.m,parameters.n,parameters.mBS_l
-        EGG,LARVAE,PUPAE,ADULT1,ADULT2,OVIPOSITION=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.ADULT2,parameters.OVIPOSITION
+        BS_lh,vBS_d,m,n,mBS_l=parameters.BS_lh,parameters.vBS_d,parameters.m,parameters.n,parameters.mBS_l
+        ADULT1,ADULT2,OVIPOSITION=parameters.ADULT1,parameters.ADULT2,parameters.OVIPOSITION
 
         vW_t=parameters.vW(t)
-        vE,vL,vP,A1,A2=Y[EGG].reshape((n,m)).transpose(),Y[LARVAE],Y[PUPAE],Y[ADULT1],Y[ADULT2]
+        A1,A2=Y[ADULT1],Y[ADULT2]
         vW_l=vW_t/BS_lh
 
         egn=63.0
@@ -307,30 +307,7 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
 
         if('ovp'):
             Y=RES#it should be Y everywhere....
-            dOvp=np.empty(Y[:,EGG].shape)
-            for i,t in enumerate(time_range):
-                T_t=parameters.weather.T(t)
-                elr,lpr,par,ovr1,ovr2=vR_D(T_t)
-                BS_a,BS_lh,vBS_d,vAlpha0,m,n,mBS_l=parameters.BS_a,parameters.BS_lh,parameters.vBS_d,parameters.vAlpha0,parameters.m,parameters.n,parameters.mBS_l
-                vW_t=parameters.vW(t)
-                A1,A2=Y[i,ADULT1],Y[i,ADULT2]
-                vW_l=vW_t/BS_lh
-                egn=63.0
-                me=0.01#mortality of the egg, for T in [278,303]
-                ovsp_t=ovsp(vW_t,vBS_d,vW_l,mBS_l)
-                egn_c=parameters.egnCorrector(egn,ovr1 *A1  + ovr2* A2, t)
-                dOvp_t=egn_c*( ovr1 *A1  + ovr2* A2)*ovsp_t
-                dOvp[i,:]=dOvp_t.transpose().reshape((1,m*n))
-
             indexOf=lambda t: (np.abs(time_range-t)).argmin()
-            ovp=np.array([np.sum(dOvp[indexOf(t-7):indexOf(t)]) for t in time_range])/BS_a
-            ovp_mean=np.array([ovp[indexOf(t-7):indexOf(t+7)].mean(axis=0) for t in time_range])
-            ovp_std =np.array([ovp[indexOf(t-7):indexOf(t+7)].std(axis=0) for t in time_range])
-            data.append(go.Scatter(x=date_range, y=applyFs(ovp,subplot), name='ovp'))
-            data.append(go.Scatter(x=date_range, y=applyFs(ovp_mean,subplot), name='ovp mean'))
-            data.append(go.Scatter(x=date_range, y=applyFs(ovp_mean+ovp_std,subplot), name='ovp + std'))
-            data.append(go.Scatter(x=date_range, y=applyFs(ovp_mean-ovp_std,subplot), name='ovp - std'))
-            #O2
             OVIPOSITION=model.parameters.OVIPOSITION
             O=Y[:,OVIPOSITION]
             lwO=np.array([Y[indexOf(t),OVIPOSITION]-Y[indexOf(t-7),OVIPOSITION] for t in time_range])/BS_a
