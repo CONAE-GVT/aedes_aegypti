@@ -305,7 +305,7 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
         if ('A2' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,ADULT2],subplot), label='A2'))
         if ('A1+A2' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,ADULT2]+RES[:,ADULT1],subplot), name='A1+A2'))
 
-        if('ovp'):
+        if('lwO' in subplot):
             Y=RES#it should be Y everywhere....
             indexOf=lambda t: (np.abs(time_range-t)).argmin()
             OVIPOSITION=model.parameters.OVIPOSITION

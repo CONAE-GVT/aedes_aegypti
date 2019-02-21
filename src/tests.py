@@ -96,7 +96,13 @@ def runSpatial():
 
 import equation_fitter
 import scipy.stats as stats
+from scipy import interpolate
 def calculateMetrics(V,ovitrap_eggs_i):
+    #assert V.shape ==  ovitrap_eggs_i.shape
+    #i_range=np.array(range(0,len(V)))
+    #s=interpolate.InterpolatedUnivariateSpline(i_range[~np.isnan(ovitrap_eggs_i)],ovitrap_eggs_i[~np.isnan(ovitrap_eggs_i)])
+    #valid_range=range(i_range[~np.isnan(ovitrap_eggs_i)][0],len(i_range))
+    #d=np.sum([(V[i]-s(i))**2 for i in valid_range ])#TODO:we are using index instead of time.Check if this can cause a problem.
     V/=np.max(V)
     ovitrap_eggs_i/=np.nanmax(ovitrap_eggs_i)
     d=np.nansum((ovitrap_eggs_i-V)**2 )/ np.where(~np.isnan(ovitrap_eggs_i),1,0).sum()
@@ -115,9 +121,9 @@ def runCases(case):
                 configuration.config_parser.set('breeding_site','height',','.join([str(h)]*n))
                 configuration.config_parser.set('breeding_site','manually_filled',','.join([str(mf)]+[str(0)]*(n-1)))
                 model=Model(configuration)
-                time_range,initial_condition,Y=model.solveEquations(method='rk')
+                time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
 
-                error_lwE=[[0,0,0]]#initialize to math id
+                error=[[1e5,-1,1]]*151#just to fill the ovitrap 0 that do not exist in reality
                 for ovitrap_id in ovi_range:
                     OVITRAP_FILENAME='data/private/ovitrampas_2017-2018.full.csv'
                     values=utils.getOvitrapEggsFromCsv2(OVITRAP_FILENAME,None,None,ovitrap_id)
@@ -131,24 +137,27 @@ def runCases(case):
                     #ovi_b=np.array(equation_fitter.populate(model.time_range,ovi_b))
                     #ovi_b=np.array(ovi_b,dtype=np.float)#this change None for np.nan
 
-                    EGG=model.parameters.EGG
-                    lwE=np.array([Y[(np.abs(time_range-t)).argmin(),EGG]-Y[(np.abs(time_range-(t-7))).argmin(),EGG] for t in time_range])
-                    lwE_mean=np.array([lwE[(np.abs(time_range-(t-7))).argmin():(np.abs(time_range-(t+7))).argmin()].mean(axis=0) for t in time_range])
-                    lwE_mean=np.sum(lwE_mean,axis=1)
+                    indexOf=lambda t: (np.abs(time_range-t)).argmin()
+                    OVIPOSITION=model.parameters.OVIPOSITION
+                    BS_a=model.parameters.BS_a
+                    O=Y[:,OVIPOSITION]
+                    lwO=np.array([Y[indexOf(t),OVIPOSITION]-Y[indexOf(t-7),OVIPOSITION] for t in time_range])/BS_a
+                    lwO_mean=np.array([lwO[indexOf(t-7):indexOf(t+7)].mean(axis=0) for t in time_range])
+                    lwO_mean=np.sum(lwO_mean,axis=1)
 
-                    square_a,rho_a,p_value_a=calculateMetrics(lwE_mean,ovi_a)
+                    square_a,rho_a,p_value_a=calculateMetrics(lwO_mean,ovi_a)
                     #square_b,rho_b,p_value_b=calculateMetrics(lwE,ovi_b)
-                    error_lwE=error_lwE+[[square_a,rho_a,p_value_a]]
+                    error[ovitrap_id]=[square_a,rho_a,p_value_a]
                     #print('ovitrap %s Error: %s rho: %s p-value: %s'%(ovitrap_id,error,rho,p_value) )
 
-                error=np.array(error_lwE)
+                error=np.array(error)
                 error[:,0]=error[:,0]/error[:,0].max()
                 pl.figure()
                 for i,label in enumerate(['square','rho','p_value']):
                     pl.plot(ovi_range,error[ovi_range,i],label=label)
                     pl.legend(loc=0)
                     pl.title('Manually Filled:%s%% Height: %scm.'%(mf*100,h))
-                print('Manually Filled:%s%% Height: %scm.---->(min to max) \n square sort: %s \n rho sort:%s '%(mf*100,h,np.argsort(error[ovi_range,0])+1, np.argsort(error[ovi_range,1])+1) )#n->n+1
+                print('Manually Filled:%s%% Height: %scm.---->(min to max) \n square sort: %s \n rho sort:%s '%(mf*100,h,np.argsort(error[:,0]), np.argsort(error[:,1])) )
         pl.show()
 
     if(case==1):
@@ -162,7 +171,8 @@ def runCases(case):
             configuration.config_parser.set('breeding_site','manually_filled',','.join([str(mf)]+[str(0)]*(n-1)))
             model=Model(configuration)
             time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
-            utils.plot(model,subplots=[{'ovp':'','O':list([99,140,143]),'f':[utils.safeAdd,utils.replaceNegativesWithZeros]}],title='Manually Filled:%s%% Height: %scm.(Oct-Nov-Dic just prom available)'%(mf*100,h),plot_start_date=datetime.date(2017,10,1))
+            utils.plot(model,subplots=[{'lwO':'','O':list([99,140,143]),'f':[utils.safeAdd]}],title='Manually Filled:%s%% Height: %scm.(Oct-Nov-Dic just prom available)'%(mf*100,h),plot_start_date=datetime.date(2017,10,1))
+            #utils.plot(model,subplots=[{'W':''}],title='Manually Filled:%s%% Height: %scm.(Oct-Nov-Dic just prom available)'%(mf*100,h),plot_start_date=datetime.date(2017,10,1))
             print('mf:%s h:%s Max E: %s'%(mf,h,np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1))))
 
             #is OEquations perturbing the result somehow?No, the results match.
