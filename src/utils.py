@@ -211,6 +211,34 @@ class EgnCorrector:
         p=self.p
         return (dOEdt/cycle_A)*p + (1-p)*egn
 
+class OEquations:
+    def __init__(self,model,diff_eqs):
+        self.model=model
+        self.diff_eqs=diff_eqs
+        m,n=model.parameters.m,model.parameters.n
+        model.parameters.OVIPOSITION=slice((2+m)*n+2,(2+m)*n+2 + m*n)#in R^n
+        model.parameters.initial_condition=np.append(model.parameters.initial_condition,np.zeros(m*n))
+        assert model.parameters.initial_condition[-2]==model.parameters.initial_condition[-1]==0#otherwise the above statement is false.
+
+    def __call__(self,Y,t,parameters):
+        dY=self.diff_eqs(Y,t,parameters)
+        T_t=parameters.weather.T(t)
+        elr,lpr,par,ovr1,ovr2=vR_D(T_t)
+        BS_a,BS_lh,vBS_d,vAlpha0,m,n,mBS_l=parameters.BS_a,parameters.BS_lh,parameters.vBS_d,parameters.vAlpha0,parameters.m,parameters.n,parameters.mBS_l
+        EGG,LARVAE,PUPAE,ADULT1,ADULT2,OVIPOSITION=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.ADULT2,parameters.OVIPOSITION
+
+        vW_t=parameters.vW(t)
+        vE,vL,vP,A1,A2=Y[EGG].reshape((n,m)).transpose(),Y[LARVAE],Y[PUPAE],Y[ADULT1],Y[ADULT2]
+        vW_l=vW_t/BS_lh
+
+        egn=63.0
+        ovsp_t=ovsp(vW_t,vBS_d,vW_l,mBS_l)
+        egn_c=parameters.egnCorrector(egn,ovr1 *A1  + ovr2* A2, t)
+        dO=egn_c*( ovr1 *A1  + ovr2* A2)*ovsp_t
+        dY[OVIPOSITION]=dO.transpose().reshape((1,m*n))
+
+        return dY
+
 ###############################################################Plot################################################################
 def normalize(values):#TODO:change name.
     return (values-values.min())/(values.max()-values.min())
@@ -302,6 +330,16 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
             data.append(go.Scatter(x=date_range, y=applyFs(ovp_mean,subplot), name='ovp mean'))
             data.append(go.Scatter(x=date_range, y=applyFs(ovp_mean+ovp_std,subplot), name='ovp + std'))
             data.append(go.Scatter(x=date_range, y=applyFs(ovp_mean-ovp_std,subplot), name='ovp - std'))
+            #O2
+            OVIPOSITION=model.parameters.OVIPOSITION
+            O=Y[:,OVIPOSITION]
+            lwO=np.array([Y[indexOf(t),OVIPOSITION]-Y[indexOf(t-7),OVIPOSITION] for t in time_range])/BS_a
+            lwO_mean=np.array([lwO[indexOf(t-7):indexOf(t+7)].mean(axis=0) for t in time_range])
+            lwO_std =np.array([lwO[indexOf(t-7):indexOf(t+7)].std(axis=0) for t in time_range])
+            data.append(go.Scatter(x=date_range, y=applyFs(lwO,subplot), name='O(t)-O(t-7)'))
+            data.append(go.Scatter(x=date_range, y=applyFs(lwO_mean,subplot), name='O(t)-O(t-7) mean'))
+            data.append(go.Scatter(x=date_range, y=applyFs(lwO_mean+lwO_std,subplot), name='O(t)-O(t-7) + std'))
+            data.append(go.Scatter(x=date_range, y=applyFs(lwO_mean-lwO_std,subplot), name='O(t)-O(t-7) - std'))
 
         #delta Eggs
         if('lwE' in subplot):
