@@ -123,7 +123,7 @@ def runCases(case):
                 model=Model(configuration)
                 time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
 
-                error=[[1e5,-1,1]]*151#just to fill the ovitrap 0 that do not exist in reality
+                error=[[1e5,0,0,-1,1]]*151#just to fill the ovitrap 0 that do not exist in reality
                 for ovitrap_id in ovi_range:
                     OVITRAP_FILENAME='data/private/ovitrampas_2017-2018.full.csv'
                     values=utils.getOvitrapEggsFromCsv2(OVITRAP_FILENAME,None,None,ovitrap_id)
@@ -143,25 +143,34 @@ def runCases(case):
                     O=Y[:,OVIPOSITION]
                     lwO=np.array([Y[indexOf(t),OVIPOSITION]-Y[indexOf(t-7),OVIPOSITION] for t in time_range])/BS_a
                     lwO_mean=np.array([lwO[indexOf(t-7):indexOf(t+7)].mean(axis=0) for t in time_range])
+                    lwO_std =np.array([lwO[indexOf(t-7):indexOf(t+7)].std(axis=0) for t in time_range])
+                    lwO_u=np.sum(lwO_mean+lwO_std,axis=1)
+                    lwO_l=np.sum(lwO_mean-lwO_std,axis=1)
+                    lwO_2u=np.sum(lwO_mean+2*lwO_std,axis=1)
+                    lwO_2l=np.sum(lwO_mean- 2*lwO_std,axis=1)
                     lwO_mean=np.sum(lwO_mean,axis=1)
 
+
                     square_a,rho_a,p_value_a=calculateMetrics(lwO_mean,ovi_a)
+                    valid_ovi_a=~np.isnan(ovi_a)
+                    count=np.sum( np.where(np.logical_and(lwO_l[~np.isnan(ovi_a)]<=ovi_a[~np.isnan(ovi_a)],ovi_a[~np.isnan(ovi_a)]<=lwO_u[~np.isnan(ovi_a)]),1,0)  )
+                    count2=np.sum(np.where(np.logical_and(lwO_2l[~np.isnan(ovi_a)]<=ovi_a[~np.isnan(ovi_a)],ovi_a[~np.isnan(ovi_a)]<=lwO_2u[~np.isnan(ovi_a)]),1,0)  )
                     #square_b,rho_b,p_value_b=calculateMetrics(lwE,ovi_b)
-                    error[ovitrap_id]=[square_a,rho_a,p_value_a]
+                    error[ovitrap_id]=[square_a,count,count2,rho_a,p_value_a]
                     #print('ovitrap %s Error: %s rho: %s p-value: %s'%(ovitrap_id,error,rho,p_value) )
 
                 error=np.array(error)
                 error[:,0]=error[:,0]/error[:,0].max()
                 pl.figure()
-                for i,label in enumerate(['square','rho','p_value']):
+                for i,label in enumerate(['square','count','count2','rho','p_value']):
                     pl.plot(ovi_range,error[ovi_range,i],label=label)
                     pl.legend(loc=0)
                     pl.title('Manually Filled:%s%% Height: %scm.'%(mf*100,h))
-                print('Manually Filled:%s%% Height: %scm.---->(min to max) \n square sort: %s \n rho sort:%s '%(mf*100,h,np.argsort(error[:,0]), np.argsort(error[:,1])) )
+                print('Manually Filled:%s%% Height: %scm.---->(min to max) \n square sort: %s \n count sort:%s \n count2 sort:%s'%(mf*100,h,np.argsort(error[:,0]), np.argsort(error[:,1]),np.argsort(error[:,2]) ) )
         pl.show()
 
     if(case==1):
-        for mf in [0.0,0.1]:
+        for mf in [0.0]:
             h=1.
             configuration=Configuration('resources/2c.cfg')
             configuration.config_parser.set('location','name','cordoba.full')
@@ -171,7 +180,7 @@ def runCases(case):
             configuration.config_parser.set('breeding_site','manually_filled',','.join([str(mf)]+[str(0)]*(n-1)))
             model=Model(configuration)
             time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
-            utils.plot(model,subplots=[{'lwO':'','O':list([99,140,143]),'f':[utils.safeAdd]}],title='Manually Filled:%s%% Height: %scm.(Oct-Nov-Dic just prom available)'%(mf*100,h),plot_start_date=datetime.date(2017,10,1))
+            utils.plot(model,subplots=[{'lwO':'','O':list([87,49,60,13,7,50,60,139]),'f':[utils.safeAdd]}],title='Manually Filled:%s%% Height: %scm.(Oct-Nov-Dic just prom available)'%(mf*100,h),plot_start_date=datetime.date(2017,10,1))
             #utils.plot(model,subplots=[{'W':''}],title='Manually Filled:%s%% Height: %scm.(Oct-Nov-Dic just prom available)'%(mf*100,h),plot_start_date=datetime.date(2017,10,1))
             print('mf:%s h:%s Max E: %s'%(mf,h,np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1))))
 
