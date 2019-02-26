@@ -216,9 +216,10 @@ class OEquations:
         self.model=model
         self.diff_eqs=diff_eqs
         m,n=model.parameters.m,model.parameters.n
-        model.parameters.OVIPOSITION=slice((2+m)*n+2,(2+m)*n+2 + m*n)#in R^n
+        OVIPOSITION_START=len(model.parameters.initial_condition)
+        model.parameters.OVIPOSITION=slice(OVIPOSITION_START,OVIPOSITION_START + m*n)#in R^(mxn)
         model.parameters.initial_condition=np.append(model.parameters.initial_condition,np.zeros(m*n))
-        assert model.parameters.initial_condition[-2]==model.parameters.initial_condition[-1]==0#otherwise the above statement is false.
+        assert model.parameters.initial_condition[model.parameters.ADULT1]==model.parameters.initial_condition[model.parameters.ADULT2]==0#otherwise the above statement is false.
 
     def __call__(self,Y,t,parameters):
         dY=self.diff_eqs(Y,t,parameters)
