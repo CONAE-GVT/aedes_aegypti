@@ -20,7 +20,6 @@ class Model:
         self.parameters.vBS_h=configuration.getArray('breeding_site','height')#in cm
         self.parameters.vBS_s=configuration.getArray('breeding_site','surface')#in cm^2
         self.parameters.vBS_d=configuration.getArray('breeding_site','distribution')#distribution of BS. Sum must be equals to 1
-        self.parameters.vBS_W0=configuration.getArray('breeding_site','initial_water')
         self.parameters.vBS_mf=configuration.getArray('breeding_site','manually_filled')#in cm
         self.parameters.n=len(self.parameters.vBS_d)
         self.parameters.m=int(np.max(np.ceil(self.parameters.vBS_h/self.parameters.BS_lh)))
@@ -31,6 +30,7 @@ class Model:
         self.parameters.PUPAE=slice((1+m)*n,(2+m)*n)#in R^n
         self.parameters.ADULT1=(2+m)*n#in R
         self.parameters.ADULT2=(2+m)*n+1#in R
+        self.parameters.WATER=slice((2+m)*n+2,(3+m)*n+2)#in R^n
         self.parameters.vAlpha0=configuration.getArray('biology','alpha0')#constant to be fitted
 
         #Cordoba
@@ -45,7 +45,8 @@ class Model:
         E0=E0.transpose().reshape((1,m*n)).flatten()
         L0=initial_condition[1]*self.parameters.vBS_d
         P0=initial_condition[2]*self.parameters.vBS_d
-        self.parameters.initial_condition=np.concatenate( (E0,L0,P0,initial_condition[-2:]) )
+        W0=configuration.getArray('breeding_site','initial_water')
+        self.parameters.initial_condition=np.concatenate( (E0,L0,P0,initial_condition[-2:],W0) )
 
         #experimental
         p=configuration.getFloat('simulation','egn_corrector_p')#TODO:change p for something with meaning...
@@ -55,8 +56,6 @@ class Model:
         self.parameters.weather=Weather(WEATHER_DATA_FILENAME,self.start_date,self.end_date)
 
         self.parameters.mf=self.parameters.weather.getAsLambdaFunction(self.parameters.weather.aps, [0,0,0,0,0,0,1.]* int( (self.end_date - self.start_date).days/7 +1) )
-        W = spi.odeint(equations.waterEquations,self.parameters.vBS_W0,self.time_range,hmax=1.0,args=(self.parameters,))
-        self.parameters.vW=interpolate.interp1d(self.time_range,W,axis=0,fill_value="extrapolate")#TODO:find a way to avoid extrapolate(mainly needed because odeint goes outside timerange)
 
         self.validate()
 

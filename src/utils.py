@@ -226,10 +226,9 @@ class OEquations:
         T_t=parameters.weather.T(t)
         elr,lpr,par,ovr1,ovr2=vR_D(T_t)
         BS_lh,vBS_d,m,n,mBS_l=parameters.BS_lh,parameters.vBS_d,parameters.m,parameters.n,parameters.mBS_l
-        ADULT1,ADULT2,OVIPOSITION=parameters.ADULT1,parameters.ADULT2,parameters.OVIPOSITION
+        ADULT1,ADULT2,WATER,OVIPOSITION=parameters.ADULT1,parameters.ADULT2,parameters.WATER,parameters.OVIPOSITION
 
-        vW_t=parameters.vW(t)
-        A1,A2=Y[ADULT1],Y[ADULT2]
+        A1,A2,vW_t=Y[ADULT1],Y[ADULT2],Y[WATER]
         vW_l=vW_t/BS_lh
 
         egn=63.0
@@ -286,7 +285,7 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
     RH=parameters.weather.RH
     vBS_mf,mf=parameters.vBS_mf,parameters.mf
     BS_a,BS_lh,vBS_h,vBS_s,vBS_d,m,n=parameters.BS_a,parameters.BS_lh,parameters.vBS_h,parameters.vBS_s,parameters.vBS_d,parameters.m,parameters.n
-    EGG,LARVAE,PUPAE,ADULT1,ADULT2=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.ADULT2
+    EGG,LARVAE,PUPAE,ADULT1,ADULT2,WATER=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.ADULT2,parameters.WATER
     data=[]
 
     date_range=[datetime.timedelta(days=d)+datetime.datetime.combine(model.start_date,datetime.time()) for d in time_range]
@@ -334,7 +333,7 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
             data.append(go.Scatter(x=date_range,y=[sum([1./model.R_D(stage,model.T(t)) for stage in [EGG,LARVAE,PUPAE,ADULT1,ADULT2]]) for  t in time_range],label='Complete life cicle(from being an egg to the second oviposition) in days'))
         #Water in containers(in L)
         if ('W' in subplot):
-            mW=parameters.vW(time_range)
+            mW=RES[:,WATER]
             for y in applyFs(mW,subplot).transpose():
                 data.append(go.Scatter(x=date_range,y=y, name='W(t) in cm.'))
 

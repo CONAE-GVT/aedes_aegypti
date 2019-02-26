@@ -181,7 +181,6 @@ def runCases(case):
             model=Model(configuration)
             time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
             utils.plot(model,subplots=[{'lwO':'','O':list([87,49,60,13,7,50,60,139]),'f':[utils.safeAdd]}],title='Manually Filled:%scm. Height: %scm.(Oct-Nov-Dic just prom available)'%(mf*100,h),plot_start_date=datetime.date(2017,10,1))
-            #utils.plot(model,subplots=[{'W':''}],title='Manually Filled:%s%% Height: %scm.(Oct-Nov-Dic just prom available)'%(mf*100,h),plot_start_date=datetime.date(2017,10,1))
             print('mf:%s h:%s Max E: %s'%(mf,h,np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1))))
 
             #is OEquations perturbing the result somehow?No, the results match.

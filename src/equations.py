@@ -39,13 +39,6 @@ def a0(W):
 def vGamma(vL,vBS_a,vW):
     return np.array([gamma(vL[i],vBS_a[i],vW[i]) for i in range(0,len(vL))])
 
-def waterEquations(vW,t,parameters):
-    T_t=parameters.weather.T(t)
-    p_t=parameters.weather.p(t)
-    RH_t=parameters.weather.RH(t)
-    vmf_t=parameters.mf(t)*parameters.vBS_mf*10.# cm -> mm
-    vBS_h,n=parameters.vBS_h,parameters.n
-    return [dW(vW[i],vBS_h[i],T_t,p_t+vmf_t[i],RH_t) for i in range(0,n)]
 #</precipitation related functionality v>
 
 
@@ -109,20 +102,22 @@ def dA2(A1,A2,ovr1):
 def diff_eqs(Y,t,parameters):
     '''The main set of equations'''
     T_t=parameters.weather.T(t)
+    p_t=parameters.weather.p(t)
+    RH_t=parameters.weather.RH(t)
     elr,lpr,par,ovr1,ovr2=vR_D(T_t)
-    BS_a,BS_lh,vBS_d,vAlpha0,m,n,mBS_l=parameters.BS_a,parameters.BS_lh,parameters.vBS_d,parameters.vAlpha0,parameters.m,parameters.n,parameters.mBS_l
-    EGG,LARVAE,PUPAE,ADULT1,ADULT2=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.ADULT2
+    BS_a,BS_lh,vBS_d,vBS_h,vAlpha0,m,n,mBS_l=parameters.BS_a,parameters.BS_lh,parameters.vBS_d,parameters.vBS_h,parameters.vAlpha0,parameters.m,parameters.n,parameters.mBS_l
+    EGG,LARVAE,PUPAE,ADULT1,ADULT2,WATER=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.ADULT2,parameters.WATER
 
-    vW_t=parameters.vW(t)
-    vE,vL,vP,A1,A2=Y[EGG].reshape((n,m)).transpose(),Y[LARVAE],Y[PUPAE],Y[ADULT1],Y[ADULT2]
-    vW_l=vW_t/BS_lh
+    vE,vL,vP,A1,A2,vW=Y[EGG].reshape((n,m)).transpose(),Y[LARVAE],Y[PUPAE],Y[ADULT1],Y[ADULT2],Y[WATER]
+    vW_l=vW/BS_lh
     wet_mask=wetMask(vW_l,mBS_l)
+    vmf_t=parameters.mf(t)*parameters.vBS_mf*10.# cm -> mm
 
     dY=np.empty(Y.shape)
-    dY[EGG]    = dvE(vE,vL,A1,A2,vW_t,BS_a,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l,parameters.egnCorrector,t).transpose().reshape((1,m*n))
-    dY[LARVAE] = dvL(vE,vL,vW_t,T_t,BS_a,vBS_d,elr,lpr,vAlpha0,wet_mask)
+    dY[EGG]    = dvE(vE,vL,A1,A2,vW,BS_a,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l,parameters.egnCorrector,t).transpose().reshape((1,m*n))
+    dY[LARVAE] = dvL(vE,vL,vW,T_t,BS_a,vBS_d,elr,lpr,vAlpha0,wet_mask)
     dY[PUPAE]  = dvP(vL,vP,T_t,lpr,par)
     dY[ADULT1] = dA1(vP,A1,par,ovr1)
     dY[ADULT2] = dA2(A1,A2,ovr1)
-
+    dY[WATER] = [dW(vW[i],vBS_h[i],T_t,p_t+vmf_t[i],RH_t) for i in range(0,n)]
     return dY   # For odeint
