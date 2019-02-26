@@ -43,7 +43,7 @@ def waterEquations(vW,t,parameters):
     T_t=parameters.weather.T(t)
     p_t=parameters.weather.p(t)
     RH_t=parameters.weather.RH(t)
-    vmf_t=parameters.mf(t)*parameters.vBS_mf*parameters.vBS_h*10.#% -> cm -> mm
+    vmf_t=parameters.mf(t)*parameters.vBS_mf*10.# cm -> mm
     vBS_h,n=parameters.vBS_h,parameters.n
     return [dW(vW[i],vBS_h[i],T_t,p_t+vmf_t[i],RH_t) for i in range(0,n)]
 #</precipitation related functionality v>

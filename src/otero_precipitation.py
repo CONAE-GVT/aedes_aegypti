@@ -21,7 +21,7 @@ class Model:
         self.parameters.vBS_s=configuration.getArray('breeding_site','surface')#in cm^2
         self.parameters.vBS_d=configuration.getArray('breeding_site','distribution')#distribution of BS. Sum must be equals to 1
         self.parameters.vBS_W0=configuration.getArray('breeding_site','initial_water')
-        self.parameters.vBS_mf=configuration.getArray('breeding_site','manually_filled')#in percentage of capacity
+        self.parameters.vBS_mf=configuration.getArray('breeding_site','manually_filled')#in cm
         self.parameters.n=len(self.parameters.vBS_d)
         self.parameters.m=int(np.max(np.ceil(self.parameters.vBS_h/self.parameters.BS_lh)))
 
