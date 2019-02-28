@@ -97,23 +97,29 @@ def runSpatial():
 import equation_fitter
 import scipy.stats as stats
 from scipy import interpolate
-def calculateMetrics(V,ovitrap_eggs_i):
-    #assert V.shape ==  ovitrap_eggs_i.shape
-    #i_range=np.array(range(0,len(V)))
-    #s=interpolate.InterpolatedUnivariateSpline(i_range[~np.isnan(ovitrap_eggs_i)],ovitrap_eggs_i[~np.isnan(ovitrap_eggs_i)])
-    #valid_range=range(i_range[~np.isnan(ovitrap_eggs_i)][0],len(i_range))
-    #d=np.sum([(V[i]-s(i))**2 for i in valid_range ])#TODO:we are using index instead of time.Check if this can cause a problem.
+def calculateMetrics(lwO_mean,lwO_std,ovitrap_eggs_i):
+    lwO_u=np.sum(lwO_mean+lwO_std,axis=1)
+    lwO_l=np.sum(lwO_mean-lwO_std,axis=1)
+    lwO_2u=np.sum(lwO_mean+1.5*lwO_std,axis=1)
+    lwO_2l=np.sum(lwO_mean- 1.5*lwO_std,axis=1)
+    V=np.sum(lwO_mean,axis=1)
+
     V/=np.max(V)
     ovitrap_eggs_i/=np.nanmax(ovitrap_eggs_i)
     d=np.nansum((ovitrap_eggs_i-V)**2 )/ np.where(~np.isnan(ovitrap_eggs_i),1,0).sum()
+
     rho,p_value=stats.pearsonr(ovitrap_eggs_i[~np.isnan(ovitrap_eggs_i)], V[~np.isnan(ovitrap_eggs_i)])
-    return d,rho,p_value
+
+    valid_ovi_idx=~np.isnan(ovitrap_eggs_i)
+    count=np.sum( np.where(np.logical_and(lwO_l[valid_ovi_idx]<=ovitrap_eggs_i[valid_ovi_idx],ovitrap_eggs_i[valid_ovi_idx]<=lwO_u[valid_ovi_idx]),1,0)  )
+    count2=np.sum(np.where(np.logical_and(lwO_2l[valid_ovi_idx]<=ovitrap_eggs_i[valid_ovi_idx],ovitrap_eggs_i[valid_ovi_idx]<=lwO_2u[valid_ovi_idx]),1,0)  )
+    return d,count,count2,rho,p_value
 
 def runCases(case):
     if(case==0):
         ovi_range=range(1,151)
-        for mf in [0.0,0.1]:
-            for h in [1,10]:
+        for h in [10]:
+            for mf  in np.arange(0,10,0.1):
                 configuration=Configuration('resources/2c.cfg')
                 configuration.config_parser.set('location','name','cordoba.full')#TODO:fix data and
                 configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(30)))# uncomment these two
@@ -123,19 +129,21 @@ def runCases(case):
                 model=Model(configuration)
                 time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
 
-                error=[[1e5,0,0,-1,1]]*151#just to fill the ovitrap 0 that do not exist in reality
+                errors=[[[1e5,0,0,-1,1],[1e5,0,0,-1,1]]]*151#just to fill the ovitrap 0 that do not exist in reality
                 for ovitrap_id in ovi_range:
                     OVITRAP_FILENAME='data/private/ovitrampas_2017-2018.full.csv'
                     values=utils.getOvitrapEggsFromCsv2(OVITRAP_FILENAME,None,None,ovitrap_id)
                     ovitrap_days=values.keys()
                     dates=[model.start_date + datetime.timedelta(t) for t in time_range]
+
                     ovi_a=[values[date][0] if date in values else None for date in dates]#TODO:WARNING!this will repeat values if model granularity is not 1 value per day.
                     ovi_a=np.array(equation_fitter.populate(model.time_range,ovi_a))
                     ovi_a=np.array(ovi_a,dtype=np.float)#this change None for np.nan
-                    #ovi_b=[values[date][1] if date in values else None for date in dates]#TODO:WARNING!this will repeat values if model granularity is not 1 value per day.Also this is different than test 13
+
+                    ovi_b=[values[date][1] if (date in values and len(values[date])>1) else None for date in dates]#TODO:WARNING!this will repeat values if model granularity is not 1 value per day.Also this is different than test 13
                     ##ovi_b=[values[date][1] if len(values[date])>1 else values[date][0] for date in ovitrap_days]
-                    #ovi_b=np.array(equation_fitter.populate(model.time_range,ovi_b))
-                    #ovi_b=np.array(ovi_b,dtype=np.float)#this change None for np.nan
+                    ovi_b=np.array(equation_fitter.populate(model.time_range,ovi_b))
+                    ovi_b=np.array(ovi_b,dtype=np.float)#this change None for np.nan
 
                     indexOf=lambda t: (np.abs(time_range-t)).argmin()
                     OVIPOSITION=model.parameters.OVIPOSITION
@@ -144,34 +152,24 @@ def runCases(case):
                     lwO=np.array([Y[indexOf(t),OVIPOSITION]-Y[indexOf(t-7),OVIPOSITION] for t in time_range])/BS_a
                     lwO_mean=np.array([lwO[indexOf(t-7):indexOf(t+7)].mean(axis=0) for t in time_range])
                     lwO_std =np.array([lwO[indexOf(t-7):indexOf(t+7)].std(axis=0) for t in time_range])
-                    lwO_u=np.sum(lwO_mean+lwO_std,axis=1)
-                    lwO_l=np.sum(lwO_mean-lwO_std,axis=1)
-                    lwO_2u=np.sum(lwO_mean+2*lwO_std,axis=1)
-                    lwO_2l=np.sum(lwO_mean- 2*lwO_std,axis=1)
-                    lwO_mean=np.sum(lwO_mean,axis=1)
 
 
-                    square_a,rho_a,p_value_a=calculateMetrics(lwO_mean,ovi_a)
-                    valid_ovi_a=~np.isnan(ovi_a)
-                    count=np.sum( np.where(np.logical_and(lwO_l[~np.isnan(ovi_a)]<=ovi_a[~np.isnan(ovi_a)],ovi_a[~np.isnan(ovi_a)]<=lwO_u[~np.isnan(ovi_a)]),1,0)  )
-                    count2=np.sum(np.where(np.logical_and(lwO_2l[~np.isnan(ovi_a)]<=ovi_a[~np.isnan(ovi_a)],ovi_a[~np.isnan(ovi_a)]<=lwO_2u[~np.isnan(ovi_a)]),1,0)  )
-                    #square_b,rho_b,p_value_b=calculateMetrics(lwE,ovi_b)
-                    error[ovitrap_id]=[square_a,count,count2,rho_a,p_value_a]
-                    #print('ovitrap %s Error: %s rho: %s p-value: %s'%(ovitrap_id,error,rho,p_value) )
 
-                error=np.array(error)
-                error[:,0]=error[:,0]/error[:,0].max()
-                pl.figure()
-                for i,label in enumerate(['square','count','count2','rho','p_value']):
-                    pl.plot(ovi_range,error[ovi_range,i],label=label)
-                    pl.legend(loc=0)
-                    pl.title('Manually Filled:%s%% Height: %scm.'%(mf*100,h))
-                print('Manually Filled:%s%% Height: %scm.---->(min to max) \n square sort: %s \n count sort:%s \n count2 sort:%s'%(mf*100,h,np.argsort(error[:,0]), np.argsort(error[:,1]),np.argsort(error[:,2]) ) )
+                    square_a,count_a,count2_a,rho_a,p_value_a=calculateMetrics(lwO_mean,lwO_std,ovi_a)
+                    square_b,count_b,count2_b,rho_b,p_value_b=calculateMetrics(lwO_mean,lwO_std,ovi_b)
+                    errors[ovitrap_id]=[[square_a,count_a,count2_a,rho_a,p_value_a],[square_b,count_b,count2_b,rho_b,p_value_b]]
+
+                for i,ovi_type in enumerate(['a','b']):
+                    error=np.array(errors)
+                    error=error[:,i,:]
+                    square,count,count2,rho=error[:,0],error[:,1],error[:,2],error[:,3]
+                    sort0,sort1,sort2,sort3=np.argsort(square),np.argsort(count),np.argsort(count2),np.argsort(rho)
+                    print('ovi:%s mf:%scm. h: %scm.---->(best) \t square: id:%s,score:%s \t count:id:%s,score:%s \t count2:id:%s,score:%s \t rho:id:%s,score:%s'%(ovi_type,mf,h,sort0[0],square[sort0[0]], sort1[-1],count[sort1[-1]], sort2[-1],count2[sort2[-1]],sort3[-1],rho[sort3[-1]] ) )
         pl.show()
 
     if(case==1):
-        for mf in [0.0]:
-            h=1.
+        for mf  in [3,3.1,3.2,3.3]:
+            h=10.
             configuration=Configuration('resources/2c.cfg')
             configuration.config_parser.set('location','name','cordoba.full')
             configuration.config_parser.set('simulation','end_date',str(datetime.date.today()))
@@ -180,14 +178,14 @@ def runCases(case):
             configuration.config_parser.set('breeding_site','manually_filled',','.join([str(mf)]+[str(0)]*(n-1)))
             model=Model(configuration)
             time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
-            utils.plot(model,subplots=[{'lwO':'','O':list([87,49,60,13,7,50,60,139]),'f':[utils.safeAdd]}],title='Manually Filled:%scm. Height: %scm.(Oct-Nov-Dic just prom available)'%(mf*100,h),plot_start_date=datetime.date(2017,10,1))
+            utils.showPlot(utils.plot(model,subplots=[{'lwO':'','O':list([90]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)), title='Manually Filled:%scm. Height: %scm.(Oct-Nov-Dic just prom available)'%(mf,h))
+            #utils.showPlot(utils.plot(model,subplots=[{'E':''}],plot_start_date=datetime.date(2017,10,1)),title='Manually Filled:%scm. Height: %scm.(Oct-Nov-Dic just prom available)'%(mf,h))
             print('mf:%s h:%s Max E: %s'%(mf,h,np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1))))
 
             #is OEquations perturbing the result somehow?No, the results match.
             #model2=Model(configuration)
             #time_range2,initial_condition2,Y2=model2.solveEquations(method='rk')
             #print(np.linalg.norm((Y[:,:model.parameters.OVIPOSITION.start]-Y2)))
-
 
 
 if(__name__ == '__main__'):

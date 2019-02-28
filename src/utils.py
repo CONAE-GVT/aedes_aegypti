@@ -276,7 +276,7 @@ def subData(time_range,Y,date_range,an_start_date):
             break#conserve the first one.
     return time_range[index:],Y[index:,:],date_range[index:]
 
-def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
+def plot(model,subplots,plot_start_date=None):
     time_range=model.time_range
     RES=model.Y
     parameters=model.parameters
@@ -297,8 +297,9 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
         if ('E' in subplot):
             for i,y in enumerate(applyFs(RES[:,EGG],subplot).transpose()):
                 bs_i=i%m
-                #data.append(go.Bar(x=date_range,y=y, name='E in [%.1f,%.1f)cm'%(bs_i*BS_lh,(bs_i+1)*BS_lh)))
-                data.append(go.Scatter(x=date_range,y=y, name='E in [%.1f,%.1f)cm'%(bs_i*BS_lh,(bs_i+1)*BS_lh)))
+                label='E in [%.1f,%.1f)cm'%(bs_i*BS_lh,(bs_i+1)*BS_lh)
+                data.append(go.Bar(x=date_range,y=y,name=label,text=label))
+                #data.append(go.Scatter(x=date_range,y=y, name='E in [%.1f,%.1f)cm'%(bs_i*BS_lh,(bs_i+1)*BS_lh)))
         if ('L' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,LARVAE],subplot), label='L'))
         if ('P' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,PUPAE],subplot), label='P'))
         if ('A1' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,ADULT1],subplot), label='A1'))
@@ -356,8 +357,8 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
                 ovitrap_dates=np.array([k for k in values.keys()])
                 ovi_a=np.array([values[date][0] for date in ovitrap_dates])
                 ovi_b=np.array([values[date][1] if len(values[date])>1 else None for date in ovitrap_dates])
-                data.append(go.Scatter(x=ovitrap_dates[ovi_a!=[None]], y=applyFs(ovi_a,subplot)[ovi_a!=[None]], name='Ovitrap %s A eggs'%ovitrap_id, mode = 'markers'))
-                data.append(go.Scatter(x=ovitrap_dates[ovi_b!=[None]], y=applyFs(ovi_b,subplot)[ovi_b!=[None]], name='Ovitrap %s B eggs'%ovitrap_id, mode = 'markers'))
+                data.append(go.Scatter(x=ovitrap_dates[ovi_a!=[None]], y=applyFs(ovi_a,subplot)[ovi_a!=[None]], name='Ovitrap %s A eggs'%ovitrap_id, mode = 'lines+markers'))
+                data.append(go.Scatter(x=ovitrap_dates[ovi_b!=[None]], y=applyFs(ovi_b,subplot)[ovi_b!=[None]], name='Ovitrap %s B eggs'%ovitrap_id, mode = 'lines+markers'))
 
         #debugging plots
         #Calls
@@ -369,9 +370,11 @@ def plot(model,subplots,plot_start_date=None,title='',figure=True,color=None):
             data.append(go.Scatter(x=date_range,y=model.parameters.negatives, label='negatives'))
             print('Negatives: %s'%sum(model.parameters.negatives))
 
-    #layout=go.Layout(title=title,barmode='stack')
-    layout=go.Layout(title=title)
-    ply.plot(go.Figure(data=data,layout=layout), filename=tempfile.NamedTemporaryFile().name)
+    return  data
+
+def showPlot(data,title=''):
+    layout=go.Layout(title=title,barmode='stack')
+    ply.plot(go.Figure(data=data,layout=layout), filename=tempfile.NamedTemporaryFile(prefix='plot_').name)
 
 ###############################################################Animation################################################################
 from PIL import ImageFont, ImageDraw,Image
