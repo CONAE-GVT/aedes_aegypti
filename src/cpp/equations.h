@@ -50,17 +50,6 @@ tensor vGamma(const tensor& vL, tensor vBS_a, const tensor& vW){
     for(unsigned int i=0;i<vL.size();i++) vGamma_t[i]=gamma(vL[i],vBS_a[i],vW[i]);
     return vGamma_t;
 }
-
-tensor waterEquations(const tensor& vW,scalar t, Parameters& parameters){
-    scalar T_t=parameters.weather.T(t);
-    scalar p_t=parameters.weather.p(t);
-    scalar RH_t=parameters.weather.RH(t);
-    tensor vmf_t=parameters.mf(t)*parameters.vBS_mf*parameters.vBS_h*10.;//#% -> cm -> mm
-    tensor vBS_h=parameters.vBS_h;
-    tensor dWdt=tensor(vW.size());
-    for(unsigned int i=0;i<vW.size();i++) dWdt[i]=dW(vW[i],vBS_h[i],T_t,p_t+vmf_t[i],RH_t);
-    return dWdt;
-}
 //</precipitation related functionality v>
 
 tensor vR_D(scalar T_t){//#day^-1
@@ -140,6 +129,8 @@ scalar dA2(scalar A1,scalar A2,scalar ovr1){
 
 tensor diff_eqs(const tensor& Y,scalar t,Parameters& parameters){
     scalar T_t=parameters.weather.T(t);
+    scalar p_t=parameters.weather.p(t);
+    scalar RH_t=parameters.weather.RH(t);
     tensor vR_D_t=vR_D(T_t);
     scalar elr=vR_D_t[0];
     scalar lpr=vR_D_t[1];
@@ -148,6 +139,7 @@ tensor diff_eqs(const tensor& Y,scalar t,Parameters& parameters){
     scalar ovr2=vR_D_t[4];
 
     scalar BS_a=parameters.BS_a;
+    tensor vBS_h=parameters.vBS_h;
     scalar BS_lh=parameters.BS_lh;
     tensor vBS_d=parameters.vBS_d;
     tensor vAlpha0=parameters.vAlpha0;
@@ -155,22 +147,25 @@ tensor diff_eqs(const tensor& Y,scalar t,Parameters& parameters){
     unsigned int n=parameters.n;
     matrix mBS_l=parameters.mBS_l;
 
-    tensor vW_t=parameters.vW(t);
     matrix vE=Utils::tensorToMatrix(Y[parameters.EGG],m,n);//equivalent to reshape and transpose
     tensor vL=Y[parameters.LARVAE];
     tensor vP=Y[parameters.PUPAE];
     scalar A1=Y[parameters.ADULT1];
     scalar A2=Y[parameters.ADULT2];
-    tensor vW_l=vW_t/BS_lh;
+    tensor vW=Y[parameters.WATER];
+    tensor vW_l=vW/BS_lh;
     matrix wet_mask=wetMask(vW_l,mBS_l);
+    tensor vmf_t=parameters.mf(t)*parameters.vBS_mf*10.;//# cm -> mm
 
     tensor dY=tensor(Y.size());
-    dY[parameters.EGG]    = Utils::matrixToTensor(dvE(vE,vL,A1,A2,vW_t,BS_a,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l));
-    dY[parameters.LARVAE] = dvL(vE,vL,vW_t,T_t,      BS_a,vBS_d,elr,lpr,vAlpha0,wet_mask);
+    dY[parameters.EGG]    = Utils::matrixToTensor(dvE(vE,vL,A1,A2,vW,BS_a,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l));
+    dY[parameters.LARVAE] = dvL(vE,vL,vW,T_t,      BS_a,vBS_d,elr,lpr,vAlpha0,wet_mask);
     dY[parameters.PUPAE]  = dvP(vL,vP,T_t,lpr,par);
     dY[parameters.ADULT1] = dA1(vP,A1,par,ovr1);
     dY[parameters.ADULT2] = dA2(A1,A2,ovr1);
-
+    tensor dW_t=tensor(n);
+    for(unsigned int i=0;i<n;i++) dW_t[i]=dW(vW[i],vBS_h[i],T_t,p_t+vmf_t[i],RH_t);
+    dY[parameters.WATER] = dW_t;
     return dY;//   # For odeint
 }
 

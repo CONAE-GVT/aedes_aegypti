@@ -31,9 +31,9 @@ struct Parameters{
     std::slice PUPAE;
     unsigned int ADULT1;
     unsigned int ADULT2;
+    std::slice WATER;
     Weather weather;
     std::function<scalar(scalar)> mf;
-    std::function<tensor(scalar)> vW;
 
 };
 

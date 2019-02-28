@@ -83,13 +83,6 @@ class Utils{
         return s;
     }
 
-
-    static std::vector<scalar> getColumn(std::vector<tensor> W, unsigned int j){
-        std::vector<scalar> W_j=std::vector<scalar>();
-        for(unsigned int i=0;i<W.size();i++) W_j.push_back(W[i][j]);
-        return W_j;
-    }
-
     static matrix tensorToMatrix(const tensor& v,unsigned int m,unsigned int n){
         matrix M=matrix(tensor(n),m);//m rows n columns
         for(unsigned int i=0;i<v.size();i++) M[int(i/n)][i%n]=v[i];
