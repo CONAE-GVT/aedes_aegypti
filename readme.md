@@ -79,24 +79,10 @@ or
 >python setup.py build_ext --inplace
 
 **Installing Boost**
->wget https://dl.bintray.com/boostorg/release/1.67.0/source/boost_1_67_0.tar.gz
->tar --gz -xf boost_1_67_0.tar.gz
->cd boost_1_67_0/
->sudo mkdir /home/exequiel/Downloads/libboost-python1.67/
->./bootstrap.sh --prefix=/home/exequiel/Downloads/libboost-python1.67/ -with-libraries=python
->./b2 install
->cd /home/exequiel/Downloads
-inside libboost-python1.67, create a folder "usr" and move "lib" and "include" there.
-Also create a folder "DEBIAN" with a file called "control" with Package:,Version:, Architecture:, etc. (you can download a deb package and use the control in there as a guide)
->dpkg-deb --build libboost-python1.67
->sudo dpkg -i libboost-python1.67
-Source: http://www.king-foo.com/2011/11/creating-debianubuntu-deb-packages/
-
+>sudo apt install libboost-python1.65-dev
 
 **c++ binding**
-> g++ -Wall -std=c++11 -Wno-deprecated-declarations  -I /usr/local/boost_1_67_0/include/ -I/usr/include/python2.7 -fpic  src/_equationsmodule.cpp -shared  -L /usr/local/boost_1_67_0/lib/ -lboost_python27 -lboost_numpy27 -o src/_equations.so -O3
->export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/boost_1_67_0/lib
->python src/_equationsmodule_test.py
+>g++ -O3 -Wall -I/usr/include/python3.6m/   -fpic  src/cpp/otero_precipitation_wrapper.cpp -shared  -lboost_python-py36 -lpython3.6m -o src/otero_precipitation_wrapper.so
 
 **To create an animation**
 >ffmpeg -framerate 250 -i out/A_%04d.png  out/A.webm
