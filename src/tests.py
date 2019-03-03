@@ -187,6 +187,21 @@ def runCases(case):
             #time_range2,initial_condition2,Y2=model2.solveEquations(method='rk')
             #print(np.linalg.norm((Y[:,:model.parameters.OVIPOSITION.start]-Y2)))
 
+try:
+    from otero_precipitation_wrapper import ModelWrapper as _Model
+except ImportError:
+    pass
+
+def runCpp():
+    model=_Model('resources/otero_precipitation.cfg')
+    Y1=np.array(model.solveEquations())
+    print(np.linalg.norm(Y1),Y1.shape)
+
+    model=Model(Configuration('resources/otero_precipitation.cfg'))
+    time_range,initial_condition,Y2=model.solveEquations(method='rk' )
+    print(np.linalg.norm(Y2),Y2.shape)
+
+    print('||Y1-Y2||=%s'%np.linalg.norm(Y1-Y2))
 
 if(__name__ == '__main__'):
     if(len(sys.argv)>2 and sys.argv[1]=='show'):
@@ -197,6 +212,8 @@ if(__name__ == '__main__'):
         runProject()
     elif(len(sys.argv)>1 and sys.argv[1]=='spatial'):
         runSpatial()
+    elif(len(sys.argv)>1 and sys.argv[1]=='cpp'):
+        runCpp()
     else:#the default is just a number indicating which test case to run, or none (test case 1 will will be default)
         if(len(sys.argv)<2):
             case=1
