@@ -3,13 +3,10 @@ import pylab as pl
 import math
 
 #"Elementary Differential Equations and Boundary Value Problem"Boyce, DiPrima:
-def solve(_dYdt,Y0,time_range,args=(),steps=1):
+def solve(dYdt,Y0,time_range,args=(),steps=1):
     #main
     Y=np.zeros([len(time_range),len(Y0)],dtype=np.float32)
     Y[0]=Y0#<---initial conditions
-    def dYdt(Y,t,_args):
-    	Y[Y<0]=0#this is to make rk work
-    	return np.array(_dYdt(Y,t,*_args))#decorate the function to return an np array
 
     for i,t in enumerate(time_range[:-1]):
         h=time_range[i+1]-time_range[i]
@@ -17,10 +14,10 @@ def solve(_dYdt,Y0,time_range,args=(),steps=1):
         h_j=h/float(steps)
         for j in range(0,steps):
             #Runge-Kutta's terms
-            K_n1=dYdt(Y_j,t,args)
-            K_n2=dYdt(Y_j + (h_j/2.)*K_n1, t + h_j/2.,args)
-            K_n3=dYdt(Y_j + (h_j/2.)*K_n2, t + h_j/2.,args)
-            K_n4=dYdt(Y_j + h_j*K_n3, t + h_j,args)
+            K_n1=dYdt(Y_j,t,h_j,*args)
+            K_n2=dYdt(Y_j + (h_j/2.)*K_n1, t + h_j/2.,h_j,*args)
+            K_n3=dYdt(Y_j + (h_j/2.)*K_n2, t + h_j/2.,h_j,*args)
+            K_n4=dYdt(Y_j + h_j*K_n3, t + h_j,h_j,*args)
 
             Y_j=Y_j+ (h_j/6.0)*(K_n1 + 2.0*K_n2 + 2.0*K_n3 + K_n4)
             t=t+h_j

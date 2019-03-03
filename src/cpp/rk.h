@@ -6,7 +6,7 @@
 
 class RK{
   public:
-    static std::vector<tensor> solve(tensor (*dYdt)(const tensor&, scalar,Parameters&),tensor& Y0,std::vector<scalar>& time_range,Parameters& parameters, int steps){//TODO:use c++ functor instead
+    static std::vector<tensor> solve(tensor (*dYdt)(const tensor&, scalar, scalar, Parameters&),tensor& Y0,std::vector<scalar>& time_range,Parameters& parameters, int steps){//TODO:use c++ functor instead
         //main
         std::vector<tensor> Y=std::vector<tensor>();
         Y.reserve(time_range.size());//small performance gain
@@ -19,10 +19,10 @@ class RK{
             scalar h_j=h/scalar(steps);
             for(int j=0;j<steps;j++){
                 //#Runge-Kutta's terms
-                tensor K_n1=dYdt(Y_j,t, parameters);
-                tensor K_n2=dYdt(Y_j + (h_j/2.)*K_n1, t + h_j/2., parameters);
-                tensor K_n3=dYdt(Y_j + (h_j/2.)*K_n2, t + h_j/2., parameters);
-                tensor K_n4=dYdt(Y_j + h_j*K_n3, t + h_j, parameters);
+                tensor K_n1=dYdt(Y_j,t,h_j, parameters);
+                tensor K_n2=dYdt(Y_j + (h_j/2.)*K_n1, t + h_j/2., h_j, parameters);
+                tensor K_n3=dYdt(Y_j + (h_j/2.)*K_n2, t + h_j/2., h_j, parameters);
+                tensor K_n4=dYdt(Y_j + h_j*K_n3, t + h_j, h_j, parameters);
 
                 Y_j = Y_j + (h_j/6.0)*(K_n1 + 2.0*K_n2 + 2.0*K_n3 + K_n4);
                 t=t+h_j;

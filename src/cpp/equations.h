@@ -15,29 +15,11 @@ tensor vDeltaH_H={100000.0,55990.0,-472379.00,1756481.0,1756481.0};// #-472379 v
 tensor vT_1_2H={14184.0,304.6,148.0,447.2,447.2};
 
 //<precipitation related functionality>
-//#Ivanov
-scalar QR(scalar RH_t,scalar T_t){//#in cm/day
-    return 6e-5* std::pow(25 + T_t-273.15, 2) * (100.-RH_t) * 0.1;//#cm
-}
-
-scalar QG(scalar p_t){//#Quantity gathered#in cm
-    return p_t*0.1;//#cm
-}
-
-/*
-    { QG(BS_s,t)-QR(BS_s,T(t))    if 0 < W < BS_h
-dW= { QG(BS_s,t)                  if W <= 0.0
-    { -QR(BS_s,T(t))               if W >= BS_h
-Note: in the implementation we needed to add functions to make function continuous, otherwise odeint breaks
-*/
-scalar dW(scalar W, scalar BS_h, scalar T_t, scalar p_t, scalar RH_t){//#in cm/day
-    scalar epsilon=1e-1;//#1mm
-    if(0+epsilon < W && W < BS_h-epsilon)
-        return QG(p_t)-QR(RH_t,T_t);
-    else if(W <= 0.0+epsilon)
-        return QG(p_t) - QR(RH_t,T_t)*(W/epsilon);
-    else// if( W >= BS_h-epsilon)//commented out to avoid warning(should have no effect)
-        return QG(p_t)*((BS_h-W)/epsilon) - QR(RH_t,T_t);
+tensor dW(tensor& vW, tensor& vBS_h, scalar T_t, tensor p_t, scalar RH_t, scalar h){//#in cm/day
+    tensor QG_t=p_t*0.1;//#cm/day
+    scalar QR_t=6e-5* std::pow(25 + T_t-273.15, 2) * (100.-RH_t) * 0.1;//#cm/day. #Ivanov
+    tensor dW_t=QG_t-QR_t;
+    return Utils::minimum(Utils::maximum(dW_t,-vW/h),(vBS_h-vW)/h);
 }
 
 scalar a0(scalar W){
@@ -127,7 +109,7 @@ scalar dA2(scalar A1,scalar A2,scalar ovr1){
 }
 
 
-tensor diff_eqs(const tensor& Y,scalar t,Parameters& parameters){
+tensor diff_eqs(const tensor& Y,scalar t,scalar h,Parameters& parameters){
     scalar T_t=parameters.weather.T(t);
     scalar p_t=parameters.weather.p(t);
     scalar RH_t=parameters.weather.RH(t);
@@ -163,9 +145,7 @@ tensor diff_eqs(const tensor& Y,scalar t,Parameters& parameters){
     dY[parameters.PUPAE]  = dvP(vL,vP,T_t,lpr,par);
     dY[parameters.ADULT1] = dA1(vP,A1,par,ovr1);
     dY[parameters.ADULT2] = dA2(A1,A2,ovr1);
-    tensor dW_t=tensor(n);
-    for(unsigned int i=0;i<n;i++) dW_t[i]=dW(vW[i],vBS_h[i],T_t,p_t+vmf_t[i],RH_t);
-    dY[parameters.WATER] = dW_t;
+    dY[parameters.WATER] = dW(vW,vBS_h,T_t,p_t+vmf_t,RH_t,h);
     return dY;//   # For odeint
 }
 

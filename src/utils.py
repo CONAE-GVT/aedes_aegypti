@@ -221,8 +221,8 @@ class OEquations:
         model.parameters.initial_condition=np.append(model.parameters.initial_condition,np.zeros(m*n))
         assert model.parameters.initial_condition[model.parameters.ADULT1]==model.parameters.initial_condition[model.parameters.ADULT2]==0#otherwise the above statement is false.
 
-    def __call__(self,Y,t,parameters):
-        dY=self.diff_eqs(Y,t,parameters)
+    def __call__(self,Y,t,h,parameters):
+        dY=self.diff_eqs(Y,t,h,parameters)
         T_t=parameters.weather.T(t)
         elr,lpr,par,ovr1,ovr2=vR_D(T_t)
         BS_lh,vBS_d,m,n,mBS_l=parameters.BS_lh,parameters.vBS_d,parameters.m,parameters.n,parameters.mBS_l

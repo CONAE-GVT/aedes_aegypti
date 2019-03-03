@@ -10,28 +10,11 @@ vT_1_2H=np.array([14184.0,304.6,148.0,447.2,447.2])
 
 
 #<precipitation related functionality v>
-
-#Ivanov
-def QR(RH_t,T_t):#in cm/day
-    return 6e-5*(25 + T_t-273.15)**2 * (100.-RH_t) * 0.1#cm
-
-def QG(p_t):#Quantity gathered#in cm
-    return p_t*0.1#cm
-
-'''
-    { QG(BS_s,t)-QR(BS_s,T(t))    if 0 < W < BS_h
-dW= { QG(BS_s,t)                  if W <= 0.0
-    { -QR(BS_s,T(t))               if W >= BS_h
-Note: in the implementation we needed to add functions to make function continuous, otherwise odeint breaks
-'''
-def dW(W,BS_h,T_t,p_t,RH_t):#in cm/day
-    epsilon=1e-1#1mm
-    if(0+epsilon < W < BS_h-epsilon):
-        return QG(p_t)-QR(RH_t,T_t)
-    elif(W <= 0.0+epsilon):
-        return QG(p_t) - QR(RH_t,T_t)*(W/epsilon)
-    elif( W >= BS_h-epsilon):
-        return QG(p_t)*((BS_h-W)/epsilon) - QR(RH_t,T_t)
+def dW(vW,vBS_h,T_t,p_t,RH_t,h):#in cm/day
+    QG_t=p_t*0.1#cm/day
+    QR_t=6e-5*(25 + T_t-273.15)**2 * (100.-RH_t) * 0.1#cm/day. #Ivanov
+    dW_t=QG_t-QR_t
+    return np.minimum(np.maximum(dW_t,-vW/h),(vBS_h-vW)/h)
 
 def a0(W):
     return 70.0* W
@@ -99,7 +82,7 @@ def dA2(A1,A2,ovr1):
     ma=0.09#for T in [278,303]
     return ovr1*A1 - ma*A2
 
-def diff_eqs(Y,t,parameters):
+def diff_eqs(Y,t,h,parameters):
     '''The main set of equations'''
     T_t=parameters.weather.T(t)
     p_t=parameters.weather.p(t)
@@ -119,5 +102,5 @@ def diff_eqs(Y,t,parameters):
     dY[PUPAE]  = dvP(vL,vP,T_t,lpr,par)
     dY[ADULT1] = dA1(vP,A1,par,ovr1)
     dY[ADULT2] = dA2(A1,A2,ovr1)
-    dY[WATER] = [dW(vW[i],vBS_h[i],T_t,p_t+vmf_t[i],RH_t) for i in range(0,n)]
+    dY[WATER] = dW(vW,vBS_h,T_t,p_t+vmf_t,RH_t,h)
     return dY   # For odeint

@@ -108,6 +108,17 @@ class Utils{
         for(tensor t:tensors) for(scalar s:t) c.push_back(s);
         return tensor(c.data(),c.size());
     }
+
+    static tensor minimum(const tensor& tensor1,const tensor& tensor2){
+        tensor minimum=tensor(tensor1.size());
+        for(unsigned int i=0;i<minimum.size();i++) minimum[i]=std::min(tensor1[i],tensor2[i]);
+        return minimum;
+    }
+    static tensor maximum(const tensor& tensor1,const tensor& tensor2){
+        tensor maximum=tensor(tensor1.size());
+        for(unsigned int i=0;i<maximum.size();i++) maximum[i]=std::max(tensor1[i],tensor2[i]);
+        return maximum;
+    }
 };
 
 #endif
