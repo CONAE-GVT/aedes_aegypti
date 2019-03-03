@@ -187,6 +187,15 @@ def runCases(case):
             #time_range2,initial_condition2,Y2=model2.solveEquations(method='rk')
             #print(np.linalg.norm((Y[:,:model.parameters.OVIPOSITION.start]-Y2)))
 
+    if(case==2):
+            configuration=Configuration('resources/1c.cfg')
+            configuration.config_parser.set('location','name','cordoba.full')
+            configuration.config_parser.set('simulation','end_date',str(datetime.date.today()))
+            mf,h=configuration.getArray('breeding_site','manually_filled')[0],configuration.getArray('breeding_site','height')[0]
+            model=Model(configuration)
+            time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
+            utils.showPlot(utils.plot(model,subplots=[{'E':''}],plot_start_date=datetime.date(2017,10,1)),title='Manually Filled:%scm. Height: %scm.(Oct-Nov-Dic just prom available)'%(mf,h))
+
 
 if(__name__ == '__main__'):
     if(len(sys.argv)>2 and sys.argv[1]=='show'):
