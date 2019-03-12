@@ -80,7 +80,7 @@ def extractDailyDataFromIMERG(lat,lon,a_date):
     lats = grp.variables['lat'][:]
     lons = grp.variables['lon'][:]
     precipitations=grp.variables['precipitationCal']
-    p=precipitations[(abs(lats-lat)).argmin(),(abs(lons-lon)).argmin()]
+    p=precipitations[(abs(lons-lon)).argmin(),(abs(lats-lat)).argmin()]
     grp.close()
     return p
 

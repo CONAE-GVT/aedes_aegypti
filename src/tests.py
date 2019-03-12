@@ -168,7 +168,7 @@ def runCases(case):
         pl.show()
 
     if(case==1):
-        for mf  in [3,3.1,3.2,3.3]:
+        for mf  in [0]:
             h=10.
             configuration=Configuration('resources/2c.cfg')
             configuration.config_parser.set('location','name','cordoba.full')
@@ -178,8 +178,9 @@ def runCases(case):
             configuration.config_parser.set('breeding_site','manually_filled',','.join([str(mf)]+[str(0)]*(n-1)))
             model=Model(configuration)
             time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
-            utils.showPlot(utils.plot(model,subplots=[{'lwO':'','O':list([90]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)), title='Manually Filled:%scm. Height: %scm.(Oct-Nov-Dic just prom available)'%(mf,h))
+            utils.showPlot(utils.plot(model,subplots=[{'lwO':'','O':list([114,107,88,93,60,9]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)), title='Manually Filled:%scm. Height: %scm.(Oct-Nov-Dic just prom available)'%(mf,h))
             #utils.showPlot(utils.plot(model,subplots=[{'E':''}],plot_start_date=datetime.date(2017,10,1)),title='Manually Filled:%scm. Height: %scm.(Oct-Nov-Dic just prom available)'%(mf,h))
+            #utils.showPlot(utils.plot(model,subplots=[{'pa':''}]))
             print('mf:%s h:%s Max E: %s'%(mf,h,np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1))))
 
             #is OEquations perturbing the result somehow?No, the results match.
@@ -198,6 +199,13 @@ def runCases(case):
             time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
             utils.showPlot(utils.plot(model,subplots=[{'E':''}],plot_start_date=datetime.date(2017,10,1)),title='Manually Filled:%scm. Height: %scm.(Oct-Nov-Dic just prom available)'%(mf,h))
 
+    if(case==3):
+        for year in range(2016,2019):
+            for month in range(1,13):
+                start_date,end_date=datetime.date(year,month,1),datetime.date(year+int(month/12),month%12 +1,1)
+                precipitations = utils.getPrecipitationsFromCsv(sys.argv[2],start_date,end_date)
+                print('period: %s to %s        %smm.'%(start_date,end_date,np.sum(precipitations)))
+
 try:
     from otero_precipitation_wrapper import ModelWrapper as _Model
 except ImportError:
@@ -214,6 +222,19 @@ def runCpp():
 
     print('||Y1-Y2||=%s'%np.linalg.norm(Y1-Y2))
 
+import netCDF4 as nc
+def runInfo(nc_filename):
+    grp = nc.Dataset(nc_filename)
+    lats = grp.variables['lat'][:]
+    lons = grp.variables['lon'][:]
+    precipitations=grp.variables['precipitationCal']
+    lat=-31.420082
+    lon=-64.188774
+    p=precipitations[(abs(lons-lon)).argmin(),(abs(lats-lat)).argmin()]
+    print(precipitations.shape)
+    print(grp)
+    print(p)
+
 
 
 if(__name__ == '__main__'):
@@ -227,6 +248,8 @@ if(__name__ == '__main__'):
         runSpatial()
     elif(len(sys.argv)>1 and sys.argv[1]=='cpp'):
         runCpp()
+    elif(len(sys.argv)>1 and sys.argv[1]=='info'):
+        runInfo(sys.argv[2])
     else:#the default is just a number indicating which test case to run, or none (test case 1 will will be default)
         if(len(sys.argv)<2):
             case=1

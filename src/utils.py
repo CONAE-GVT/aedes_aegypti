@@ -342,10 +342,15 @@ def plot(model,subplots,plot_start_date=None):
         if ('T' in subplot):
             data.append(go.Scatter(x=date_range,y=applyFs(np.array([T(t)- 273.15 for t in time_range]),subplot),name='Temperature in C'))
 
-        #precipitations(in mm.)
+        #precipitations rate(in mm./day)
         if ('p' in subplot):
             data.append(go.Scatter(x=date_range,y=applyFs(np.array([p(t+0.5) for t in time_range]),subplot), name='p(t+1/2) in mm./day'))
 
+
+        #precipitations accumulated(in mm.)
+        if ('pa' in subplot):
+            precipitations = getPrecipitationsFromCsv('data/public/'+model.parameters.location['name']+'.csv',model.start_date,model.end_date)
+            data.append(go.Bar(x=date_range,y=precipitations,name='Accumulated precipitations in mm.'))
 
         #relative Humidity
         if ('RH' in subplot):
