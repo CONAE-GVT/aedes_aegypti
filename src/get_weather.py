@@ -21,6 +21,7 @@ FORECAST_FOLDER=DATA_FOLDER+'/forecast/'
 FORECAST_PGB_FOLDER=FORECAST_FOLDER+'/pgb/'
 FORECAST_FLX_FOLDER=FORECAST_FOLDER+'/flx/'
 FORECAST_RANGE=30#in days
+HISTORY_FOLDER=DATA_FOLDER+'/.history/'
 SLEEP=5
 LOG_FILENAME='logs/get_weather.log'
 
@@ -165,7 +166,9 @@ def joinFullWeather():
     for location in getLocations():
         historic_data=open(DATA_FOLDER+location+'.csv','r').read()
         forecast_data=open(DATA_FOLDER+location+'.forecast.csv','r').read()
-        open(DATA_FOLDER+location+'.full.csv','w').write(historic_data+ '\n'.join(forecast_data.split('\n')[1:]))#remove the header of forecast data
+        filename=location+'.full.csv'
+        os.rename(DATA_FOLDER+filename,HISTORY_FOLDER+filename.replace('.csv','.weather-'+datetime.datetime.now().strftime('%Y-%m-%d')+'.csv'))#backup old results
+        open(DATA_FOLDER+filename,'w').write(historic_data+ '\n'.join(forecast_data.split('\n')[1:]))#remove the header of forecast data
 
 if(__name__ == '__main__'):
     FORMAT='%Y-%m-%d'
