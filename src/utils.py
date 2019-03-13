@@ -349,7 +349,7 @@ def plot(model,subplots,plot_start_date=None):
 
         #precipitations accumulated(in mm.)
         if ('pa' in subplot):
-            precipitations = getPrecipitationsFromCsv('data/public/'+model.parameters.location['name']+'.csv',model.start_date,model.end_date)
+            precipitations = getPrecipitationsFromCsv('data/public/'+model.parameters.location['name']+'.csv',date_range[0].date(),date_range[-1].date())
             data.append(go.Bar(x=date_range,y=precipitations,name='Accumulated precipitations in mm.'))
 
         #relative Humidity
