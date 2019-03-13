@@ -167,7 +167,7 @@ def joinFullWeather():
         historic_data=open(DATA_FOLDER+location+'.csv','r').read()
         forecast_data=open(DATA_FOLDER+location+'.forecast.csv','r').read()
         filename=location+'.full.csv'
-        os.rename(DATA_FOLDER+filename,HISTORY_FOLDER+filename.replace('.csv','.weather-'+datetime.datetime.now().strftime('%Y-%m-%d')+'.csv'))#backup old results
+        if(os.path.isfile(DATA_FOLDER+filename)): os.rename(DATA_FOLDER+filename,HISTORY_FOLDER+filename.replace('.csv','.weather-'+datetime.datetime.now().strftime('%Y-%m-%d')+'.csv'))#backup old results
         open(DATA_FOLDER+filename,'w').write(historic_data+ '\n'.join(forecast_data.split('\n')[1:]))#remove the header of forecast data
 
 if(__name__ == '__main__'):
