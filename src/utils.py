@@ -365,6 +365,8 @@ def plot(model,subplots,plot_start_date=None):
                 data.append(go.Scatter(x=ovitrap_dates[ovi_a!=[None]], y=applyFs(ovi_a,subplot)[ovi_a!=[None]], name='Ovitrap %s A eggs'%ovitrap_id, mode = 'lines+markers'))
                 data.append(go.Scatter(x=ovitrap_dates[ovi_b!=[None]], y=applyFs(ovi_b,subplot)[ovi_b!=[None]], name='Ovitrap %s B eggs'%ovitrap_id, mode = 'lines+markers'))
 
+        if('cd' in subplot):#current date
+            data.append(go.Scatter(x=[datetime.date.today()],y=[0],name='Current Date',mode='markers'));
         #debugging plots
         #Calls
         if ('c' in subplot):
