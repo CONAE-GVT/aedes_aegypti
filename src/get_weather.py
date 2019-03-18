@@ -56,7 +56,7 @@ def downloadData(start_date,end_date):
 #IMERG#
 #TODO: take into account the utc time. ?
 def getFilenameForIMERG(a_date):
-    return '3B-DAY-E.MS.MRG.3IMERG.{year}{month:02}{day:02}-S000000-E235959.V05.nc4'.format(year=a_date.year,month=a_date.month,day=a_date.day)
+    return '3B-DAY-L.MS.MRG.3IMERG.{year}{month:02}{day:02}-S000000-E235959.V05.nc4'.format(year=a_date.year,month=a_date.month,day=a_date.day)
 
 #https://wiki.earthdata.nasa.gov/display/EL/How+To+Access+Data+With+Python
 def downloadDataFromIMERG(start_date,end_date,folder):
@@ -69,7 +69,7 @@ def downloadDataFromIMERG(start_date,end_date,folder):
     for a_date in daterange(start_date,end_date):
         filename=getFilenameForIMERG(a_date)
         if(path.isfile(folder+'/'+filename)): continue#TODO: Also check filesize
-        url='https://gpm1.gesdisc.eosdis.nasa.gov/data/GPM_L3/GPM_3IMERGDE.05/{year}/{month:02}/{filename}'.format(year=a_date.year,month=a_date.month,filename=filename)
+        url='https://gpm1.gesdisc.eosdis.nasa.gov/data/GPM_L3/GPM_3IMERGDL.05/{year}/{month:02}/{filename}'.format(year=a_date.year,month=a_date.month,filename=filename)
         request = urllib.request.Request(url)
         response = urllib.request.urlopen(request)
         handle = open(folder+'/'+filename, 'wb').write(response.read())

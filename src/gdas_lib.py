@@ -7,10 +7,13 @@ import time
 import urllib
 import logging
 import getpass
+import tarfile
 import datetime
 import http.cookiejar
 from utils import daterange
+from get_weather import GDAS_FOLDER
 from configparser import ConfigParser
+
 
 base='https://rda.ucar.edu/apps/'
 config_parser = ConfigParser()
@@ -22,6 +25,7 @@ loginurl='https://rda.ucar.edu/cgi-bin/login'
 FILENAME_FORMAT='gdas1.fnl0p25.%d%02d%02d%s.f%s.grib2'
 LOG_FILENAME='logs/get_weather.log'
 logging.basicConfig(format='%(levelname)s: %(asctime)s %(message)s',filename=LOG_FILENAME,level=logging.DEBUG)
+GDAS_TMP_FOLDER=GDAS_FOLDER+'/.tmp/'
 
 def init():
     passman = urllib.request.HTTPPasswordMgrWithDefaultRealm()
@@ -95,15 +99,23 @@ def purge(index):#method not tested
 def getFilename(a_date,a_time,f):
     return FILENAME_FORMAT%(a_date.year,a_date.month,a_date.day,a_time,f)
 
-def downloadData(start_date,end_date,folder):
+def downloadData(start_date,end_date):
     init()
     index=submit(start_date,end_date)
     waitFor(index)
-    download(index,folder)
+    download(index,GDAS_TMP_FOLDER)
     purge(index)
 
 class GDASError(Exception):
     pass
+
+def unpack():
+    for filename in os.listdir(GDAS_TMP_FOLDER) :
+        if(os.path.isfile(GDAS_TMP_FOLDER+filename) and tarfile.is_tarfile(GDAS_TMP_FOLDER+filename)):
+            tarfile.open(GDAS_TMP_FOLDER+filename).extractall(GDAS_FOLDER)
+    for filename in os.listdir(GDAS_FOLDER) :
+        if(os.path.isfile(GDAS_FOLDER+filename)):
+            os.rename(GDAS_FOLDER+filename,GDAS_FOLDER+filename.split('.spasub')[0])
 
 if __name__=='__main__':
     FORMAT='%Y-%m-%d'
@@ -113,4 +125,5 @@ if __name__=='__main__':
     elif(len(sys.argv)==1):
         start_date,end_date=datetime.date.today()-datetime.timedelta(days=1),datetime.date.today()
 
-    downloadData(start_date,end_date,'data/public/gdas')
+    downloadData(start_date,end_date)
+    unpack()
