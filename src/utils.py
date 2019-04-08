@@ -170,8 +170,8 @@ class MetricsEquations:
         model.parameters.calls=None
         model.parameters.negatives=None
 
-    def __call__(self,Y,t,parameters):
-        dY=self.diff_eqs(Y,t,parameters)
+    def __call__(self,Y,t,h,parameters):
+        dY=self.diff_eqs(Y,t,h,parameters)
         time_range=self.model.time_range
         #account calls
         if(parameters.calls is None):
