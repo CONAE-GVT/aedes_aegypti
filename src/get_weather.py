@@ -33,8 +33,8 @@ def downloadForecast():
     end_date=start_date+datetime.timedelta(days=FORECAST_RANGE)
     f='00'
     forecast_types={
-    FORECAST_FLX_FOLDER:'http://nomads.ncep.noaa.gov/cgi-bin/filter_cfs_flx.pl?file=flxf{f_year}{f_month:02}{f_day:02}{time}.01.{year}{month:02}{day:02}{f}.grb2&lev_2_m_above_ground=on&lev_surface=on&var_PRATE=on&var_TMAX=on&var_TMIN=on&var_TMP=on&subregion=&leftlon=-68&rightlon=-60&toplat=-28&bottomlat=-36&dir=%%2Fcfs.{year}{month:02}{day:02}%%2F{f}%%2F6hrly_grib_01',
-    FORECAST_PGB_FOLDER:'http://nomads.ncep.noaa.gov/cgi-bin/filter_cfs_pgb.pl?file=pgbf{f_year}{f_month:02}{f_day:02}{time}.01.{year}{month:02}{day:02}{f}.grb2&lev_2_m_above_ground=on&lev_surface=on&var_APCP=on&var_RH=on&subregion=&leftlon=-68&rightlon=-60&toplat=-28&bottomlat=-36&dir=%%2Fcfs.{year}{month:02}{day:02}%%2F{f}%%2F6hrly_grib_01'
+    FORECAST_FLX_FOLDER:'http://nomads.ncep.noaa.gov/cgi-bin/filter_cfs_flx.pl?file=flxf{f_year}{f_month:02}{f_day:02}{time}.01.{year}{month:02}{day:02}{f}.grb2&lev_2_m_above_ground=on&lev_surface=on&var_PRATE=on&var_TMAX=on&var_TMIN=on&var_TMP=on&subregion=&leftlon=-76&rightlon=-52&toplat=-19&bottomlat=-56&dir=%%2Fcfs.{year}{month:02}{day:02}%%2F{f}%%2F6hrly_grib_01',
+    FORECAST_PGB_FOLDER:'http://nomads.ncep.noaa.gov/cgi-bin/filter_cfs_pgb.pl?file=pgbf{f_year}{f_month:02}{f_day:02}{time}.01.{year}{month:02}{day:02}{f}.grb2&lev_2_m_above_ground=on&lev_surface=on&var_APCP=on&var_RH=on&subregion=&leftlon=-76&rightlon=-52&toplat=-19&bottomlat=-56&dir=%%2Fcfs.{year}{month:02}{day:02}%%2F{f}%%2F6hrly_grib_01'
     }
     for key in forecast_types.keys():
         for a_date in daterange(start_date,end_date):
@@ -94,7 +94,7 @@ def downloadDataFromGDAS(start_date,end_date,folder):
     for a_date in daterange(start_date,end_date):
         for a_time in ['00','06','12','18']:
             for a_forecast in ['00','03','06','09']:#a forcast time
-                url='http://nomads.ncep.noaa.gov/cgi-bin/filter_gdas_0p25.pl?file=gdas.t%sz.pgrb2.0p25.f0%s&lev_2_m_above_ground=on&var_GUST=on&var_RH=on&var_TCDC=on&var_TMAX=on&var_TMIN=on&var_TMP=on&subregion=&leftlon=-68&rightlon=-60&toplat=-28&bottomlat=-36&dir=%%2Fgdas.%d%02d%02d'%(a_time,a_forecast,a_date.year,a_date.month,a_date.day)
+                url='http://nomads.ncep.noaa.gov/cgi-bin/filter_gdas_0p25.pl?file=gdas.t%sz.pgrb2.0p25.f0%s&lev_2_m_above_ground=on&var_GUST=on&var_RH=on&var_TCDC=on&var_TMAX=on&var_TMIN=on&var_TMP=on&subregion=&leftlon=-76&rightlon=-52&toplat=-19&bottomlat=-56&dir=%%2Fgdas.%d%02d%02d'%(a_time,a_forecast,a_date.year,a_date.month,a_date.day)
                 filename=getFilenameForGDAS(a_date,a_time,f=a_forecast)
                 open(folder+'/'+filename, 'wb').write(urllib.request.urlopen(url).read())
                 time.sleep(SLEEP)
