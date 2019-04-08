@@ -8,6 +8,7 @@ sys.path.append('./src')
 import utils
 from config import Configuration
 from otero_precipitation import Model
+from equations import diff_eqs
 
 SCENARIO_FULLNAMES={'rc':'condiciones_regulares','it':'temperatura_aumentada','dt':'temperatura_disminuida','ip':'precipitacion_aumentada','dp':'precipitacion_disminuida','oc':'contenedores_externos','ic':'contenedores_internos'}
 
@@ -58,7 +59,7 @@ def runSimulation(GET):
     end_date=datetime.datetime.strptime(GET.get('end_date'),'%Y-%m-%d').date()
     location=GET.get('location')
     scenario=GET.get('scenario')
-    configuration=Configuration('resources/otero_precipitation.cfg',
+    configuration=Configuration('resources/1c.cfg',
         {'simulation':{
             'start_date':start_date,
             'end_date':end_date,
@@ -70,20 +71,26 @@ def runSimulation(GET):
     configuration=getConfig(configuration,scenario)
     model=applyScenario(Model(configuration), scenario)
 
-    time_range,initial_condition,Y= model.solveEquations(method='rk')
-    EGG,LARVAE,ADULT1,ADULT2=model.parameters.EGG,model.parameters.LARVAE,model.parameters.ADULT1,model.parameters.ADULT2
+    time_range,initial_condition,Y= model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
+    EGG,LARVAE,ADULT1,ADULT2,OVIPOSITION=model.parameters.EGG,model.parameters.LARVAE,model.parameters.ADULT1,model.parameters.ADULT2,model.parameters.OVIPOSITION
     BS_a=configuration.getFloat('breeding_site','amount')
+    indexOf=lambda t: (np.abs(time_range-t)).argmin()
 
     E=[ [ daysSinceEpoch(start_datetime,t), np.sum(Y[i,EGG])/BS_a ] for i,t in enumerate(time_range)]
     L=[ [ daysSinceEpoch(start_datetime,t), np.sum(Y[i,LARVAE])/BS_a ] for i,t in enumerate(time_range)]
     A=[ [ daysSinceEpoch(start_datetime,t), (Y[i,ADULT1]+Y[i,ADULT2])/BS_a ] for i,t in enumerate(time_range)]
 
+    lwO=np.array([Y[indexOf(t),OVIPOSITION]-Y[indexOf(t-7),OVIPOSITION] for t in time_range])
+    lwO_mean=np.array([lwO[indexOf(t-7):indexOf(t+7)].mean(axis=0) for t in time_range])
+    O=[ [ daysSinceEpoch(start_datetime,t), np.sum(lwO_mean[i])/BS_a ] for i,t in enumerate(time_range)]
+
     weather=model.parameters.weather
-    p=[ [ daysSinceEpoch(start_datetime,t), weather.p(t) ] for t in time_range]
+    precipitations = utils.getPrecipitationsFromCsv('data/public/'+location+'.full.csv',start_date,end_date)
+    p=[ [ daysSinceEpoch(start_datetime,t), precipitations[int(t)] ] for t in time_range]
     T=[ [ daysSinceEpoch(start_datetime,t), np.asscalar(weather.T(t)) - 273.15 ] for t in time_range]
     RH=[ [ daysSinceEpoch(start_datetime,t), np.asscalar(weather.RH(t)) ] for t in time_range]
 
     return json.dumps({
-                        'population':[{'name':'Huevos','data':E},{'name':'Larvas','data':L},{'name':'Adultos','data':A}],
-                        'weather':[{'name':'Temperatura','data':T},{'name':'Humedad Relativa','data':RH},{'name':'Precipitacion','data':p}]
+                        'population':[{'name':'Huevos','data':E,'type':'scatter'},{'name':'Larvas','data':L,'type':'scatter'},{'name':'Adultos','data':A,'type':'scatter'},{'name':'Oviposicion','data':O,'type':'scatter'}],
+                        'weather':[{'name':'Temperatura','data':T,'type':'scatter'},{'name':'Humedad Relativa','data':RH,'type':'scatter'},{'name':'Precipitacion','data':p,'type':'bar'}]
                         })

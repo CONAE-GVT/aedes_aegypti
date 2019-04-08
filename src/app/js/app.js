@@ -59,7 +59,7 @@ $(document).ready(function() {
         x:[],
         y:[],
         name: serie_xy.name,
-        type: 'scatter'
+        type: serie_xy.type
       }
       $(serie_xy.data).each(function( index, value ) {
         trace.x.push(new Date(value[0]));
