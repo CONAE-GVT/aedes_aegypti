@@ -12,48 +12,6 @@ import equations
 from spatial_equations import diff_eqs as spatial_diff_eqs
 import pylab as pl
 
-def testModel(configuration, subplots=[],plot_start_date=None,title='',figure=True,color=None):
-    model=Model(configuration)
-    time_range,INPUT,RES=model.solveEquations(equations=utils.MetricsEquations(model,diff_eqs),method='rk' )
-    utils.plot(model,subplots,plot_start_date,title,figure,color)
-    for warning in model.warnings:
-        print('# WARNING: ' + warning)
-
-def runOviShow(folder):
-    config_filenames=[filename for filename in os.listdir(folder) if filename.endswith('.cfg')]
-    for config_filename in config_filenames:
-        for ovitrap_id in re.findall(r'.*_ovi([0-9]+)\.cfg',config_filename):
-            testModel(Configuration(folder+'/'+config_filename),subplots=[ ['E','P','A1+A2',[utils.safeAdd,utils.normalize] ],{'lwE':'','O':[int(ovitrap_id)+1],'f':[utils.replaceNegativesWithZeros,utils.safeAdd,utils.safeNormalize]}])
-
-
-def runShow(folder):
-    filenames=[filename for filename in os.listdir(folder) if re.match(r'.*cordoba\.[0-9]+.*\.csv',filename)]
-    filenames.sort()
-    for i,filename in enumerate(filenames):
-        configuration=Configuration('resources/otero_precipitation.cfg',
-            {'simulation':{
-                'start_date':datetime.date(2017,7,1),
-                'end_date':datetime.date(2019,1,4),
-            }
-            })
-        configuration.config_parser.set('location','name',filename.replace('.csv',''))
-        p=i/len(filenames)
-        color=p*np.array([1,0,0]) + (1-p)*np.array([0,1,0])
-        testModel(configuration,subplots=[ ['A1+A2',[utils.safeAdd] ],['T'] ],plot_start_date=datetime.date(2018,12,1),title=': '+configuration.getString('location','name'),color=color.tolist(),figure=False)
-
-
-def runProject():
-    config=Configuration('resources/otero_precipitation.cfg',
-        {'simulation':{
-            'start_date':datetime.date(2017,7,1),
-            'end_date':datetime.date.today()+datetime.timedelta(30),
-        }
-        })
-    for location in utils.getLocations():
-        config.config_parser.set('location','name',location+'.full')
-        testModel(config,subplots=[['E','A1+A2',[utils.safeAdd,utils.normalize] ]],title=location)
-
-
 def runSpatial():
     configuration=Configuration('resources/otero_precipitation.cfg')
     configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(30)))
@@ -205,6 +163,23 @@ def runCases(case):
                 start_date,end_date=datetime.date(year,month,1),datetime.date(year+int(month/12),month%12 +1,1)
                 precipitations = utils.getPrecipitationsFromCsv(sys.argv[2],start_date,end_date)
                 print('period: %s to %s        %smm.'%(start_date,end_date,np.sum(precipitations)))
+    if(case==4):
+        ovi_range=range(1,151)
+        ovi_mean=[1e10]*151
+        for ovitrap_id in ovi_range:
+            OVITRAP_FILENAME='data/private/ovitrampas_2017-2018.full.csv'
+            values=utils.getOvitrapEggsFromCsv2(OVITRAP_FILENAME,None,None,ovitrap_id)
+            dates=values.keys()
+            ovi_a=[values[date][0] if date in values else None for date in dates]#TODO:WARNING!this will repeat values if model granularity is not 1 value per day.
+            ovi_a=np.array(ovi_a,dtype=np.float)#this change None for np.nan
+            ovi_b=[values[date][1] if (date in values and len(values[date])>1) else None for date in dates]
+            ovi_b=np.array(ovi_b,dtype=np.float)#this change None for np.nan
+            ovi_mean[ovitrap_id]=np.nanmean(np.abs(ovi_a-ovi_b)/(ovi_a+ovi_b))
+
+        ovi_mean=np.array(ovi_mean)
+        ovi_ordered=np.argsort(ovi_mean)
+        print(ovi_ordered)
+        print(ovi_mean[ovi_ordered])
 
 try:
     from otero_precipitation_wrapper import ModelWrapper as _Model
@@ -238,13 +213,7 @@ def runInfo(nc_filename):
 
 
 if(__name__ == '__main__'):
-    if(len(sys.argv)>2 and sys.argv[1]=='show'):
-            runShow(sys.argv[2])
-    elif(len(sys.argv)>2 and sys.argv[1]=='ovishow'):
-        runOviShow(sys.argv[2])
-    elif(len(sys.argv)>1 and sys.argv[1]=='project'):
-        runProject()
-    elif(len(sys.argv)>1 and sys.argv[1]=='spatial'):
+    if(len(sys.argv)>1 and sys.argv[1]=='spatial'):
         runSpatial()
     elif(len(sys.argv)>1 and sys.argv[1]=='cpp'):
         runCpp()
