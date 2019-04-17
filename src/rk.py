@@ -25,7 +25,11 @@ def solve(dYdt,Y0,time_range,args=(),steps=1):
 
     return Y
 
-import cupy as cp
+try:
+    import cupy as cp
+except ImportError:
+    pass
+
 #this is way too similar to the RK method above
 def cuda_solve(_dYdt,Y0,time_range,args=(),steps=1,dtype=np.float32):
     #numpy array ----> cupy arrays
