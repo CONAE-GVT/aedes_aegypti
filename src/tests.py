@@ -56,22 +56,11 @@ import equation_fitter
 import scipy.stats as stats
 from scipy import interpolate
 def calculateMetrics(lwO_mean,lwO_std,ovitrap_eggs_i):
-    lwO_u=np.sum(lwO_mean+lwO_std,axis=1)
-    lwO_l=np.sum(lwO_mean-lwO_std,axis=1)
-    lwO_2u=np.sum(lwO_mean+1.5*lwO_std,axis=1)
-    lwO_2l=np.sum(lwO_mean- 1.5*lwO_std,axis=1)
-    V=np.sum(lwO_mean,axis=1)
-
-    V/=np.max(V)
-    ovitrap_eggs_i/=np.nanmax(ovitrap_eggs_i)
-    d=np.nansum((ovitrap_eggs_i-V)**2 )/ np.where(~np.isnan(ovitrap_eggs_i),1,0).sum()
-
-    rho,p_value=stats.pearsonr(ovitrap_eggs_i[~np.isnan(ovitrap_eggs_i)], V[~np.isnan(ovitrap_eggs_i)])
-
     valid_ovi_idx=~np.isnan(ovitrap_eggs_i)
-    count=np.sum( np.where(np.logical_and(lwO_l[valid_ovi_idx]<=ovitrap_eggs_i[valid_ovi_idx],ovitrap_eggs_i[valid_ovi_idx]<=lwO_u[valid_ovi_idx]),1,0)  )
-    count2=np.sum(np.where(np.logical_and(lwO_2l[valid_ovi_idx]<=ovitrap_eggs_i[valid_ovi_idx],ovitrap_eggs_i[valid_ovi_idx]<=lwO_2u[valid_ovi_idx]),1,0)  )
-    return d,count,count2,rho,p_value
+    rmse=np.sqrt(np.nansum((ovitrap_eggs_i[valid_ovi_idx]-lwO_mean[valid_ovi_idx])**2 )/ np.where(valid_ovi_idx,1,0).sum())#Barnston, A., (1992). “Correspondence among the Correlation [root mean square error] and Heidke Verification Measures; Refinement of the Heidke Score.” Notes and Correspondence, Climate Analysis Center.
+    rho,p_value=stats.pearsonr(ovitrap_eggs_i[valid_ovi_idx], lwO_mean[valid_ovi_idx])
+
+    return rmse,rho,p_value
 
 def runCases(case):
     if(case==0):
@@ -87,7 +76,7 @@ def runCases(case):
                 model=Model(configuration)
                 time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
 
-                errors=[[[1e5,0,0,-1,1],[1e5,0,0,-1,1]]]*151#just to fill the ovitrap 0 that do not exist in reality
+                errors=[[[1e5,-1,1],[1e5,-1,1]]]*151#just to fill the ovitrap 0 that do not exist in reality
                 for ovitrap_id in ovi_range:
                     OVITRAP_FILENAME='data/private/ovitrampas_2017-2018.full.csv'
                     values=utils.getOvitrapEggsFromCsv2(OVITRAP_FILENAME,None,None,ovitrap_id)
@@ -107,22 +96,21 @@ def runCases(case):
                     OVIPOSITION=model.parameters.OVIPOSITION
                     BS_a=model.parameters.BS_a
                     O=Y[:,OVIPOSITION]
-                    lwO=np.array([Y[indexOf(t),OVIPOSITION]-Y[indexOf(t-7),OVIPOSITION] for t in time_range])/BS_a
+                    lwO=np.sum([Y[indexOf(t),OVIPOSITION]-Y[indexOf(t-7),OVIPOSITION] for t in time_range],axis=1)/BS_a#calculate the difference,sum up all levels, and divide by amount of containers
                     lwO_mean=np.array([lwO[indexOf(t-7):indexOf(t+7)].mean(axis=0) for t in time_range])
                     lwO_std =np.array([lwO[indexOf(t-7):indexOf(t+7)].std(axis=0) for t in time_range])
 
 
 
-                    square_a,count_a,count2_a,rho_a,p_value_a=calculateMetrics(lwO_mean,lwO_std,ovi_a)
-                    square_b,count_b,count2_b,rho_b,p_value_b=calculateMetrics(lwO_mean,lwO_std,ovi_b)
-                    errors[ovitrap_id]=[[square_a,count_a,count2_a,rho_a,p_value_a],[square_b,count_b,count2_b,rho_b,p_value_b]]
+                    rmse_a,rho_a,p_value_a=calculateMetrics(lwO_mean,lwO_std,ovi_a)
+                    rmse_b,rho_b,p_value_b=calculateMetrics(lwO_mean,lwO_std,ovi_b)
+                    errors[ovitrap_id]=[[rmse_a,rho_a,p_value_a],[rmse_b,rho_b,p_value_b]]
 
                 for i,ovi_type in enumerate(['a','b']):
-                    error=np.array(errors)
-                    error=error[:,i,:]
-                    square,count,count2,rho=error[:,0],error[:,1],error[:,2],error[:,3]
-                    sort0,sort1,sort2,sort3=np.argsort(square),np.argsort(count),np.argsort(count2),np.argsort(rho)
-                    print('ovi:%s mf:%scm. h: %scm.---->(best) \t square: id:%s,score:%s \t count:id:%s,score:%s \t count2:id:%s,score:%s \t rho:id:%s,score:%s'%(ovi_type,mf,h,sort0[0],square[sort0[0]], sort1[-1],count[sort1[-1]], sort2[-1],count2[sort2[-1]],sort3[-1],rho[sort3[-1]] ) )
+                    errors=np.array(errors)
+                    rmse,rho=errors[:,i,0],errors[:,i,1]
+                    sort0,sort1=np.argsort(rmse),np.argsort(rho)
+                    print('ovi:%s mf:%scm. h: %scm.---->(best) \t rmse: id:%s,score:%s \t rho:id:%s,score:%s'%(ovi_type,mf,h,sort0[0],rmse[sort0[0]],sort1[-1],rho[sort1[-1]] ) )
         pl.show()
 
     if(case==1):
@@ -137,6 +125,7 @@ def runCases(case):
             model=Model(configuration)
             time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
             utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','O':list([114,107,88]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)), title='Manually Filled:%scm. Height: %scm.(Oct-Nov-Dic just prom available)'%(mf,h))
+
             #utils.showPlot(utils.plot(model,subplots=[{'E':''}],plot_start_date=datetime.date(2017,10,1)),title='Manually Filled:%scm. Height: %scm.(Oct-Nov-Dic just prom available)'%(mf,h))
             #utils.showPlot(utils.plot(model,subplots=[{'pa':''}]))
             print('mf:%s h:%s Max E: %s'%(mf,h,np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1))))
