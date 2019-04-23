@@ -406,3 +406,26 @@ def createAnimation(out_filename,matrix,getTitle,duration):
 
     animation = mpy.VideoClip(makeFrame, duration=duration)
     animation.write_videofile(out_filename+'.mp4', fps=15)
+
+
+
+###############################################################Metrics#####################################################################
+def rmse(x,y):
+    assert len(x)==len(y)
+    return delta_e(x,y)/np.sqrt(len(x))#Barnston, A., (1992). “Correspondence among the Correlation [root mean square error] and Heidke Verification Measures; Refinement of the Heidke Score.” Notes and Correspondence, Climate Analysis Center.
+
+#Astrain-Ojeda 2017 "Medidas de disimilitud en series temporales"
+#Chouakria-Nagabhushan 2007 "Adaptive dissimilarity index for measuring time series proximity"
+def cort(x,y):
+    assert len(x)==len(y)
+    return np.sum((x[:-1]-x[1:])*(y[:-1]-y[1:]))/(  np.sqrt(np.sum((x[:-1]-x[1:])**2)) * np.sqrt(np.sum((y[:-1]-y[1:])**2)) )
+
+def delta_e(x,y):
+    assert len(x)==len(y)
+    return np.sqrt( np.sum((x-y)**2) )
+
+def D(x,y):
+    return f(cort(x,y))*delta_e(x,y)
+
+def f(x,k=3):
+    return 2/(1+np.exp(k*x))

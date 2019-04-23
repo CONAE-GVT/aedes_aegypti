@@ -52,22 +52,21 @@ def runSpatial():
         getTitle=lambda i: datetime.timedelta(days=time_range[i])+start_date
         utils.createAnimation('out/%s'%key,matrix,getTitle,time_range.max())# 1 day : 1 second
 
-import equation_fitter
-import scipy.stats as stats
-from scipy import interpolate
-from scipy.spatial.distance import euclidean
+from scipy import stats
 from fastdtw import fastdtw
 def calculateMetrics(time_range,lwO_mean,ovitrap_eggs_i):
     valid_ovi_idx=~np.isnan(ovitrap_eggs_i)
-    rmse=np.sqrt(np.nansum((ovitrap_eggs_i[valid_ovi_idx]-lwO_mean[valid_ovi_idx])**2 )/ np.where(valid_ovi_idx,1,0).sum())#Barnston, A., (1992). “Correspondence among the Correlation [root mean square error] and Heidke Verification Measures; Refinement of the Heidke Score.” Notes and Correspondence, Climate Analysis Center.
-    rho,p_value=stats.pearsonr(ovitrap_eggs_i[valid_ovi_idx], lwO_mean[valid_ovi_idx])
+    rmse=utils.rmse(ovitrap_eggs_i[valid_ovi_idx],lwO_mean[valid_ovi_idx])
+    cort=utils.cort(ovitrap_eggs_i[valid_ovi_idx], lwO_mean[valid_ovi_idx])
     x=np.array([[t,lwO_mean[idx]] for idx,t in enumerate(time_range)])
     y=np.array([ [time_range[idx],ovitrap_eggs_i[idx] ] for idx,isValid in enumerate(valid_ovi_idx) if isValid])
+    dtw, path = fastdtw(x, y)
+    D=utils.D(ovitrap_eggs_i[valid_ovi_idx], lwO_mean[valid_ovi_idx])
+    pearson,p_value=stats.pearsonr(ovitrap_eggs_i[valid_ovi_idx], lwO_mean[valid_ovi_idx])
 
-    distance, path = fastdtw(x, y, dist=euclidean)
+    return rmse, cort,dtw,D,pearson
 
-    return rmse, rho,p_value, distance,path
-
+import equation_fitter
 def runCases(case):
     if(case==0):
         ovi_range=range(1,151)
@@ -82,7 +81,7 @@ def runCases(case):
                 model=Model(configuration)
                 time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
 
-                errors=[[[1e15,-1,1e15],[1e15,-1,1e15]]]*151#just to fill the ovitrap 0 that do not exist in reality
+                errors=[[[1e15,-1,1e15,1e15,-1],[1e15,-1,1e15,1e15,-1]]]*151#just to fill the ovitrap 0 that do not exist in reality
                 for ovitrap_id in ovi_range:
                     OVITRAP_FILENAME='data/private/ovitrampas_2017-2018.full.csv'
                     values=utils.getOvitrapEggsFromCsv2(OVITRAP_FILENAME,None,None,ovitrap_id)
@@ -107,16 +106,26 @@ def runCases(case):
                     lwO_std =np.array([lwO[indexOf(t-7):indexOf(t+7)].std(axis=0) for t in time_range])
 
 
-
-                    rmse_a,rho_a,p_value_a,distance_a,path_a=calculateMetrics(time_range,lwO_mean,ovi_a)
-                    rmse_b,rho_b,p_value_b,distance_b,path_b=calculateMetrics(time_range,lwO_mean,ovi_b)
-                    errors[ovitrap_id]=[[rmse_a,rho_a,distance_a],[rmse_b,rho_b,distance_b]]
+                    errors[ovitrap_id]=[calculateMetrics(time_range,lwO_mean,ovi_a),calculateMetrics(time_range,lwO_mean,ovi_b)]
 
                 for i,ovi_type in enumerate(['a','b']):
                     errors=np.array(errors)
-                    rmse,rho,distance=errors[:,i,0],errors[:,i,1],errors[:,i,2]
-                    sort0,sort1,sort2=np.argsort(rmse),np.argsort(rho),np.argsort(distance)
-                    print('ovi:%s mf:%scm. h: %scm.---->(best) \t rmse: id:%s,score:%s \t rho:id:%s,score:%s \t dtw:id:%s,score:%s'%(ovi_type,mf,h,sort0[0],rmse[sort0[0]],sort1[-1],rho[sort1[-1]],sort2[0],distance[sort2[0]] ) )
+                    rmse,cort,dtw,D,pearson=errors[:,i,0],errors[:,i,1],errors[:,i,2],errors[:,i,3],errors[:,i,4]
+                    sort0,sort1,sort2,sort3,sort4=np.argsort(rmse),np.argsort(cort),np.argsort(dtw),np.argsort(D),np.argsort(pearson)
+                    print('''ovi:%s mf:%scm. h: %scm.
+                                 id,    score
+                        rmse:    %3s,   %s
+                        cort:    %3s,   %s
+                        dtw:     %3s,   %s
+                        D:       %3s,   %s
+                        pearson: %3s,   %s'''%
+                        (ovi_type,mf,h,
+                        sort0[0],rmse[sort0[0]],
+                        sort1[-1],cort[sort1[-1]],
+                        sort2[0],dtw[sort2[0]],
+                        sort3[0],D[sort3[0]],
+                        sort4[-1],pearson[sort4[-1]]
+                        ) )
         pl.show()
 
     if(case==1):
@@ -130,7 +139,7 @@ def runCases(case):
             configuration.config_parser.set('breeding_site','manually_filled',','.join([str(mf)]+[str(0)]*(n-1)))
             model=Model(configuration)
             time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
-            utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','O':list([114,107,88,146,105]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)), title='Manually Filled:%scm. Height: %scm.(Oct-Nov-Dic just prom available)'%(mf,h))
+            utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','O':list([140,129,146,139,13,105,14,107]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)), title='Manually Filled:%scm. Height: %scm.(Oct-Nov-Dic just prom available)'%(mf,h))
 
             #utils.showPlot(utils.plot(model,subplots=[{'E':''}],plot_start_date=datetime.date(2017,10,1)),title='Manually Filled:%scm. Height: %scm.(Oct-Nov-Dic just prom available)'%(mf,h))
             #utils.showPlot(utils.plot(model,subplots=[{'pa':''}]))
