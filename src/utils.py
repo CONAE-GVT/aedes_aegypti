@@ -259,6 +259,14 @@ def replaceNegativesWithZeros(values):
     values[safe_values<0]=0.#replace negatives with zeros, preserving Nones
     return values
 
+def noneMean(values):
+    values=np.array(values)
+    values=values[values!=[None]]
+    if(len(values)!=0):
+        return np.mean(values)
+    else:
+        return None
+
 def applyFs(values,subplot):
     if(type(subplot) is dict): subplot=subplot.values()#if we pass a dict, we need to iterate over the values(were the functions are.)
     for f_list in subplot:#first we assume all elements
@@ -315,19 +323,13 @@ def plot(model,subplots,plot_start_date=None):
             lwO_mean=np.array([lwO[indexOf(t-7):indexOf(t+7)].mean(axis=0) for t in time_range])
             lwO_std =np.array([lwO[indexOf(t-7):indexOf(t+7)].std(axis=0) for t in time_range])
             data.append(go.Scatter(x=date_range, y=applyFs(lwO,subplot), name='O(t)-O(t-7)'))
-            data.append(go.Scatter(x=date_range, y=applyFs(lwO_mean,subplot), name='O(t)-O(t-7) mean'))
-            data.append(go.Scatter(x=date_range, y=applyFs(lwO_mean+lwO_std,subplot), name='O(t)-O(t-7) + std'))
-            data.append(go.Scatter(x=date_range, y=applyFs(lwO_mean-lwO_std,subplot), name='O(t)-O(t-7) - std'))
 
         #delta Eggs
         if('lwE' in subplot):
             lwE=np.array([RES[(np.abs(time_range-t)).argmin(),EGG]-RES[(np.abs(time_range-(t-7))).argmin(),EGG] for t in time_range])
             lwE_mean=np.array([lwE[(np.abs(time_range-(t-7))).argmin():(np.abs(time_range-(t+7))).argmin()].mean(axis=0) for t in time_range])/BS_a
             lwE_std =np.array([lwE[(np.abs(time_range-(t-7))).argmin():(np.abs(time_range-(t+7))).argmin()].std(axis=0) for t in time_range])/BS_a
-            #data.append(go.Scatter(x=date_range, y=applyFs(lwE,subplot), name='E(t)-E(t-7)'))
             data.append(go.Scatter(x=date_range, y=applyFs(lwE_mean,subplot), name='E(t)-E(t-7) mean'))
-            #data.append(go.Scatter(x=date_range, y=applyFs(lwE_mean+lwE_std,subplot), name='E(t)-E(t-7) +std'))#for these to make sense
-            #data.append(go.Scatter(x=date_range, y=applyFs(lwE_mean-lwE_std,subplot), name='E(t)-E(t-7) -std'))#, avoid normalize
 
         #Complete lifecycle
         if('clc' in subplot):
@@ -360,10 +362,8 @@ def plot(model,subplots,plot_start_date=None):
             for ovitrap_id in subplot['O']:
                 values=getOvitrapEggsFromCsv2('data/private/ovitrampas_2017-2018.full.csv',model.start_date,model.end_date,ovitrap_id)
                 ovitrap_dates=np.array([k for k in values.keys()])
-                ovi_a=np.array([values[date][0] for date in ovitrap_dates])
-                ovi_b=np.array([values[date][1] if len(values[date])>1 else None for date in ovitrap_dates])
-                data.append(go.Scatter(x=ovitrap_dates[ovi_a!=[None]], y=applyFs(ovi_a,subplot)[ovi_a!=[None]], name='Ovitrap %s A eggs'%ovitrap_id, mode = 'lines+markers'))
-                data.append(go.Scatter(x=ovitrap_dates[ovi_b!=[None]], y=applyFs(ovi_b,subplot)[ovi_b!=[None]], name='Ovitrap %s B eggs'%ovitrap_id, mode = 'lines+markers'))
+                ovi=np.array([noneMean(values[date]) for date in ovitrap_dates])
+                data.append(go.Scatter(x=ovitrap_dates[ovi!=[None]], y=applyFs(ovi,subplot)[ovi!=[None]], name='Ovitrap %s eggs'%ovitrap_id, mode = 'lines+markers'))
 
         if('cd' in subplot):#current date
             data.append(go.Scatter(x=[datetime.date.today()],y=[0],name='Current Date',mode='markers'));
