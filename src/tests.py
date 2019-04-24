@@ -11,6 +11,7 @@ from equations import diff_eqs,vR_D
 import equations
 from spatial_equations import diff_eqs as spatial_diff_eqs
 import pylab as pl
+import similaritymeasures as sm
 
 def runSpatial():
     configuration=Configuration('resources/otero_precipitation.cfg')
@@ -53,18 +54,22 @@ def runSpatial():
         utils.createAnimation('out/%s'%key,matrix,getTitle,time_range.max())# 1 day : 1 second
 
 from scipy import stats
-from fastdtw import fastdtw
 def calculateMetrics(time_range,lwO_mean,ovitrap_eggs_i):
     valid_ovi_idx=~np.isnan(ovitrap_eggs_i)
     rmse=utils.rmse(ovitrap_eggs_i[valid_ovi_idx],lwO_mean[valid_ovi_idx])
     cort=utils.cort(ovitrap_eggs_i[valid_ovi_idx], lwO_mean[valid_ovi_idx])
-    x=np.array([[t,lwO_mean[idx]] for idx,t in enumerate(time_range)])
-    y=np.array([ [time_range[idx],ovitrap_eggs_i[idx] ] for idx,isValid in enumerate(valid_ovi_idx) if isValid])
-    dtw, path = fastdtw(x, y)
-    D=utils.D(ovitrap_eggs_i[valid_ovi_idx], lwO_mean[valid_ovi_idx])
     pearson,p_value=stats.pearsonr(ovitrap_eggs_i[valid_ovi_idx], lwO_mean[valid_ovi_idx])
 
-    return rmse, cort,dtw,D,pearson
+    reversed_valid_ovi_idx=valid_ovi_idx[::-1]
+    first,last=np.argmax(valid_ovi_idx), len(reversed_valid_ovi_idx)-np.argmax(reversed_valid_ovi_idx)-1
+    x=np.array([[time_range[idx],lwO_mean[idx]] for idx in range(first,last)])
+    y=np.array([ [time_range[idx],ovitrap_eggs_i[idx] ] for idx,isValid in enumerate(valid_ovi_idx) if isValid])
+    fd=sm.frechet_dist(x,y)
+    dtw, path = sm.dtw(x, y)
+    D=utils.D(ovitrap_eggs_i[valid_ovi_idx], lwO_mean[valid_ovi_idx])
+
+
+    return rmse, cort,pearson,fd,dtw,D
 
 import equation_fitter
 def runCases(case):
@@ -81,7 +86,7 @@ def runCases(case):
                 model=Model(configuration)
                 time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
 
-                errors=[[[1e15,-1,1e15,1e15,-1],[1e15,-1,1e15,1e15,-1]]]*151#just to fill the ovitrap 0 that do not exist in reality
+                errors=[[[1e15,-1,-1,1e15,1e15,1e15],[1e15,-1,-1,1e15,1e15,1e15]]]*151#just to fill the ovitrap 0 that do not exist in reality
                 for ovitrap_id in ovi_range:
                     OVITRAP_FILENAME='data/private/ovitrampas_2017-2018.full.csv'
                     values=utils.getOvitrapEggsFromCsv2(OVITRAP_FILENAME,None,None,ovitrap_id)
@@ -110,21 +115,22 @@ def runCases(case):
 
                 for i,ovi_type in enumerate(['a','b']):
                     errors=np.array(errors)
-                    rmse,cort,dtw,D,pearson=errors[:,i,0],errors[:,i,1],errors[:,i,2],errors[:,i,3],errors[:,i,4]
-                    sort0,sort1,sort2,sort3,sort4=np.argsort(rmse),np.argsort(cort),np.argsort(dtw),np.argsort(D),np.argsort(pearson)
+                    rmse, cort,pearson,fd,dtw,D=errors[:,i,0],errors[:,i,1],errors[:,i,2],errors[:,i,3],errors[:,i,4],errors[:,i,5]
                     print('''ovi:%s mf:%scm. h: %scm.
                                  id,    score
                         rmse:    %3s,   %s
                         cort:    %3s,   %s
+                        pearson: %3s,   %s
+                        fd:      %3s,   %s
                         dtw:     %3s,   %s
-                        D:       %3s,   %s
-                        pearson: %3s,   %s'''%
+                        D:       %3s,   %s'''%
                         (ovi_type,mf,h,
-                        sort0[0],rmse[sort0[0]],
-                        sort1[-1],cort[sort1[-1]],
-                        sort2[0],dtw[sort2[0]],
-                        sort3[0],D[sort3[0]],
-                        sort4[-1],pearson[sort4[-1]]
+                        rmse.argmin(),rmse.min(),
+                        cort.argmax(),cort.max(),
+                        pearson.argmax(),pearson.max(),
+                        fd.argmin(),fd.min(),
+                        dtw.argmin(),dtw.min(),
+                        D.argmin(),D.min()
                         ) )
         pl.show()
 
@@ -139,7 +145,7 @@ def runCases(case):
             configuration.config_parser.set('breeding_site','manually_filled',','.join([str(mf)]+[str(0)]*(n-1)))
             model=Model(configuration)
             time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
-            utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','O':list([140,129,146,139,13,105,14,107]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)), title='Manually Filled:%scm. Height: %scm.(Oct-Nov-Dic just prom available)'%(mf,h))
+            utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','O':list([34,90,1,53,117]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)), title='Manually Filled:%scm. Height: %scm.(Oct-Nov-Dic just prom available)'%(mf,h))
 
             #utils.showPlot(utils.plot(model,subplots=[{'E':''}],plot_start_date=datetime.date(2017,10,1)),title='Manually Filled:%scm. Height: %scm.(Oct-Nov-Dic just prom available)'%(mf,h))
             #utils.showPlot(utils.plot(model,subplots=[{'pa':''}]))
