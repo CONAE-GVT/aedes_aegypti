@@ -86,52 +86,44 @@ def runCases(case):
                 model=Model(configuration)
                 time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
 
-                errors=[[[1e15,-1,-1,1e15,1e15,1e15],[1e15,-1,-1,1e15,1e15,1e15]]]*151#just to fill the ovitrap 0 that do not exist in reality
+                errors=[[1e15,-1,-1,1e15,1e15,1e15]]*151#just to fill the ovitrap 0 that do not exist in reality
                 for ovitrap_id in ovi_range:
                     OVITRAP_FILENAME='data/private/ovitrampas_2017-2018.full.csv'
                     values=utils.getOvitrapEggsFromCsv2(OVITRAP_FILENAME,None,None,ovitrap_id)
                     ovitrap_days=values.keys()
                     dates=[model.start_date + datetime.timedelta(t) for t in time_range]
 
-                    ovi_a=[values[date][0] if date in values else None for date in dates]#TODO:WARNING!this will repeat values if model granularity is not 1 value per day.
-                    ovi_a=np.array(equation_fitter.populate(model.time_range,ovi_a))
-                    ovi_a=np.array(ovi_a,dtype=np.float)#this change None for np.nan
-
-                    ovi_b=[values[date][1] if (date in values and len(values[date])>1) else None for date in dates]#TODO:WARNING!this will repeat values if model granularity is not 1 value per day.Also this is different than test 13
-                    ##ovi_b=[values[date][1] if len(values[date])>1 else values[date][0] for date in ovitrap_days]
-                    ovi_b=np.array(equation_fitter.populate(model.time_range,ovi_b))
-                    ovi_b=np.array(ovi_b,dtype=np.float)#this change None for np.nan
+                    ovi=[utils.noneMean(values[date]) if date in values else None for date in dates]#TODO:WARNING!this will repeat values if model granularity is not 1 value per day.
+                    ovi=np.array(equation_fitter.populate(model.time_range,ovi))
+                    ovi=np.array(ovi,dtype=np.float)#this change None for np.nan
 
                     indexOf=lambda t: (np.abs(time_range-t)).argmin()
                     OVIPOSITION=model.parameters.OVIPOSITION
                     BS_a=model.parameters.BS_a
                     O=Y[:,OVIPOSITION]
                     lwO=np.sum([Y[indexOf(t),OVIPOSITION]-Y[indexOf(t-7),OVIPOSITION] for t in time_range],axis=1)/BS_a#calculate the difference,sum up all levels, and divide by amount of containers
-                    lwO_mean=np.array([lwO[indexOf(t-7):indexOf(t+7)].mean(axis=0) for t in time_range])
-                    lwO_std =np.array([lwO[indexOf(t-7):indexOf(t+7)].std(axis=0) for t in time_range])
+
+                    errors[ovitrap_id]=calculateMetrics(time_range,lwO,ovi)
 
 
-                    errors[ovitrap_id]=[calculateMetrics(time_range,lwO_mean,ovi_a),calculateMetrics(time_range,lwO_mean,ovi_b)]
-
-                for i,ovi_type in enumerate(['a','b']):
-                    errors=np.array(errors)
-                    rmse, cort,pearson,fd,dtw,D=errors[:,i,0],errors[:,i,1],errors[:,i,2],errors[:,i,3],errors[:,i,4],errors[:,i,5]
-                    print('''ovi:%s mf:%scm. h: %scm.
-                                 id,    score
-                        rmse:    %3s,   %s
-                        cort:    %3s,   %s
-                        pearson: %3s,   %s
-                        fd:      %3s,   %s
-                        dtw:     %3s,   %s
-                        D:       %3s,   %s'''%
-                        (ovi_type,mf,h,
-                        rmse.argmin(),rmse.min(),
-                        cort.argmax(),cort.max(),
-                        pearson.argmax(),pearson.max(),
-                        fd.argmin(),fd.min(),
-                        dtw.argmin(),dtw.min(),
-                        D.argmin(),D.min()
-                        ) )
+                errors=np.array(errors)
+                rmse, cort,pearson,fd,dtw,D=errors[:,0],errors[:,1],errors[:,2],errors[:,3],errors[:,4],errors[:,5]
+                print('''mf:%scm. h: %scm.
+                             id,    score
+                    rmse:    %3s,   %s
+                    cort:    %3s,   %s
+                    pearson: %3s,   %s
+                    fd:      %3s,   %s
+                    dtw:     %3s,   %s
+                    D:       %3s,   %s'''%
+                    (mf,h,
+                    rmse.argmin(),rmse.min(),
+                    cort.argmax(),cort.max(),
+                    pearson.argmax(),pearson.max(),
+                    fd.argmin(),fd.min(),
+                    dtw.argmin(),dtw.min(),
+                    D.argmin(),D.min()
+                    ) )
         pl.show()
 
     if(case==1):
@@ -145,7 +137,7 @@ def runCases(case):
             configuration.config_parser.set('breeding_site','manually_filled',','.join([str(mf)]+[str(0)]*(n-1)))
             model=Model(configuration)
             time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
-            utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','O':list([34,90,1,53,117]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
+            utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','O':list([34,103,11,48]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
             title='Manually Filled:%scm. Height: %scm.'%(mf,h),
             xaxis_title='Fecha',
             yaxis_title='Nº de huevos')
