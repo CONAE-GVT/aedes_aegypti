@@ -379,8 +379,10 @@ def plot(model,subplots,plot_start_date=None):
 
     return  data
 
-def showPlot(data,title=''):
-    layout=go.Layout(title=title,barmode='stack')
+def showPlot(data,title='',xaxis_title='',yaxis_title=''):
+    layout=go.Layout(title=title,barmode='stack',
+                    xaxis = dict(title = xaxis_title),
+                    yaxis = dict(title = yaxis_title))
     ply.plot(go.Figure(data=data,layout=layout), filename=tempfile.NamedTemporaryFile(prefix='plot_').name)
 
 ###############################################################Animation################################################################
