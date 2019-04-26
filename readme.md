@@ -120,3 +120,8 @@ band info: https://www.satimagingcorp.com/satellite-sensors/other-satellite-sens
 
 **Notes**
 constant ml -> constant survival (independent of initial larvaes)
+
+
+#doc
+IEEE template
+>sudo apt install texlive-publishers
