@@ -64,8 +64,8 @@ def dvE(mE,vL,A1,A2,vW_t,BS_a,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l,egnCorrect
 
 def dvL(mE,vL,vW,T_t,BS_a,vBS_d,elr,lpr,vAlpha0,wet_mask):
     ml=0.01 + 0.9725 * math.exp(-(T_t-278.0)/2.7035)#mortality of the larvae, for T in [278,303]
-    epsilon=
-    mdl=2.*(1.- vW/(vW+1e-4))#mortality of dry larvae.TODO:Unjustified!
+    epsilon=1e-4
+    mdl=2.*(1.- vW/(vW+epsilon))#mortality of dry larvae.TODO:Unjustified!
     vAlpha=vAlpha0/(BS_a*vBS_d)
     return elr* (1-vGamma(vL,BS_a*vBS_d,vW)) * np.sum(mE*wet_mask,axis=0) - ml*vL - mdl*vL - vAlpha* vL*vL - lpr *vL
 
