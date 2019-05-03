@@ -127,7 +127,7 @@ def runCases(case):
 
                 #print first N
                 f=errors[:,0]
-                ovi_sorted=np.argsort(errors[:,0])
+                ovi_sorted=np.argsort(f)
                 N=5
                 print('''mf:%scm. h: %scm.
                      id,    score
