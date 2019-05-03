@@ -76,7 +76,7 @@ def runCases(case):
     if(case==0):
         ovi_range=range(1,151)
         for h in [10]:
-            for mf  in np.arange(0,10,0.1):
+            for mf  in [0]:
                 configuration=Configuration('resources/2c.cfg')
                 configuration.config_parser.set('location','name','cordoba.full')#TODO:fix data and
                 configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(20)))# uncomment these two
@@ -124,6 +124,24 @@ def runCases(case):
                     dtw.argmin(),dtw.min(),
                     D.argmin(),D.min()
                     ) )
+
+                #print first N
+                f=errors[:,0]
+                ovi_sorted=np.argsort(errors[:,0])
+                N=5
+                print('''mf:%scm. h: %scm.
+                     id,    score
+                     f:    %3s,   %s'''%
+                     (mf,h,
+                     ovi_sorted[:N],f[ovi_sorted[:N]]
+                     ))
+                #print last N(excluding the ficticius one)
+                print('''mf:%scm. h: %scm.
+                     id,    score
+                     f:    %3s,   %s'''%
+                     (mf,h,
+                     ovi_sorted[-N-1:-1],f[ovi_sorted[-N-1:-1]]
+                     ))
         pl.show()
 
     if(case==1):
@@ -137,7 +155,7 @@ def runCases(case):
             configuration.config_parser.set('breeding_site','manually_filled',','.join([str(mf)]+[str(0)]*(n-1)))
             model=Model(configuration)
             time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
-            utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','O':list([34,103,11,48]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
+            utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','O':list([34,19,133,1,56,16,25,143,59,44]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
             title='Manually Filled:%scm. Height: %scm.'%(mf,h),
             xaxis_title='Fecha',
             yaxis_title='Nº de huevos')
