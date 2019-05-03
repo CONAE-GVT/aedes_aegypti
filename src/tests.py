@@ -131,16 +131,16 @@ def runCases(case):
                 N=5
                 print('''mf:%scm. h: %scm.
                      id,    score
-                     f:    %3s,   %s'''%
+                     f:    %3s  <---->  %s'''%
                      (mf,h,
-                     ovi_sorted[:N],f[ovi_sorted[:N]]
+                     ', '.join(map(str,ovi_sorted[:N])), ', '.join(map(str,f[ovi_sorted[:N]]))
                      ))
                 #print last N(excluding the ficticius one)
                 print('''mf:%scm. h: %scm.
                      id,    score
-                     f:    %3s,   %s'''%
+                     f:    %3s  <---->  %s'''%
                      (mf,h,
-                     ovi_sorted[-N-1:-1],f[ovi_sorted[-N-1:-1]]
+                     ', '.join(map(str,ovi_sorted[-N-1:-1])), ', '.join(map(str,f[ovi_sorted[-N-1:-1]]))
                      ))
         pl.show()
 
