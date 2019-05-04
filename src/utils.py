@@ -366,7 +366,12 @@ def plot(model,subplots,plot_start_date=None):
                 data.append(go.Scatter(x=ovitrap_dates[ovi!=[None]], y=applyFs(ovi,subplot)[ovi!=[None]], name='Ovitrap %s eggs'%ovitrap_id, mode = 'lines+markers'))
 
         if('cd' in subplot):#current date
-            data.append(go.Scatter(x=[datetime.date.today()],y=[0],name='Current Date',mode='markers'));
+            location=model.parameters.location['name']
+            if('cordoba.full.weather-' in location):
+                current_date=datetime.datetime.strptime(location.replace('cordoba.full.weather-',''),'%Y-%m-%d').date()
+            else:
+                current_date=datetime.date.today()
+            data.append(go.Scatter(x=[current_date,current_date],y=[0,600],name='Current Date',mode='lines'));
         #debugging plots
         #Calls
         if ('c' in subplot):

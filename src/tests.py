@@ -203,6 +203,23 @@ def runCases(case):
         ovi_ordered=np.argsort(ovi_mean)
         print(ovi_ordered)
         print(ovi_mean[ovi_ordered])
+    if(case==5):
+        h=10.
+        mf=0.
+        for location in ['cordoba.full.weather-2019-01-01','cordoba.full.weather-2019-02-01']:
+            configuration=Configuration('resources/2c.cfg')
+            configuration.config_parser.set('location','name',location)
+            start_date,end_date=utils.getStartEndDates('data/public/'+location+'.csv')
+            configuration.config_parser.set('simulation','end_date',str(end_date))
+            n=len(configuration.getArray('breeding_site','height'))
+            configuration.config_parser.set('breeding_site','height',','.join([str(h)]*n))
+            configuration.config_parser.set('breeding_site','manually_filled',','.join([str(mf)]+[str(0)]*(n-1)))
+            model=Model(configuration)
+            time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
+            utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','O':list([143]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
+            title='Manually Filled:%scm. Height: %scm.'%(mf,h),
+            xaxis_title='Date',
+            yaxis_title='Numeber of eggs')
 
 try:
     from otero_precipitation_wrapper import ModelWrapper as _Model
