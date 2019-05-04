@@ -26,22 +26,22 @@ def getValues(location):
     time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
     #calculate oviposition
     indexOf=lambda t: (np.abs(time_range-t)).argmin()
-    OVIPOSITION=model.parameters.OVIPOSITION
+    ADULT1,ADULT2=model.parameters.ADULT1,model.parameters.ADULT2
     BS_a=model.parameters.BS_a
-    O=Y[:,OVIPOSITION]
-    lwO=np.sum([Y[indexOf(t),OVIPOSITION]-Y[indexOf(t-7),OVIPOSITION] for t in time_range],axis=1)/BS_a#calculate the difference,sum up all levels, and divide by amount of containers
+    A=(Y[:,ADULT1]+Y[:,ADULT2])/BS_a
+    #lwO=np.sum([Y[indexOf(t),OVIPOSITION]-Y[indexOf(t-7),OVIPOSITION] for t in time_range],axis=1)/BS_a#calculate the difference,sum up all levels, and divide by amount of containers
     values={}
     dates=[datetime.date(2018,12,1),datetime.date(2019,1,1),datetime.date(2019,2,1),datetime.date(2019,3,1),datetime.date(2019,4,1)]
     start_date=configuration.getDate('simulation','start_date')
     for i in range(len(dates)-1):
         date,next_date=dates[i],dates[i+1]
         start,end=(date-start_date).days,(next_date-start_date).days
-        values[date.month]=np.max(lwO[indexOf(start):indexOf(end)])
+        values[date.month]=np.max(A[indexOf(start):indexOf(end)])
     return values
 
 
 def generateCSV():
-    #return DATA_FOLDER+'arg_cities.csv'
+    return DATA_FOLDER+'arg_cities.csv'
     config_parser = ConfigParser()
     config_parser.read('resources/get_weather.cfg')
     params=[]
@@ -72,7 +72,7 @@ def plotMap():
                 text = df[ df['month'] == i ]['value'],
                 name = months[i],
                 marker = go.scattergeo.Marker(
-                    size = df[ df['month'] == i ]['value']/25,
+                    size = df[ df['month'] == i ]['value']*3,
                     color = colors[i%4],
                     line = go.scattergeo.marker.Line(width = 0)
                 )
@@ -107,9 +107,7 @@ def plotMap():
 
     layout = go.Layout(
         title = go.layout.Title(
-            text = 'Ebola cases reported by month in West Africa 2014<br> \
-    Source: <a href="https://data.hdx.rwlabs.org/dataset/rowca-ebola-cases">\
-    HDX</a>'),
+            text = 'Maximum Adults per BS '),
         geo = go.layout.Geo(
             resolution = 50,
             scope = 'south america',
@@ -129,7 +127,7 @@ def plotMap():
     )
 
     fig = go.Figure(layout=layout, data=cases)
-    ply.plot(fig, filename='2017-2018 maximum weekly oviposition')
+    ply.plot(fig, filename='2017-2018 Maximum Adults per BS ')
 
 if(__name__ == '__main__'):
     plotMap()
