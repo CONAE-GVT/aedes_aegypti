@@ -308,10 +308,10 @@ def plot(model,subplots,plot_start_date=None):
                 label='E in [%.1f,%.1f)cm'%(bs_i*BS_lh,(bs_i+1)*BS_lh)
                 data.append(go.Bar(x=date_range,y=y,name=label,text=label))
                 #data.append(go.Scatter(x=date_range,y=y, name='E in [%.1f,%.1f)cm'%(bs_i*BS_lh,(bs_i+1)*BS_lh)))
-        if ('L' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,LARVAE],subplot), label='L'))
-        if ('P' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,PUPAE],subplot), label='P'))
-        if ('A1' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,ADULT1],subplot), label='A1'))
-        if ('A2' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,ADULT2],subplot), label='A2'))
+        if ('L' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,LARVAE],subplot), name='L'))
+        if ('P' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,PUPAE],subplot), name='P'))
+        if ('A1' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,ADULT1],subplot), name='A1'))
+        if ('A2' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,ADULT2],subplot), name='A2'))
         if ('A1+A2' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,ADULT2]+RES[:,ADULT1],subplot), name='A1+A2'))
 
         if('lwO' in subplot):
