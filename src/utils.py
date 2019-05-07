@@ -363,7 +363,7 @@ def plot(model,subplots,plot_start_date=None):
                 values=getOvitrapEggsFromCsv2('data/private/ovitrampas_2017-2018.full.csv',model.start_date,model.end_date,ovitrap_id)
                 ovitrap_dates=np.array([k for k in values.keys()])
                 ovi=np.array([noneMean(values[date]) for date in ovitrap_dates])
-                data.append(go.Scatter(x=ovitrap_dates[ovi!=[None]], y=applyFs(ovi,subplot)[ovi!=[None]], name='Ovitrap %s eggs'%ovitrap_id, mode = 'lines+markers'))
+                data.append(go.Scatter(x=ovitrap_dates[ovi!=[None]], y=applyFs(ovi,subplot)[ovi!=[None]], name='Ovitrap %s eggs'%ovitrap_id, mode = 'markers'))
 
         if('cd' in subplot):#current date
             location=model.parameters.location['name']

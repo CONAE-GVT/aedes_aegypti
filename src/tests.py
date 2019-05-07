@@ -126,22 +126,23 @@ def runCases(case):
                     ) )
 
                 #print first N
-                f=errors[:,0]
-                ovi_sorted=np.argsort(f)
-                N=5
-                print('''mf:%scm. h: %scm.
-                     id,    score
-                     f:    %3s  <---->  %s'''%
-                     (mf,h,
-                     ', '.join(map(str,ovi_sorted[:N])), ', '.join(map(str,f[ovi_sorted[:N]]))
-                     ))
-                #print last N(excluding the ficticius one)
-                print('''mf:%scm. h: %scm.
-                     id,    score
-                     f:    %3s  <---->  %s'''%
-                     (mf,h,
-                     ', '.join(map(str,ovi_sorted[-N-1:-1])), ', '.join(map(str,f[ovi_sorted[-N-1:-1]]))
-                     ))
+                for i in range(errors.shape[1]):
+                    f=errors[:,i]
+                    ovi_sorted=np.argsort(f)
+                    N=5
+                    print('''mf:%scm. h: %scm.
+                         id,    score
+                         f:    %3s  <---->  %s'''%
+                         (mf,h,
+                         ', '.join(map(str,ovi_sorted[:N])), ', '.join(map(str,f[ovi_sorted[:N]]))
+                         ))
+                    #print last N(excluding the ficticius one)
+                    print('''mf:%scm. h: %scm.
+                         id,    score
+                         f:    %3s  <---->  %s'''%
+                         (mf,h,
+                         ', '.join(map(str,ovi_sorted[-N-1:-1])), ', '.join(map(str,f[ovi_sorted[-N-1:-1]]))
+                         ))
         pl.show()
 
     if(case==1):
@@ -216,7 +217,7 @@ def runCases(case):
             configuration.config_parser.set('breeding_site','manually_filled',','.join([str(mf)]+[str(0)]*(n-1)))
             model=Model(configuration)
             time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
-            utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','O':list([143]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
+            utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','O':list([28,123,143]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
             title='Manually Filled:%scm. Height: %scm.'%(mf,h),
             xaxis_title='Date',
             yaxis_title='Number of eggs')
