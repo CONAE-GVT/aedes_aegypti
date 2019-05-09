@@ -6,6 +6,7 @@ import utils
 import datetime
 import numpy as np
 from config import Configuration
+from configparser import ConfigParser
 from otero_precipitation import Model
 from equations import diff_eqs,vR_D
 import equations
@@ -164,6 +165,7 @@ def runCases(case):
             #utils.showPlot(utils.plot(model,subplots=[{'E':''}],plot_start_date=datetime.date(2017,10,1)),title='Manually Filled:%scm. Height: %scm.(Oct-Nov-Dic just prom available)'%(mf,h))
             #utils.showPlot(utils.plot(model,subplots=[{'pa':''}]))
             print('mf:%s h:%s Max E: %s'%(mf,h,np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1))))
+            print(model.warnings)
 
             #is OEquations perturbing the result somehow?No, the results match.
             #model2=Model(configuration)
@@ -179,7 +181,8 @@ def runCases(case):
             h=configuration.getArray('breeding_site','height')[0]
             model=Model(configuration)
             time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
-            utils.showPlot(utils.plot(model,subplots=[{'E':''}],plot_start_date=datetime.date(2017,10,1)),title='Manually Filled:%scm. Height: %scm.(Oct-Nov-Dic just prom available)'%(mf,h))
+            utils.showPlot(utils.plot(model,subplots=[{'E':''}],plot_start_date=datetime.date(2017,10,1)),title='Manually Filled:%scm. Height: %scm.'%(mf,h))
+            print(model.warnings)
 
     if(case==3):
         for year in range(2016,2019):
@@ -221,6 +224,45 @@ def runCases(case):
             title='Manually Filled:%scm. Height: %scm.'%(mf,h),
             xaxis_title='Date',
             yaxis_title='Number of eggs')
+            print(model.warnings)
+
+    if(case==6):
+        h=10.
+        mf=0.
+        config_parser = ConfigParser()
+        config_parser.read('resources/get_weather.cfg')
+        for location in config_parser.sections():
+            configuration=Configuration('resources/2c.cfg')
+            configuration.config_parser.set('location','name',location+'.full')
+            configuration.config_parser.set('simulation','end_date',str(datetime.date.today()))
+            n=len(configuration.getArray('breeding_site','height'))
+            configuration.config_parser.set('breeding_site','height',','.join([str(h)]*n))
+            configuration.config_parser.set('breeding_site','manually_filled',','.join([str(mf)]+[str(0)]*(n-1)))
+            model=Model(configuration)
+            time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
+            utils.showPlot(utils.plot(model,subplots=[{'lwO':'','f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
+            title='%s Manually Filled:%scm. Height: %scm.'%(location,mf,h),
+            xaxis_title='Date',
+            yaxis_title='Number of eggs')
+            print(model.warnings)
+
+    if(case==7):
+        h=10.
+        mf=0.
+        configuration=Configuration('resources/2c.cfg')
+        configuration.config_parser.set('location','name','cordoba.full')
+        configuration.config_parser.set('simulation','end_date',str(datetime.date.today()))
+        configuration.config_parser.set('breeding_site','manually_filled',str(mf))
+        n=len(configuration.getArray('breeding_site','height'))
+        configuration.config_parser.set('breeding_site','height',','.join([str(h)]*n))
+        configuration.config_parser.set('breeding_site','manually_filled',','.join([str(mf)]+[str(0)]*(n-1)))
+        model=Model(configuration)
+        time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
+        utils.showPlot(utils.plot(model,subplots=[{'L':'','P':'','A1':'','A2':'','f':[utils.safeAdd]}]),
+            title='Manually Filled:%scm. Height: %scm.'%(mf,h),
+            xaxis_title='Date',
+            yaxis_title='Individuals')
+        print(model.warnings)
 
 try:
     from otero_precipitation_wrapper import ModelWrapper as _Model
