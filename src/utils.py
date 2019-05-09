@@ -248,7 +248,7 @@ def safeNormalize(values):#take care of None values
     return values
 
 def safeAdd(values):
-    #if(len(values.shape)==3): return np.sum(values,axis=(1,2))
+    if(len(values.shape)==3): return np.sum(values,axis=(1,2))
     if(len(values.shape)!=2):
         return values
     else:
@@ -303,18 +303,18 @@ def plot(model,subplots,plot_start_date=None):
             time_range,RES,date_range=subData(time_range,RES,date_range,plot_start_date)
 
         #Amount of larvaes,pupaes and adults
-        if ('E' in subplot):
+        if ('E_i' in subplot):
             for i,y in enumerate(applyFs(RES[:,EGG],subplot).transpose()):
                 bs_i=i%m
                 label='E in [%.1f,%.1f)cm'%(bs_i*BS_lh,(bs_i+1)*BS_lh)
                 data.append(go.Bar(x=date_range,y=y,name=label,text=label))
                 #data.append(go.Scatter(x=date_range,y=y, name='E in [%.1f,%.1f)cm'%(bs_i*BS_lh,(bs_i+1)*BS_lh)))
-        #if ('E' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,EGG],subplot), name='E'))
+        if ('E' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,EGG],subplot)*1e-2, name='Eggs . 10e-2'))
         if ('L' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,LARVAE],subplot), name='L'))
         if ('P' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,PUPAE],subplot), name='P'))
         if ('A1' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,ADULT1],subplot), name='A1'))
         if ('A2' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,ADULT2],subplot), name='A2'))
-        if ('A1+A2' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,ADULT2]+RES[:,ADULT1],subplot), name='A1+A2'))
+        if ('A1+A2' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,ADULT2]+RES[:,ADULT1],subplot), name='Adults'))
 
         if('lwO' in subplot):
             Y=RES#it should be Y everywhere....

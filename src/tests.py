@@ -258,7 +258,7 @@ def runCases(case):
         configuration.config_parser.set('breeding_site','manually_filled',','.join([str(mf)]+[str(0)]*(n-1)))
         model=Model(configuration)
         time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
-        utils.showPlot(utils.plot(model,subplots=[{'L':'','P':'','A1':'','A2':'','f':[utils.safeAdd]}]),
+        utils.showPlot(utils.plot(model,subplots=[{'E':':','A1+A2':'','f':[utils.safeAdd]}]),
             title='Manually Filled:%scm. Height: %scm.'%(mf,h),
             xaxis_title='Date',
             yaxis_title='Individuals')
