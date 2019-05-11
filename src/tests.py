@@ -241,7 +241,7 @@ def runCases(case):
             model=Model(configuration)
             time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
             utils.showPlot(utils.plot(model,subplots=[{'lwO':'','f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
-            title='%s Manually Filled:%scm. Height: %scm.'%(location,mf,h),
+            title='%s '%(location.replace('_',' ').title()),
             xaxis_title='Date',
             yaxis_title='Number of eggs')
             print(model.warnings)

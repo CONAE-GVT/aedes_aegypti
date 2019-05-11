@@ -126,3 +126,12 @@ constant ml -> constant survival (independent of initial larvaes)
 #doc
 IEEE template
 >sudo apt install texlive-publishers
+
+QGIS:
+Open arg.jp2
+add layer> add delimited text. (select cities.csv)
+right click cities layer and click properties:
+  on the left select "Labels":
+    In Text>"label with" select city
+    in Buffer > draw buffer
+source: http://transnationalhistory.net/mapping/tutorials/pointvectorlayers/
