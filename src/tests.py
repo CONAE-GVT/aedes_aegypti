@@ -208,36 +208,26 @@ def runCases(case):
         print(ovi_ordered)
         print(ovi_mean[ovi_ordered])
     if(case==5):
-        h=10.
-        mf=0.
         for location in ['cordoba.full.weather-2019-01-01','cordoba.full.weather-2019-02-01']:
-            configuration=Configuration('resources/2c.cfg')
+            configuration=Configuration('resources/1c.cfg')
             configuration.config_parser.set('location','name',location)
             start_date,end_date=utils.getStartEndDates('data/public/'+location+'.csv')
             configuration.config_parser.set('simulation','end_date',str(end_date))
-            n=len(configuration.getArray('breeding_site','height'))
-            configuration.config_parser.set('breeding_site','height',','.join([str(h)]*n))
-            configuration.config_parser.set('breeding_site','manually_filled',','.join([str(mf)]+[str(0)]*(n-1)))
             model=Model(configuration)
             time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
             utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','O':list([143]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
-            title='Manually Filled:%scm. Height: %scm.'%(mf,h),
+            title=location.replace('.full.weather-',' ').title(),
             xaxis_title='Date',
             yaxis_title='Number of eggs')
             print(model.warnings)
 
     if(case==6):
-        h=10.
-        mf=0.
         config_parser = ConfigParser()
         config_parser.read('resources/get_weather.cfg')
         for location in config_parser.sections():
-            configuration=Configuration('resources/2c.cfg')
+            configuration=Configuration('resources/1c.cfg')
             configuration.config_parser.set('location','name',location+'.full')
             configuration.config_parser.set('simulation','end_date',str(datetime.date.today()))
-            n=len(configuration.getArray('breeding_site','height'))
-            configuration.config_parser.set('breeding_site','height',','.join([str(h)]*n))
-            configuration.config_parser.set('breeding_site','manually_filled',','.join([str(mf)]+[str(0)]*(n-1)))
             model=Model(configuration)
             time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
             utils.showPlot(utils.plot(model,subplots=[{'lwO':'','f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
@@ -247,19 +237,13 @@ def runCases(case):
             print(model.warnings)
 
     if(case==7):
-        h=10.
-        mf=0.
-        configuration=Configuration('resources/2c.cfg')
+        configuration=Configuration('resources/1c.cfg')
         configuration.config_parser.set('location','name','cordoba.full')
         configuration.config_parser.set('simulation','end_date',str(datetime.date.today()))
-        configuration.config_parser.set('breeding_site','manually_filled',str(mf))
-        n=len(configuration.getArray('breeding_site','height'))
-        configuration.config_parser.set('breeding_site','height',','.join([str(h)]*n))
-        configuration.config_parser.set('breeding_site','manually_filled',','.join([str(mf)]+[str(0)]*(n-1)))
         model=Model(configuration)
         time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
         utils.showPlot(utils.plot(model,subplots=[{'E':':','A1+A2':'','f':[utils.safeAdd]}]),
-            title='Manually Filled:%scm. Height: %scm.'%(mf,h),
+            title='Cordoba',
             xaxis_title='Date',
             yaxis_title='Individuals')
         print(model.warnings)
