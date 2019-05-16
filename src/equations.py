@@ -49,7 +49,7 @@ def gamma(L,BS,W):
 def ovsp(vW,vBS_d,vW_l,mBS_l):#OViposition Site Preference
     epsilon=1e-4
     vf=vW/(vW+epsilon) * vBS_d#check this method is not spontaneus generation of eggs.(like inventing adults.)
-    if(vf.max()>epsilon): vf/=vf.sum()
+    vf=vf/max(vf.sum(),epsilon)
     return np.where(mBS_l==np.floor(vW_l),1,0)*vf
 
 def wetMask(vW_l,mBS_l):
