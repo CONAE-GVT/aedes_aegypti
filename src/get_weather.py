@@ -54,9 +54,14 @@ def downloadData(start_date,end_date):
     downloadForecast()
 
 #IMERG#
+def getIMERGVersion(a_date):
+    if(a_date<datetime.date(2019,5,1)):
+        return '05'
+    else:
+        return '06'
 #TODO: take into account the utc time. ?
 def getFilenameForIMERG(a_date):
-    return '3B-DAY-L.MS.MRG.3IMERG.{year}{month:02}{day:02}-S000000-E235959.V05.nc4'.format(year=a_date.year,month=a_date.month,day=a_date.day)
+    return '3B-DAY-L.MS.MRG.3IMERG.{year}{month:02}{day:02}-S000000-E235959.V{version}.nc4'.format(year=a_date.year,month=a_date.month,day=a_date.day,version=getIMERGVersion(a_date))
 
 #https://wiki.earthdata.nasa.gov/display/EL/How+To+Access+Data+With+Python
 def downloadDataFromIMERG(start_date,end_date,folder):
@@ -69,7 +74,8 @@ def downloadDataFromIMERG(start_date,end_date,folder):
     for a_date in daterange(start_date,end_date):
         filename=getFilenameForIMERG(a_date)
         if(path.isfile(folder+'/'+filename)): continue#TODO: Also check filesize
-        url='https://gpm1.gesdisc.eosdis.nasa.gov/data/GPM_L3/GPM_3IMERGDL.05/{year}/{month:02}/{filename}'.format(year=a_date.year,month=a_date.month,filename=filename)
+        url='https://gpm1.gesdisc.eosdis.nasa.gov/data/GPM_L3/GPM_3IMERGDL.{version}/{year}/{month:02}/{filename}'.format(year=a_date.year,month=a_date.month,filename=filename,version=getIMERGVersion(a_date))
+        if(getIMERGVersion(a_date)=='05'): url=url.replace('data','opendap')+'.nc4?precipitationCal[1040:1280][339:709],precipitationCal_cnt[1040:1280][339:709],lon[1040:1280],lat[339:709]'
         request = urllib.request.Request(url)
         response = urllib.request.urlopen(request)
         handle = open(folder+'/'+filename, 'wb').write(response.read())
@@ -81,7 +87,10 @@ def extractDailyDataFromIMERG(lat,lon,a_date):
     lats = grp.variables['lat'][:]
     lons = grp.variables['lon'][:]
     precipitations=grp.variables['precipitationCal']
-    p=precipitations[(abs(lons-lon)).argmin(),(abs(lats-lat)).argmin()]
+    if(getIMERGVersion(a_date)=='05'):
+        p=precipitations[(abs(lons-lon)).argmin(),(abs(lats-lat)).argmin()]
+    else:#version 6
+        p=precipitations[0,(abs(lons-lon)).argmin(),(abs(lats-lat)).argmin()]#TODO:search documentation on the first index(time)
     grp.close()
     return p
 
@@ -115,7 +124,7 @@ def extractDailyDataFromGDAS(lat,lon,a_date,folder,FIELDS,typeOfLevel,f):
             assert (grb.validDate - datetime.timedelta(hours=3,seconds=1)).date() == a_date, '%s vs %s for %s'%( (grb.validDate - datetime.timedelta(hours=3,seconds=1)).date(),a_date,grib_filename) #the second is because I want to take into account the 00 of the next day
             #validate lat,lon
             lats, lons = grb.latlons()
-            assert lats.min()<=lat<=lats.max() and lons.min()<=lon<=lons.max()
+            assert lats.min()<=lat<=lats.max() and lons.min()<=lon<=lons.max(), '%s<%s<%s  %s<%s<%s for %s'%(lats.min(),lat,lats.max(),lons.min(),lon,lons.max(), grib_filename)
             #extract the data
             data, lats, lons = grb.data(lat1=lat-epsilon,lat2=lat+epsilon,lon1=lon-epsilon,lon2=lon+epsilon)#TODO:use lat,lon to fabricate lat1,lat2,lon1,lon2
             value=data[0,0]
