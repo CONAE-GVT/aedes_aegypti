@@ -277,6 +277,22 @@ def runInfo(nc_filename):
     print(grp)
     print(p)
 
+def rewritehistory():
+    DATA_FOLDER='data/public/'
+    HISTORY_FOLDER=DATA_FOLDER  + '.history/'
+    for filename in  os.listdir(HISTORY_FOLDER):
+        if(filename=='.empty' or not open(HISTORY_FOLDER+filename).readline().startswith('Date')): continue
+        location,year,month,day=filename.replace('.full.weather','').replace('.csv','').split('-')
+        start_date,tmp=utils.getStartEndDates(HISTORY_FOLDER+filename)
+        end_date=datetime.date(int(year),int(month),int(day))
+        precipitations=utils.getPrecipitationsFromCsv(DATA_FOLDER+location+'.full.csv',start_date,end_date)
+        content='Date,Minimum Temp (C),Mean Temperature (C),Maximum Temp (C),Rain (mm),Relative Humidity %,CloudCover,Mean Wind SpeedKm/h\n'
+        for i,line in enumerate(open(HISTORY_FOLDER+filename).readlines()[1:]):
+            fields=line.rstrip().split(',')
+            if(i<len(precipitations)): fields[4]=str(precipitations[i])
+            content+=','.join(fields)+',,\n'
+        open('data/public/out/'+filename,'w').write(content)
+        #print(start_date,end_date)
 
 
 if(__name__ == '__main__'):
@@ -286,6 +302,8 @@ if(__name__ == '__main__'):
         runCpp()
     elif(len(sys.argv)>1 and sys.argv[1]=='info'):
         runInfo(sys.argv[2])
+    elif(len(sys.argv)>1 and sys.argv[1]=='rewrite'):
+        rewritehistory()
     else:#the default is just a number indicating which test case to run, or none (test case 1 will will be default)
         if(len(sys.argv)<2):
             case=1
