@@ -248,6 +248,39 @@ def runCases(case):
             yaxis_title='Individuals')
         print(model.warnings)
 
+    if(case==8):
+        LOCATION='cordoba'
+        PLOT_START_DATE=datetime.date(2018,12,15)#maybe by parameter?
+        FORECAST=60
+        PLOT_END_DATE=PLOT_START_DATE+datetime.timedelta(FORECAST)
+        DATA_FOLDER='data/public/'
+        HISTORY_FOLDER=DATA_FOLDER  + '.history/'
+        data=[]
+        filenames=os.listdir(HISTORY_FOLDER)
+        filenames.sort()
+        i=0
+        for filename in  filenames:
+            if(filename=='.empty' or not filename.startswith(LOCATION)): continue
+            location,year,month,day=filename.replace('.full.weather','').replace('.csv','').split('-')
+            simulation_date=datetime.date(int(year),int(month),int(day))
+            if( not (PLOT_START_DATE<=simulation_date<=PLOT_END_DATE)): continue
+            color = 'rgb(%s, %s, 0)'%(int( (1-i/FORECAST) * 255), int(i/FORECAST * 255) )
+            i=i+1
+            if(i%7!=0): continue
+            configuration=Configuration('resources/1c.cfg')
+            configuration.config_parser.set('location','name','.history/'+filename.replace('.csv',''))
+            configuration.config_parser.set('simulation','end_date',str(PLOT_END_DATE))
+            print(filename)
+            model=Model(configuration)
+            time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
+            data+=utils.plot(model,subplots=[{'A1+A2':str(simulation_date),'f':[utils.safeAdd]}],plot_start_date=PLOT_START_DATE,color=color)
+            print(model.warnings)
+
+        utils.showPlot(data,
+            title=LOCATION.title(),
+            xaxis_title='Date',
+            yaxis_title='Individuals')
+
 try:
     from otero_precipitation_wrapper import ModelWrapper as _Model
 except ImportError:

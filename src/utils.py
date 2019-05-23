@@ -285,7 +285,7 @@ def subData(time_range,Y,date_range,an_start_date):
             break#conserve the first one.
     return time_range[index:],Y[index:,:],date_range[index:]
 
-def plot(model,subplots,plot_start_date=None):
+def plot(model,subplots,plot_start_date=None,color=None):
     time_range=model.time_range
     RES=model.Y
     parameters=model.parameters
@@ -314,7 +314,7 @@ def plot(model,subplots,plot_start_date=None):
         if ('P' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,PUPAE],subplot), name='P'))
         if ('A1' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,ADULT1],subplot), name='A1'))
         if ('A2' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,ADULT2],subplot), name='A2'))
-        if ('A1+A2' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,ADULT2]+RES[:,ADULT1],subplot), name='Adults'))
+        if ('A1+A2' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,ADULT2]+RES[:,ADULT1],subplot), name=subplot['A1+A2'] or 'Adults',line = dict(color= (color)) ))
 
         if('lwO' in subplot):
             Y=RES#it should be Y everywhere....
