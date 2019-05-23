@@ -273,7 +273,7 @@ def runCases(case):
             print(filename)
             model=Model(configuration)
             time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
-            data+=utils.plot(model,subplots=[{'A1+A2':str(simulation_date),'f':[utils.safeAdd]}],plot_start_date=PLOT_START_DATE,color=color)
+            data+=utils.plot(model,subplots=[{'lwO':str(simulation_date),'f':[utils.safeAdd]}],plot_start_date=PLOT_START_DATE,color=color)
             print(model.warnings)
 
         utils.showPlot(data,

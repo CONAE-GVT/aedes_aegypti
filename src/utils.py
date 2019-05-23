@@ -324,7 +324,7 @@ def plot(model,subplots,plot_start_date=None,color=None):
             lwO=np.array([Y[indexOf(t),OVIPOSITION]-Y[indexOf(t-7),OVIPOSITION] for t in time_range])/BS_a
             lwO_mean=np.array([lwO[indexOf(t-7):indexOf(t+7)].mean(axis=0) for t in time_range])
             lwO_std =np.array([lwO[indexOf(t-7):indexOf(t+7)].std(axis=0) for t in time_range])
-            data.append(go.Scatter(x=date_range, y=applyFs(lwO,subplot), name='O(t)-O(t-7)'))
+            data.append(go.Scatter(x=date_range, y=applyFs(lwO,subplot), name=subplot['lwO'] or 'lwO',line = dict(color= (color))  ))
 
         #delta Eggs
         if('lwE' in subplot):
