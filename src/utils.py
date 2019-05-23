@@ -340,7 +340,7 @@ def plot(model,subplots,plot_start_date=None,color=None):
         if ('W' in subplot):
             mW=RES[:,WATER]
             for y in applyFs(mW,subplot).transpose():
-                data.append(go.Scatter(x=date_range,y=y, name='W(t) in cm.'))
+                data.append(go.Scatter(x=date_range,y=y, name=subplot['W'] or 'W(t) in cm.',line = dict(color= (color)) ))
 
         #Temperature in K
         if ('T' in subplot):
