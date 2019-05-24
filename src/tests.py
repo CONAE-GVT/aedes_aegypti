@@ -13,6 +13,7 @@ import equations
 from spatial_equations import diff_eqs as spatial_diff_eqs
 import pylab as pl
 import similaritymeasures as sm
+import plotly.graph_objs as go
 
 def runSpatial():
     configuration=Configuration('resources/otero_precipitation.cfg')
@@ -251,7 +252,7 @@ def runCases(case):
     if(case==8):
         LOCATION='cordoba'
         PLOT_START_DATE=datetime.date(2018,12,15)#maybe by parameter?
-        FORECAST=60
+        FORECAST=51
         PLOT_END_DATE=PLOT_START_DATE+datetime.timedelta(FORECAST)
         DATA_FOLDER='data/public/'
         HISTORY_FOLDER=DATA_FOLDER  + '.history/'
@@ -263,7 +264,7 @@ def runCases(case):
             if(filename=='.empty' or not filename.startswith(LOCATION)): continue
             location,year,month,day=filename.replace('.full.weather','').replace('.csv','').split('-')
             simulation_date=datetime.date(int(year),int(month),int(day))
-            if( not (PLOT_START_DATE<=simulation_date<=PLOT_END_DATE)): continue
+            if( not (PLOT_START_DATE<=simulation_date<=PLOT_END_DATE)): continue#the equals is because we want to  have one last curve with no forecast
             color = 'rgb(0, %s, %s)'%(int(i/FORECAST * 255), int( (1-i/FORECAST) * 255) )
             i=i+1
             if(i%7!=0): continue
@@ -277,9 +278,17 @@ def runCases(case):
             data_W+=utils.plot(model,subplots=[{'W':str(simulation_date)    ,'f':[]             }],plot_start_date=PLOT_START_DATE,color=color)
             print(filename,model.warnings)
 
+
+        x=[]
+        y=[]
+        for serie in data_A:
+            x+= [datetime.datetime.strptime(serie['name'],'%Y-%m-%d')]#TODO:we depend on using simulation date as name
+            y+= [np.linalg.norm(np.array(data_A[-1]['y'])- np.array(serie['y'])) ]
+
         utils.showPlot(data_A,title='Adults in '+LOCATION.title(),xaxis_title='Date',yaxis_title='Individuals')
         utils.showPlot(data_O,title='Oviposition in '+LOCATION.title(),xaxis_title='Date',yaxis_title='Eggs')
         utils.showPlot(data_W,title='Water in '+LOCATION.title(),xaxis_title='Date',yaxis_title='cm.')
+        utils.showPlot([go.Scatter(x=x,y=y, name='||S_i-S_60||')],title='||S_i-S_60||')
 
 try:
     from otero_precipitation_wrapper import ModelWrapper as _Model
