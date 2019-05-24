@@ -324,7 +324,7 @@ def plot(model,subplots,plot_start_date=None,color=None):
             lwO=np.array([Y[indexOf(t),OVIPOSITION]-Y[indexOf(t-7),OVIPOSITION] for t in time_range])/BS_a
             lwO_mean=np.array([lwO[indexOf(t-7):indexOf(t+7)].mean(axis=0) for t in time_range])
             lwO_std =np.array([lwO[indexOf(t-7):indexOf(t+7)].std(axis=0) for t in time_range])
-            data.append(go.Scatter(x=date_range, y=applyFs(lwO,subplot), name=subplot['lwO'] or 'lwO',line = dict(color= (color))  ))
+            data.append(go.Scatter(x=date_range, y=applyFs(lwO,subplot), name=subplot['lwO'] or 'O(t)-O(t-7)',line = dict(color= (color))  ))
 
         #delta Eggs
         if('lwE' in subplot):
@@ -373,7 +373,7 @@ def plot(model,subplots,plot_start_date=None,color=None):
                 current_date=datetime.datetime.strptime(location.replace('cordoba.full.weather-',''),'%Y-%m-%d').date()
             else:
                 current_date=datetime.date.today()
-            data.append(go.Scatter(x=[current_date,current_date],y=[0,600],name='Current Date',mode='lines'));
+            data.append(go.Scatter(x=[current_date,current_date],y=[0,150],name='Current Date',mode='lines'));
         #debugging plots
         #Calls
         if ('c' in subplot):
