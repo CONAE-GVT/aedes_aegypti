@@ -259,15 +259,20 @@ def runCases(case):
         data_A,data_O,data_W=[],[],[]
         filenames=os.listdir(HISTORY_FOLDER)
         filenames.sort()
-        i=0
+        i=-1
         for filename in  filenames:
             if(filename=='.empty' or not filename.startswith(LOCATION)): continue
             location,year,month,day=filename.replace('.full.weather','').replace('.csv','').split('-')
             simulation_date=datetime.date(int(year),int(month),int(day))
             if( not (PLOT_START_DATE<=simulation_date<=PLOT_END_DATE)): continue#the equals is because we want to  have one last curve with no forecast
-            color = 'rgb(0, %s, %s)'%(int(i/FORECAST * 255), int( (1-i/FORECAST) * 255) )
             i=i+1
-            if(i%7!=0): continue
+            if(i==0):
+                color='rgb(0, 0, 0)'
+            elif(i==FORECAST-1):
+                color='rgb(255, 0, 255)'
+            else:
+                color = 'rgb(%s, %s, 0)'%(int( (1-i/FORECAST) * 255),int(i/FORECAST * 255))
+            if(i%7!=0 and i!=FORECAST-1): continue#every 7 days but the last one must be shown.
             configuration=Configuration('resources/1c.cfg')
             configuration.config_parser.set('location','name','.history/'+filename.replace('.csv',''))
             configuration.config_parser.set('simulation','end_date',str(PLOT_END_DATE))
@@ -282,13 +287,16 @@ def runCases(case):
         x=[]
         y=[]
         for serie in data_A:
-            x+= [datetime.datetime.strptime(serie['name'],'%Y-%m-%d')]#TODO:we depend on using simulation date as name
-            y+= [np.linalg.norm(np.array(data_A[-1]['y'])- np.array(serie['y'])) ]
+            x+= [( datetime.datetime.strptime(data_A[-1]['name'],'%Y-%m-%d') - datetime.datetime.strptime(serie['name'],'%Y-%m-%d') ).days]#TODO:we depend on using simulation date as name
+            S_last,S_i=np.array(data_A[-1]['y']),np.array(serie['y'])
+            y+= [np.sum(np.abs(S_last-S_i)/S_last)*1/len(S_i) ]#relative difference mean
+            assert len(S_i)==len(S_last)
+        x,y=[e for e in reversed(x)],[e for e in reversed(y)]
 
         utils.showPlot(data_A,title='Adults in '+LOCATION.title(),xaxis_title='Date',yaxis_title='Individuals')
         utils.showPlot(data_O,title='Oviposition in '+LOCATION.title(),xaxis_title='Date',yaxis_title='Eggs')
         utils.showPlot(data_W,title='Water in '+LOCATION.title(),xaxis_title='Date',yaxis_title='cm.')
-        utils.showPlot([go.Scatter(x=x,y=y, name='||S_i-S_60||')],title='||S_i-S_60||')
+        utils.showPlot([go.Scatter(x=x,y=y, name='')],title='',xaxis_title='Amount of days forecast',yaxis_title='Mean relative difference(?)')
 
 try:
     from otero_precipitation_wrapper import ModelWrapper as _Model
