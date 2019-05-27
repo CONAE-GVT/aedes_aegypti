@@ -10,7 +10,7 @@ import numpy as np
 from os import path
 import netCDF4 as nc
 import http.cookiejar
-from utils import daterange,getLocations
+from utils import daterange,getLocations,getStartEndDates
 from configparser import ConfigParser
 import multiprocessing as mp
 
@@ -186,8 +186,8 @@ if(__name__ == '__main__'):
         start_date,end_date= datetime.datetime.strptime(sys.argv[1],FORMAT).date(),datetime.datetime.strptime(sys.argv[2],FORMAT).date()
     elif(len(sys.argv)==1):
         today=datetime.date.today()
-        yesterday=today-datetime.timedelta(1)
-        start_date,end_date= yesterday,today
+        first_date,last_date=getStartEndDates(DATA_FOLDER+'cordoba.csv')#in case the script failed, we start from the last good run.
+        start_date,end_date= last_date,today
 
     downloadData(start_date,end_date)
     config_parser = ConfigParser()
