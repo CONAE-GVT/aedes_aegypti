@@ -20,7 +20,7 @@ def dW(t):
 def dE(E,W,t):
     ovsp_t=0.5
     h=2
-    return ovsp_t*np.exp(-(2-W)**2)/np.sqrt(np.pi)#t-W makes no sense! it's h-w integrated over h. now it's just how much eggs accumulated at level h
+    return ovsp_t*np.exp(-(h-W)**2)/np.sqrt(np.pi)#t-W makes no sense! it's h-w integrated over h. now it's just how much eggs accumulated at level h
 
 def diff_eqs(Y,t,h,parameters):
     '''The main set of equations'''
