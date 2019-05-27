@@ -187,7 +187,7 @@ if(__name__ == '__main__'):
     elif(len(sys.argv)==1):
         today=datetime.date.today()
         first_date,last_date=getStartEndDates(DATA_FOLDER+'cordoba.csv')#in case the script failed, we start from the last good run.
-        start_date,end_date= last_date,today
+        start_date,end_date= last_date+datetime.timedelta(1),today
 
     downloadData(start_date,end_date)
     config_parser = ConfigParser()
