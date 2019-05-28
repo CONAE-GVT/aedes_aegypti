@@ -77,7 +77,9 @@ import equation_fitter
 def runCases(case):
     if(case==0):
         ovi_range=range(1,151)
-        for h in [10]:
+        errors_by_height=[[[1e15,-1,-1,1e15,1e15,1e15]]*151]*10
+        for h in range(1,3):
+            errors=errors_by_height[int(h)]
             for mf  in [0]:
                 configuration=Configuration('resources/2c.cfg')
                 configuration.config_parser.set('location','name','cordoba.full')#TODO:fix data and
@@ -88,7 +90,7 @@ def runCases(case):
                 model=Model(configuration)
                 time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
 
-                errors=[[1e15,-1,-1,1e15,1e15,1e15]]*151#just to fill the ovitrap 0 that do not exist in reality
+                #errors=[[1e15,-1,-1,1e15,1e15,1e15]]*151#just to fill the ovitrap 0 that do not exist in reality
                 for ovitrap_id in ovi_range:
                     OVITRAP_FILENAME='data/private/ovitrampas_2017-2018.full.csv'
                     values=utils.getOvitrapEggsFromCsv2(OVITRAP_FILENAME,None,None,ovitrap_id)
@@ -145,6 +147,9 @@ def runCases(case):
                          (mf,h,
                          ', '.join(map(str,ovi_sorted[-N-1:-1])), ', '.join(map(str,f[ovi_sorted[-N-1:-1]]))
                          ))
+
+        errors_by_height=np.array(errors_by_height)
+        print(errors_by_height.shape)
         pl.show()
 
     if(case==1):
