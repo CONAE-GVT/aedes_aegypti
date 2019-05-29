@@ -77,8 +77,8 @@ import equation_fitter
 def runCases(case):
     if(case==0):
         ovi_range=range(1,151)
-        errors_by_height=[[[1e15,-1,-1,1e15,1e15,1e15]]*151]*10
-        for h in range(1,3):
+        errors_by_height=[[[1e15,-1,-1,1e15,1e15,1e15]]*151]*15
+        for h in range(1,15):
             errors=errors_by_height[int(h)]
             for mf  in [0]:
                 configuration=Configuration('resources/2c.cfg')
@@ -149,6 +149,7 @@ def runCases(case):
                          ))
 
         errors_by_height=np.array(errors_by_height)
+        np.save('errors_by_height.npy',errors_by_height)
         print(errors_by_height.shape)
         pl.show()
 
@@ -302,6 +303,18 @@ def runCases(case):
         utils.showPlot(data_O,title='Oviposition in '+LOCATION.title(),xaxis_title='Date',yaxis_title='Eggs')
         utils.showPlot(data_W,title='Water in '+LOCATION.title(),xaxis_title='Date',yaxis_title='cm.')
         utils.showPlot([go.Scatter(x=x,y=y, name='')],title='',xaxis_title='Amount of days forecast',yaxis_title='Mean relative difference(?)')
+
+    if(case==9):
+        errors_by_height=np.load('errors_by_height.npy')
+        M_1,M_2,M_3=errors_by_height.shape
+        k=4
+        x,y,z=[],[],[]
+        for i in range(1,M_1):
+            for j in range(1,M_2):
+                    x+=[i]
+                    y+=[j]
+                    z+=[errors_by_height[i,j,k]]
+        utils.showPlot([go.Scatter3d(x=x,y=y,z=z,mode='markers', name='')],title='',xaxis_title='Height',yaxis_title='y')
 
 try:
     from otero_precipitation_wrapper import ModelWrapper as _Model
