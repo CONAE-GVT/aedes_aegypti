@@ -77,78 +77,73 @@ import equation_fitter
 def runCases(case):
     if(case==0):
         ovi_range=range(1,151)
-        errors_by_height=[[[1e15,-1,-1,1e15,1e15,1e15]]*151]*15
+        errors_by_height=np.array([[[np.nan,np.nan,np.nan,np.nan,np.nan]]*151]*15)
         for h in range(1,15):
-            errors=errors_by_height[int(h)]
-            for mf  in [0]:
-                configuration=Configuration('resources/2c.cfg')
-                configuration.config_parser.set('location','name','cordoba.full')#TODO:fix data and
-                configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(20)))# uncomment these two
-                n=len(configuration.getArray('breeding_site','height'))
-                configuration.config_parser.set('breeding_site','height',','.join([str(h)]*n))
-                configuration.config_parser.set('breeding_site','manually_filled',','.join([str(mf)]+[str(0)]*(n-1)))
-                model=Model(configuration)
-                time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
+            configuration=Configuration('resources/1c.cfg')
+            configuration.config_parser.set('location','name','cordoba.full')#TODO:fix data and
+            configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(20)))# uncomment these two
+            configuration.config_parser.set('breeding_site','height',str(h))
+            model=Model(configuration)
+            time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
 
-                #errors=[[1e15,-1,-1,1e15,1e15,1e15]]*151#just to fill the ovitrap 0 that do not exist in reality
-                for ovitrap_id in ovi_range:
-                    OVITRAP_FILENAME='data/private/ovitrampas_2017-2018.full.csv'
-                    values=utils.getOvitrapEggsFromCsv2(OVITRAP_FILENAME,None,None,ovitrap_id)
-                    ovitrap_days=values.keys()
-                    dates=[model.start_date + datetime.timedelta(t) for t in time_range]
+            #errors=[[1e15,-1,-1,1e15,1e15,1e15]]*151#just to fill the ovitrap 0 that do not exist in reality
+            for ovitrap_id in ovi_range:
+                OVITRAP_FILENAME='data/private/ovitrampas_2017-2018.full.csv'
+                values=utils.getOvitrapEggsFromCsv2(OVITRAP_FILENAME,None,None,ovitrap_id)
+                ovitrap_days=values.keys()
+                dates=[model.start_date + datetime.timedelta(t) for t in time_range]
 
-                    ovi=[utils.noneMean(values[date]) if date in values else None for date in dates]#TODO:WARNING!this will repeat values if model granularity is not 1 value per day.
-                    ovi=np.array(equation_fitter.populate(model.time_range,ovi))
-                    ovi=np.array(ovi,dtype=np.float)#this change None for np.nan
+                ovi=[utils.noneMean(values[date]) if date in values else None for date in dates]#TODO:WARNING!this will repeat values if model granularity is not 1 value per day.
+                ovi=np.array(equation_fitter.populate(model.time_range,ovi))
+                ovi=np.array(ovi,dtype=np.float)#this change None for np.nan
 
-                    indexOf=lambda t: (np.abs(time_range-t)).argmin()
-                    OVIPOSITION=model.parameters.OVIPOSITION
-                    BS_a=model.parameters.BS_a
-                    O=Y[:,OVIPOSITION]
-                    lwO=np.sum([Y[indexOf(t),OVIPOSITION]-Y[indexOf(t-7),OVIPOSITION] for t in time_range],axis=1)/BS_a#calculate the difference,sum up all levels, and divide by amount of containers
+                indexOf=lambda t: (np.abs(time_range-t)).argmin()
+                OVIPOSITION=model.parameters.OVIPOSITION
+                BS_a=model.parameters.BS_a
+                O=Y[:,OVIPOSITION]
+                lwO=np.sum([Y[indexOf(t),OVIPOSITION]-Y[indexOf(t-7),OVIPOSITION] for t in time_range],axis=1)/BS_a#calculate the difference,sum up all levels, and divide by amount of containers
 
-                    errors[ovitrap_id]=calculateMetrics(time_range,lwO,ovi)
+                errors_by_height[h][ovitrap_id]=calculateMetrics(time_range,lwO,ovi)
 
 
-                errors=np.array(errors)
-                rmse, cort,pearson,fd,dtw,D=errors[:,0],errors[:,1],errors[:,2],errors[:,3],errors[:,4],errors[:,5]
-                print('''mf:%scm. h: %scm.
-                             id,    score
-                    rmse:    %3s,   %s
-                    cort:    %3s,   %s
-                    pearson: %3s,   %s
-                    fd:      %3s,   %s
-                    dtw:     %3s,   %s
-                    D:       %3s,   %s'''%
-                    (mf,h,
-                    rmse.argmin(),rmse.min(),
-                    cort.argmax(),cort.max(),
-                    pearson.argmax(),pearson.max(),
-                    fd.argmin(),fd.min(),
-                    dtw.argmin(),dtw.min(),
-                    D.argmin(),D.min()
-                    ) )
-
-                #print first N
-                for i in range(errors.shape[1]):
-                    f=errors[:,i]
-                    ovi_sorted=np.argsort(f)
-                    N=5
-                    print('''mf:%scm. h: %scm.
+            errors=errors_by_height[h]
+            rmse, cort,pearson,fd,dtw,D=errors[:,0],errors[:,1],errors[:,2],errors[:,3],errors[:,4],errors[:,5]
+            print('''h: %scm.
                          id,    score
-                         f:    %3s  <---->  %s'''%
-                         (mf,h,
-                         ', '.join(map(str,ovi_sorted[:N])), ', '.join(map(str,f[ovi_sorted[:N]]))
-                         ))
-                    #print last N(excluding the ficticius one)
-                    print('''mf:%scm. h: %scm.
-                         id,    score
-                         f:    %3s  <---->  %s'''%
-                         (mf,h,
-                         ', '.join(map(str,ovi_sorted[-N-1:-1])), ', '.join(map(str,f[ovi_sorted[-N-1:-1]]))
-                         ))
+                rmse:    %3s,   %s
+                cort:    %3s,   %s
+                pearson: %3s,   %s
+                fd:      %3s,   %s
+                dtw:     %3s,   %s
+                D:       %3s,   %s'''%
+                (h,
+                rmse.argmin(),rmse.min(),
+                cort.argmax(),cort.max(),
+                pearson.argmax(),pearson.max(),
+                fd.argmin(),fd.min(),
+                dtw.argmin(),dtw.min(),
+                D.argmin(),D.min()
+                ) )
 
-        errors_by_height=np.array(errors_by_height)
+            #print first N
+            for i in range(errors.shape[1]):
+                f=errors[:,i]
+                ovi_sorted=np.argsort(f)
+                N=5
+                print('''h: %scm.
+                     id,    score
+                     f:    %3s  <---->  %s'''%
+                     (h,
+                     ', '.join(map(str,ovi_sorted[:N])), ', '.join(map(str,f[ovi_sorted[:N]]))
+                     ))
+                #print last N(excluding the ficticius one)
+                print('''h: %scm.
+                     id,    score
+                     f:    %3s  <---->  %s'''%
+                     (h,
+                     ', '.join(map(str,ovi_sorted[-N-1:-1])), ', '.join(map(str,f[ovi_sorted[-N-1:-1]]))
+                     ))
+
         np.save('errors_by_height.npy',errors_by_height)
         print(errors_by_height.shape)
         pl.show()
@@ -306,15 +301,7 @@ def runCases(case):
 
     if(case==9):
         errors_by_height=np.load('errors_by_height.npy')
-        M_1,M_2,M_3=errors_by_height.shape
-        k=4
-        x,y,z=[],[],[]
-        for i in range(1,M_1):
-            for j in range(1,M_2):
-                    x+=[i]
-                    y+=[j]
-                    z+=[errors_by_height[i,j,k]]
-        utils.showPlot([go.Scatter3d(x=x,y=y,z=z,mode='markers', name='')],title='',xaxis_title='Height',yaxis_title='y')
+        utils.showPlot([go.Surface(z=errors_by_height[:,:,3], name='')],title='',xaxis_title='Height',yaxis_title='y')
 
 try:
     from otero_precipitation_wrapper import ModelWrapper as _Model
