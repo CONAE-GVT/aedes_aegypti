@@ -295,7 +295,7 @@ def runCases(case):
         for serie in data_A:
             x+= [( datetime.datetime.strptime(data_A[-1]['name'],'%Y-%m-%d') - datetime.datetime.strptime(serie['name'],'%Y-%m-%d') ).days]#TODO:we depend on using simulation date as name
             S_last,S_i=np.array(data_A[-1]['y']),np.array(serie['y'])
-            y+= [np.sum(np.abs(S_last-S_i)/S_last)*1/len(S_i) ]#relative difference mean
+            y+= [np.sum(np.abs(S_last-S_i)/(S_last+S_i))*1/len(S_i) ]#relative difference mean. 0<=||S_last-S_i||/(S_last+S_i) <= 1 by triangular inequality. => sum(...)/n in [0,1].
             assert len(S_i)==len(S_last)
         x,y=[e for e in reversed(x)],[e for e in reversed(y)]
 
