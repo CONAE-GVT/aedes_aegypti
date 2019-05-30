@@ -122,7 +122,7 @@ def runCases(case):
                 np.nanargmin(cort),np.nanmin(cort),
                 np.nanargmin(pearson),np.nanmin(pearson),
                 np.nanargmin(fd),np.nanmin(fd),
-                np.nanargmin(fd),np.nanmin(fd),
+                np.nanargmin(dtw),np.nanmin(dtw),
                 np.nanargmin(D),np.nanmin(D)
                 ) )
 
@@ -150,30 +150,27 @@ def runCases(case):
         pl.show()
 
     if(case==1):
-        for mf  in [0]:
-            h=10.
-            configuration=Configuration('resources/2c.cfg')
-            configuration.config_parser.set('location','name','cordoba.full')
-            configuration.config_parser.set('simulation','end_date',str(datetime.date.today()))
-            n=len(configuration.getArray('breeding_site','height'))
-            configuration.config_parser.set('breeding_site','height',','.join([str(h)]*n))
-            configuration.config_parser.set('breeding_site','manually_filled',','.join([str(mf)]+[str(0)]*(n-1)))
-            model=Model(configuration)
-            time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
-            utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','O':list([34,19,133,1,56,16,25,143,59,44]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
-            title='Manually Filled:%scm. Height: %scm.'%(mf,h),
-            xaxis_title='Fecha',
-            yaxis_title='Nº de huevos')
+        h=1.
+        configuration=Configuration('resources/1c.cfg')
+        configuration.config_parser.set('location','name','cordoba.full')
+        configuration.config_parser.set('simulation','end_date',str(datetime.date.today()))
+        configuration.config_parser.set('breeding_site','height',str(h))
+        model=Model(configuration)
+        time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
+        utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','O':list([34,19,133,1,56,16,25,143,59,44]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
+        title='Height: %scm.'%h,
+        xaxis_title='Fecha',
+        yaxis_title='Nº de huevos')
 
-            #utils.showPlot(utils.plot(model,subplots=[{'E':''}],plot_start_date=datetime.date(2017,10,1)),title='Manually Filled:%scm. Height: %scm.(Oct-Nov-Dic just prom available)'%(mf,h))
-            #utils.showPlot(utils.plot(model,subplots=[{'pa':''}]))
-            print('mf:%s h:%s Max E: %s'%(mf,h,np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1))))
-            print(model.warnings)
+        #utils.showPlot(utils.plot(model,subplots=[{'E':''}],plot_start_date=datetime.date(2017,10,1)),title='Manually Filled:%scm. Height: %scm.(Oct-Nov-Dic just prom available)'%(mf,h))
+        #utils.showPlot(utils.plot(model,subplots=[{'pa':''}]))
+        print('h:%s Max E: %s'%(h,np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1))))
+        print(model.warnings)
 
-            #is OEquations perturbing the result somehow?No, the results match.
-            #model2=Model(configuration)
-            #time_range2,initial_condition2,Y2=model2.solveEquations(method='rk')
-            #print(np.linalg.norm((Y[:,:model.parameters.OVIPOSITION.start]-Y2)))
+        #is OEquations perturbing the result somehow?No, the results match.
+        #model2=Model(configuration)
+        #time_range2,initial_condition2,Y2=model2.solveEquations(method='rk')
+        #print(np.linalg.norm((Y[:,:model.parameters.OVIPOSITION.start]-Y2)))
 
     if(case==2):
         for mf  in [0.,3.]:
@@ -303,6 +300,22 @@ def runCases(case):
     if(case==9):
         errors_by_height=np.load('errors_by_height.npy')
         utils.showPlot([go.Surface(z=errors_by_height[:,:,4], name='')],title='',xaxis_title='Height',yaxis_title='y')
+    if(case==10):
+        errors_by_height=np.load('errors_by_height.npy')
+        for h in range(1,15):
+            configuration=Configuration('resources/1c.cfg')
+            configuration.config_parser.set('location','name','cordoba.full')
+            configuration.config_parser.set('simulation','end_date',str(datetime.date.today()))
+            configuration.config_parser.set('breeding_site','height',str(h))
+            model=Model(configuration)
+            time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
+            o_h=[]
+            for i in range(1,151):
+                if np.nanargmin(errors_by_height[:,i,5])==h: o_h+=[i]
+            utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','O':list(o_h),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
+            title='Height: %scm.'%h,
+            xaxis_title='Fecha',
+            yaxis_title='Nº de huevos')
 
 try:
     from otero_precipitation_wrapper import ModelWrapper as _Model
