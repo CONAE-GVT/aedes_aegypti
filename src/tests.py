@@ -77,7 +77,8 @@ import equation_fitter
 def runCases(case):
     if(case==0):
         ovi_range=range(1,151)
-        errors_by_height=np.array([[[np.nan,np.nan,np.nan,np.nan,np.nan]]*151]*15)
+        errors_by_height=np.empty((15,151,6))
+        errors_by_height[:]=np.nan
         for h in range(1,15):
             configuration=Configuration('resources/1c.cfg')
             configuration.config_parser.set('location','name','cordoba.full')#TODO:fix data and
@@ -117,12 +118,12 @@ def runCases(case):
                 dtw:     %3s,   %s
                 D:       %3s,   %s'''%
                 (h,
-                rmse.argmin(),rmse.min(),
-                cort.argmax(),cort.max(),
-                pearson.argmax(),pearson.max(),
-                fd.argmin(),fd.min(),
-                dtw.argmin(),dtw.min(),
-                D.argmin(),D.min()
+                np.nanargmin(rmse),np.nanmin(rmse),
+                np.nanargmin(cort),np.nanmin(cort),
+                np.nanargmin(pearson),np.nanmin(pearson),
+                np.nanargmin(fd),np.nanmin(fd),
+                np.nanargmin(fd),np.nanmin(fd),
+                np.nanargmin(D),np.nanmin(D)
                 ) )
 
             #print first N
@@ -301,7 +302,7 @@ def runCases(case):
 
     if(case==9):
         errors_by_height=np.load('errors_by_height.npy')
-        utils.showPlot([go.Surface(z=errors_by_height[:,:,3], name='')],title='',xaxis_title='Height',yaxis_title='y')
+        utils.showPlot([go.Surface(z=errors_by_height[:,:,4], name='')],title='',xaxis_title='Height',yaxis_title='y')
 
 try:
     from otero_precipitation_wrapper import ModelWrapper as _Model
