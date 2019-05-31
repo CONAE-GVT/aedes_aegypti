@@ -299,7 +299,9 @@ def runCases(case):
 
     if(case==9):
         errors_by_height=np.load('errors_by_height.npy')
-        utils.showPlot([go.Surface(z=errors_by_height[:,:,4], name='')],title='',xaxis_title='Height',yaxis_title='y')
+        names=['rmse', 'cort','pearson','fd','dtw','D']
+        d=5
+        utils.showPlot([go.Surface(z=errors_by_height[:,:,d] )],title=names[d],scene=dict(xaxis=dict(title='Ovitrap id'),yaxis=dict(title='Height')) )
     if(case==10):
         errors_by_height=np.load('errors_by_height.npy')
         for h in range(1,15):
@@ -311,7 +313,7 @@ def runCases(case):
             time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
             o_h=[]
             for i in range(1,151):
-                if np.nanargmin(errors_by_height[:,i,5])==h: o_h+=[i]
+                if np.nanargmin(errors_by_height[:,i,0])==h: o_h+=[i]
             utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','O':list(o_h),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
             title='Height: %scm.'%h,
             xaxis_title='Fecha',
