@@ -68,16 +68,18 @@ def calculateMetrics(time_range,lwO_mean,ovitrap_eggs_i):
     y=np.array([ [time_range[idx],ovitrap_eggs_i[idx] ] for idx,isValid in enumerate(valid_ovi_idx) if isValid])
     fd=sm.frechet_dist(x,y)
     dtw, path = sm.dtw(x, y)
+    D_1=utils.D(ovitrap_eggs_i[valid_ovi_idx], lwO_mean[valid_ovi_idx],k=1)
     D=utils.D(ovitrap_eggs_i[valid_ovi_idx], lwO_mean[valid_ovi_idx])
+    D_2=utils.D(ovitrap_eggs_i[valid_ovi_idx], lwO_mean[valid_ovi_idx],k=2)
+    D_4=utils.D(ovitrap_eggs_i[valid_ovi_idx], lwO_mean[valid_ovi_idx],k=4)
 
-
-    return rmse, cort,pearson,fd,dtw,D
+    return rmse, cort,pearson,fd,dtw,D,D_1,D_2,D_4
 
 import equation_fitter
 def runCases(case):
     if(case==0):
         ovi_range=range(1,151)
-        errors_by_height=np.empty((15,151,6))
+        errors_by_height=np.empty((15,151,9))
         errors_by_height[:]=np.nan
         for h in range(1,15):
             configuration=Configuration('resources/1c.cfg')
@@ -108,7 +110,7 @@ def runCases(case):
 
 
             errors=errors_by_height[h]
-            rmse, cort,pearson,fd,dtw,D=errors[:,0],errors[:,1],errors[:,2],errors[:,3],errors[:,4],errors[:,5]
+            rmse, cort,pearson,fd,dtw,D,D_1,D_2,D_4=[errors[:,i] for i in range(errors.shape[1])]
             print('''h: %scm.
                          id,    score
                 rmse:    %3s,   %s
@@ -299,9 +301,9 @@ def runCases(case):
 
     if(case==9):
         errors_by_height=np.load('errors_by_height.npy')
-        names=['rmse', 'cort','pearson','fd','dtw','D']
-        d=5
-        utils.showPlot([go.Surface(z=errors_by_height[:,:,d] )],title=names[d],scene=dict(xaxis=dict(title='Ovitrap id'),yaxis=dict(title='Height')) )
+        names=['rmse', 'cort','pearson','fd','dtw','D','D_1','D_2','D_4']
+        for d,name in enumerate(names):
+            utils.showPlot([go.Surface(z=errors_by_height[:,:,d] )],title=name,scene=dict(xaxis=dict(title='Ovitrap id'),yaxis=dict(title='Height')) )
     if(case==10):
         errors_by_height=np.load('errors_by_height.npy')
         for h in range(1,15):

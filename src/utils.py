@@ -434,8 +434,8 @@ def delta_e(x,y):
     assert len(x)==len(y)
     return np.sqrt( np.sum((x-y)**2) )
 
-def D(x,y):
-    return f(cort(x,y))*delta_e(x,y)
+def D(x,y,k=3):
+    return f(cort(x,y),k)*delta_e(x,y)
 
-def f(x,k=3):
+def f(x,k):
     return 2/(1+np.exp(k*x))
