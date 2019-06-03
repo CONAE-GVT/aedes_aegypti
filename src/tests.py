@@ -14,6 +14,7 @@ from spatial_equations import diff_eqs as spatial_diff_eqs
 import pylab as pl
 import similaritymeasures as sm
 import plotly.graph_objs as go
+from plotly import tools
 
 def runSpatial():
     configuration=Configuration('resources/otero_precipitation.cfg')
@@ -320,6 +321,18 @@ def runCases(case):
             title='Height: %scm.'%h,
             xaxis_title='Fecha',
             yaxis_title='Nº de huevos')
+
+    if(case==11):
+        errors_by_height=np.load('errors_by_height.npy')
+        #names=['rmse', 'cort','pearson','fd','dtw','D','D_1','D_2','D_4']
+        #for d,name in enumerate(names):
+        #    utils.showPlot([go.Surface(z=errors_by_height[:,:,d] )],title=name,scene=dict(xaxis=dict(title='Ovitrap id'),yaxis=dict(title='Height')) )
+        d=4
+        fig = tools.make_subplots(rows=errors_by_height.shape[0], cols=1)
+        for h in range(1,errors_by_height.shape[0]):
+            fig.append_trace(go.Scatter(x=np.array(range(0,errors_by_height.shape[1])), y=errors_by_height[h,:,d],name='%scm.'%h),errors_by_height.shape[0]-h,1)
+        utils.showPlot(fig)
+
 
 try:
     from otero_precipitation_wrapper import ModelWrapper as _Model
