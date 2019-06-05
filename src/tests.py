@@ -300,13 +300,14 @@ def runCases(case):
         utils.showPlot(data_W,title='Water in '+LOCATION.title(),xaxis_title='Date',yaxis_title='cm.')
         utils.showPlot([go.Scatter(x=x,y=y, name='')],title='',xaxis_title='Amount of days forecast',yaxis_title='Mean relative difference(?)')
 
+    names=['rmse', 'cort','pearson','fd','dtw','D','D_1','D_2','D_4']
     if(case==9):
         errors_by_height=np.load('errors_by_height.npy')
-        names=['rmse', 'cort','pearson','fd','dtw','D','D_1','D_2','D_4']
         for d,name in enumerate(names):
             utils.showPlot([go.Surface(z=errors_by_height[:,:,d] )],title=name,scene=dict(xaxis=dict(title='Ovitrap id'),yaxis=dict(title='Height')) )
     if(case==10):
         errors_by_height=np.load('errors_by_height.npy')
+        d=3
         for h in range(1,15):
             configuration=Configuration('resources/1c.cfg')
             configuration.config_parser.set('location','name','cordoba.full')
@@ -316,20 +317,21 @@ def runCases(case):
             time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
             o_h=[]
             for i in range(1,151):
-                if np.nanargmin(errors_by_height[:,i,0])==h: o_h+=[i]
+                if np.nanargmin(errors_by_height[:,i,d])==h: o_h+=[i]
             utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','O':list(o_h),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
-            title='Height: %scm.'%h,
+            title=names[d]+' Height: %scm.'%h,
             xaxis_title='Fecha',
             yaxis_title='Nº de huevos')
 
     if(case==11):
         errors_by_height=np.load('errors_by_height.npy')
-        d=4
-        fig = tools.make_subplots(rows=errors_by_height.shape[0], cols=1)
-        for h in range(1,errors_by_height.shape[0]):
-            fig.append_trace(go.Scatter(x=np.array(range(0,errors_by_height.shape[1])), y=errors_by_height[h,:,d],name='%scm.'%h),errors_by_height.shape[0]-h,1)
-            fig['layout']['yaxis'+str(h)].update(range=[1,20000])
-        utils.showPlot(fig)
+        for d,name in enumerate(names):
+            fig = tools.make_subplots(rows=errors_by_height.shape[0], cols=1)
+            for h in range(1,errors_by_height.shape[0]):
+                fig.append_trace(go.Scatter(x=np.array(range(0,errors_by_height.shape[1])), y=errors_by_height[h,:,d],name='%scm.'%h),h,1)
+                fig['layout']['yaxis'+str(h)].update(range=[1,np.nanmax(errors_by_height[:,:,d])])
+            fig['layout']['title']=name
+            utils.showPlot(fig)
 
 
 try:
