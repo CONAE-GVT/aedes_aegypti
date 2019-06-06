@@ -291,7 +291,7 @@ def runCases(case):
         for serie in data_A:
             x+= [( datetime.datetime.strptime(data_A[-1]['name'],'%Y-%m-%d') - datetime.datetime.strptime(serie['name'],'%Y-%m-%d') ).days]#TODO:we depend on using simulation date as name
             S_last,S_i=np.array(data_A[-1]['y']),np.array(serie['y'])
-            y+= [np.sum(np.abs(S_last-S_i)/(S_last+S_i))*1/len(S_i) ]#relative difference mean. 0<=||S_last-S_i||/(S_last+S_i) <= 1 by triangular inequality. => sum(...)/n in [0,1].
+            y+= [np.sum(np.abs(S_last-S_i)/S_last)*1/len(S_i) ]#relative difference mean. 0<=||S_last-S_i||/(S_last+S_i) <= 1 by triangular inequality. => sum(...)/n in [0,1].
             assert len(S_i)==len(S_last)
         x,y=[e for e in reversed(x)],[e for e in reversed(y)]
 
@@ -307,7 +307,7 @@ def runCases(case):
             utils.showPlot([go.Surface(z=errors_by_height[:,:,d] )],title=name,scene=dict(xaxis=dict(title='Ovitrap id'),yaxis=dict(title='Height')) )
     if(case==10):
         errors_by_height=np.load('errors_by_height.npy')
-        d=3
+        d=6
         for h in range(1,15):
             configuration=Configuration('resources/1c.cfg')
             configuration.config_parser.set('location','name','cordoba.full')
@@ -318,10 +318,12 @@ def runCases(case):
             o_h=[]
             for i in range(1,151):
                 if np.nanargmin(errors_by_height[:,i,d])==h: o_h+=[i]
-            utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','O':list(o_h),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
-            title=names[d]+' Height: %scm.'%h,
-            xaxis_title='Fecha',
-            yaxis_title='Nº de huevos')
+
+            if(o_h):
+                utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','O':list(o_h),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
+                    title=names[d]+' Height: %scm.'%h,
+                    xaxis_title='Fecha',
+                    yaxis_title='Nº de huevos')
 
     if(case==11):
         errors_by_height=np.load('errors_by_height.npy')
