@@ -9,7 +9,6 @@
 
 import numpy as np
 from scipy.sparse import spdiags,linalg,eye
-from time import sleep
 import moviepy.editor as mpy
 
 #Parameter values
@@ -52,9 +51,6 @@ def five_pt_laplacian_sparse(m,a,b):
 # Set up the grid
 a=-1.; b=1.
 m=200; h=(b-a)/m;
-x = np.linspace(-1,1,m)
-y = np.linspace(-1,1,m)
-Y,X = np.meshgrid(y,x)
 
 # Initial data
 u=np.random.randn(m,m)/2.;
@@ -93,5 +89,5 @@ def makeFrame(t):
     return frame[:,:,np.newaxis]*np.array([1,0,0]).transpose()*255
 
 
-animation = mpy.VideoClip(makeFrame, duration=len(frames))
+animation = mpy.VideoClip(makeFrame, duration=len(frames)/3)
 animation.write_videofile('pde.mp4', fps=60)

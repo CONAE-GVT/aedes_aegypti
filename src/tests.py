@@ -338,15 +338,18 @@ def runCases(case):
     if(case==12):
         errors_by_height=np.load('errors_by_height.npy')
         d=5#this has to be the same as test 10!
-        fig = tools.make_subplots(rows=2, cols=2)
-        for i,h in enumerate([1,4,6,8]):
+        heights=[1,4,6,8]
+        fig = tools.make_subplots(rows=2, cols=2,subplot_titles=['%scm.'%h for h in heights])
+        for i,h in enumerate(heights):
             configuration=Configuration('resources/1c.cfg')
             configuration.config_parser.set('location','name','cordoba.full')
-            configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(30)))
+            configuration.config_parser.set('simulation','end_date',str(datetime.date.today()))
             configuration.config_parser.set('breeding_site','height',str(h))
             model=Model(configuration)
             time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
-            fig.append_trace(utils.plot(model,subplots=[{'cd':'','lwO':'','O':[np.nanargmin(errors_by_height[h,:,d])],'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1))[0],int(i/2) +1,i%2 +1)
+            traces=utils.plot(model,subplots=[{'lwO':'','O':list([np.nanargmin(errors_by_height[h,:,d])]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1))
+            for trace in traces:
+                fig.append_trace(trace,int(i/2) +1,i%2 +1)
             #fig['layout']['yaxis'+str(h)].update(range=[1,np.nanmax(errors_by_height[:,:,d])])
         fig['layout']['title']=''
         utils.showPlot(fig)
