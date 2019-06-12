@@ -338,7 +338,7 @@ def runCases(case):
     if(case==12):
         errors_by_height=np.load('errors_by_height.npy')
         d=5#this has to be the same as test 10!
-        heights=[1,4,6,8]
+        heights=[1,2,3,8]
         fig = tools.make_subplots(rows=2, cols=2,subplot_titles=['%scm.'%h for h in heights])
         for i,h in enumerate(heights):
             configuration=Configuration('resources/1c.cfg')
