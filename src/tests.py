@@ -153,14 +153,14 @@ def runCases(case):
         pl.show()
 
     if(case==1):
-        h=1.
+        h=3.
         configuration=Configuration('resources/1c.cfg')
         configuration.config_parser.set('location','name','cordoba.full')
         configuration.config_parser.set('simulation','end_date',str(datetime.date.today()))
         configuration.config_parser.set('breeding_site','height',str(h))
         model=Model(configuration)
         time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
-        utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','O':list([34,19,133,1,56,16,25,143,59,44]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
+        utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','O':list([100,44,68,25,143]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
         title='Height: %scm.'%h,
         xaxis_title='Fecha',
         yaxis_title='Nº de huevos')
@@ -353,6 +353,13 @@ def runCases(case):
             #fig['layout']['yaxis'+str(h)].update(range=[1,np.nanmax(errors_by_height[:,:,d])])
         fig['layout']['title']=''
         utils.showPlot(fig)
+
+    if(case==13):
+        errors_by_height=np.load('errors_by_height.npy')
+        a=[-1]+[np.nanmin(errors_by_height[:,o,5]) for o in range(1,151)]
+        idx=np.argsort(a)
+        print(idx[-5:])
+
 
 
 try:
