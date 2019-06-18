@@ -105,7 +105,10 @@ def downloadDataFromGDAS(start_date,end_date,folder):
             for a_forecast in ['00','03','06','09']:#a forcast time
                 url='http://nomads.ncep.noaa.gov/cgi-bin/filter_gdas_0p25.pl?file=gdas.t%sz.pgrb2.0p25.f0%s&lev_2_m_above_ground=on&var_GUST=on&var_RH=on&var_TCDC=on&var_TMAX=on&var_TMIN=on&var_TMP=on&subregion=&leftlon=-76&rightlon=-52&toplat=-19&bottomlat=-56&dir=%%2Fgdas.%d%02d%02d'%(a_time,a_forecast,a_date.year,a_date.month,a_date.day)
                 filename=getFilenameForGDAS(a_date,a_time,f=a_forecast)
-                open(folder+'/'+filename, 'wb').write(urllib.request.urlopen(url).read())
+                try:
+                    open(folder+'/'+filename, 'wb').write(urllib.request.urlopen(url).read())
+                except urllib.error.HTTPError as e:
+                    logging.warning(e.reason)
                 time.sleep(SLEEP)
 
 def extractDailyDataFromGDAS(lat,lon,a_date,folder,FIELDS,typeOfLevel,f):
