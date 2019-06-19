@@ -359,7 +359,10 @@ def runCases(case):
         a=[-1]+[np.nanmin(errors_by_height[:,o,5]) for o in range(1,151)]
         idx=np.argsort(a)
         print(idx[-5:])
-
+    if(case==14):
+        errors_by_height=np.load('errors_by_height.npy')
+        d=5
+        utils.showPlot([go.Heatmap(z=errors_by_height[:,:,d])])
 
 
 try:
