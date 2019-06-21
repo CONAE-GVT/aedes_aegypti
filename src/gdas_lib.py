@@ -86,7 +86,7 @@ def download_files(filelist,directory):
                     logging.info('Download: %s'% remote_filename)
 
 def download(index,folder):
-    file_list=json.loads( urllib.request.urlopen(base+'/request/'+index+'/filelist').read() )
+    file_list=json.loads( urllib.request.urlopen(base+'/request/'+index+'/filelist').read().decode('ISO-8859-1') )
     download_files(file_list,folder)
 
 def purge(index):#method not tested
