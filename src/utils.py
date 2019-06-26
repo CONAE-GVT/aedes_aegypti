@@ -367,6 +367,22 @@ def plot(model,subplots,plot_start_date=None,color=None):
                 ovi=np.array([noneMean(values[date]) for date in ovitrap_dates])
                 data.append(go.Scatter(x=ovitrap_dates[ovi!=[None]], y=applyFs(ovi,subplot)[ovi!=[None]], name='Ovitrap %s eggs'%ovitrap_id, mode = 'markers'))
 
+        if('PO' in subplot):
+            po={}
+            for ovitrap_id in range(1,151):
+                values=getOvitrapEggsFromCsv2('data/private/ovitrampas_2017-2018.full.csv',model.start_date,model.end_date,ovitrap_id)
+                for k in values:
+                    a=np.array(values[k],np.float)
+                    positives=np.count_nonzero(a[:2]>0)
+                    if k in po:
+                        po[k]+=positives
+                    else:
+                        po[k]=positives
+
+            ovitrap_dates=np.array([k for k in po.keys()])
+            ovi=np.array([po[date] for date in ovitrap_dates])
+            data.append(go.Scatter(x=ovitrap_dates, y=applyFs(ovi,subplot), name='Positive Ovitraps', mode = 'markers'))
+
         if('cd' in subplot):#current date
             location=model.parameters.location['name']
             if('cordoba.full.weather-' in location):
