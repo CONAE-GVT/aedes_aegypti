@@ -363,6 +363,13 @@ def runCases(case):
         errors_by_height=np.load('errors_by_height.npy')
         d=5
         utils.showPlot([go.Heatmap(z=errors_by_height[:,:,d])])
+    if(case==15):
+        configuration=Configuration('resources/1c.cfg')
+        configuration.config_parser.set('location','name','cordoba.full')
+        configuration.config_parser.set('simulation','end_date',str(datetime.date.today()))
+        model=Model(configuration)
+        model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
+        utils.showPlot(utils.plot(model,subplots=[{'PO':'','f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)))
 
 
 try:
