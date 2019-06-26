@@ -103,8 +103,7 @@ def downloadDataFromGDAS(start_date,end_date,folder):
     for a_date in daterange(start_date,end_date):
         for a_time in ['00','06','12','18']:
             for a_forecast in ['00','03','06','09']:#a forcast time
-                url='https://nomads.ncep.noaa.gov/cgi-bin/filter_gdas_0p25.pl?file=gdas.t{time}z.pgrb2.0p25.f0{forecast}&lev_2_m_above_ground=on&var_GUST=on&var_RH=on&var_TCDC=on&var_TMAX=on&var_TMIN=on&var_TMP=on&subregion=&leftlon=-76&rightlon=-52&toplat=-19&bottomlat=-56&dir=%%2Fgdas.{year}{month:02}{day:02}%%2F{time}'
-                    .format(time=a_time,forecast=a_forecast,year=a_date.year,month=a_date.month,day=a_date.day)
+                url='https://nomads.ncep.noaa.gov/cgi-bin/filter_gdas_0p25.pl?file=gdas.t{time}z.pgrb2.0p25.f0{forecast}&lev_2_m_above_ground=on&var_GUST=on&var_RH=on&var_TCDC=on&var_TMAX=on&var_TMIN=on&var_TMP=on&subregion=&leftlon=-76&rightlon=-52&toplat=-19&bottomlat=-56&dir=%%2Fgdas.{year}{month:02}{day:02}%%2F{time}'.format(time=a_time,forecast=a_forecast,year=a_date.year,month=a_date.month,day=a_date.day)
                 filename=getFilenameForGDAS(a_date,a_time,f=a_forecast)
                 open(folder+'/'+filename, 'wb').write(urllib.request.urlopen(url).read())
                 time.sleep(SLEEP)
