@@ -369,6 +369,7 @@ def plot(model,subplots,plot_start_date=None,color=None):
 
         if('PO' in subplot):
             po={}
+            fo={}
             for ovitrap_id in range(1,151):
                 values=getOvitrapEggsFromCsv2('data/private/ovitrampas_2017-2018.full.csv',model.start_date,model.end_date,ovitrap_id)
                 for k in values:
@@ -376,12 +377,23 @@ def plot(model,subplots,plot_start_date=None,color=None):
                     positives=np.count_nonzero(a[:2]>0)
                     if k in po:
                         po[k]+=positives
+                        fo[k]+=np.count_nonzero(np.isfinite(a[:2]))#amount of not nan.
                     else:
                         po[k]=positives
+                        fo[k]=np.count_nonzero(np.isfinite(a[:2]))#amount of not nan.
 
             ovitrap_dates=np.array([k for k in po.keys()])
-            ovi=np.array([po[date] for date in ovitrap_dates])
-            data.append(go.Scatter(x=ovitrap_dates, y=applyFs(ovi,subplot), name='Positive Ovitraps', mode = 'markers'))
+            ovi=np.array([po[date]/fo[date] for date in ovitrap_dates])
+            data.append(go.Scatter(x=ovitrap_dates, y=ovi, name='Positive Ovitraps', mode = 'markers'))
+            #q
+            Y=RES#it should be Y everywhere....
+            indexOf=lambda t: (np.abs(time_range-t)).argmin()
+            OVIPOSITION=model.parameters.OVIPOSITION
+            O=Y[:,OVIPOSITION]
+            lwO=np.array([Y[indexOf(t),OVIPOSITION]-Y[indexOf(t-7),OVIPOSITION] for t in time_range])/BS_a
+            M=safeAdd(lwO)*BS_a/63#Check if this actually is the amount of BS colonized.
+            p=1/BS_a
+            data.append(go.Scatter(x=date_range, y=1-(1-p)**M, name='q',line = dict(color= (color))  ))
 
         if('cd' in subplot):#current date
             location=model.parameters.location['name']

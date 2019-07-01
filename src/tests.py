@@ -364,12 +364,19 @@ def runCases(case):
         d=5
         utils.showPlot([go.Heatmap(z=errors_by_height[:,:,d])])
     if(case==15):
-        configuration=Configuration('resources/1c.cfg')
-        configuration.config_parser.set('location','name','cordoba.full')
-        configuration.config_parser.set('simulation','end_date',str(datetime.date.today()))
-        model=Model(configuration)
-        model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
-        utils.showPlot(utils.plot(model,subplots=[{'PO':'','f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)))
+        mfs=[1,2,3,4]
+        fig = tools.make_subplots(rows=2, cols=2,subplot_titles=['%scm.'%mf for mf in mfs])
+        for i,mf in enumerate(mfs):
+            configuration=Configuration('resources/1c.cfg')
+            configuration.config_parser.set('location','name','cordoba.full')
+            configuration.config_parser.set('simulation','end_date',str(datetime.date.today()))
+            configuration.config_parser.set('breeding_site','manually_filled',str(mf))
+            model=Model(configuration)
+            model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
+            traces=utils.plot(model,subplots=[{'PO':''}],plot_start_date=datetime.date(2017,10,1))
+            for trace in traces:
+                fig.append_trace(trace,int(i/2) +1,i%2 +1)
+        utils.showPlot(fig)
 
 
 try:
