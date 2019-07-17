@@ -77,6 +77,7 @@ def calculateMetrics(time_range,lwO_mean,ovitrap_eggs_i):
     return rmse, cort,pearson,fd,dtw,D,D_1,D_2,D_4
 
 import equation_fitter
+from matplotlib import pyplot as plt
 def runCases(case):
     if(case==0):
         ovi_range=range(1,151)
@@ -364,6 +365,12 @@ def runCases(case):
         d=5
         utils.showPlot([go.Heatmap(z=errors_by_height[:,:,d])])
     if(case==15):
+        errors_by_height=np.load('errors_by_height.npy')
+        matrix=errors_by_height[:,:,3:6]
+        matrix/=np.nanmax(matrix,axis=(0,1))#normalize
+        plt.imshow(np.uint8(matrix*255),interpolation='nearest', aspect='auto')
+        plt.show()
+    if(case==16):
         mfs=[1,2,3,4]
         fig = tools.make_subplots(rows=2, cols=2,subplot_titles=['%scm.'%mf for mf in mfs])
         for i,mf in enumerate(mfs):
