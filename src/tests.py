@@ -229,16 +229,26 @@ def runCases(case):
         config_parser = ConfigParser()
         config_parser.read('resources/get_weather.cfg')
         for location in config_parser.sections():
+            h=10.
             configuration=Configuration('resources/1c.cfg')
             configuration.config_parser.set('location','name',location+'.full')
-            configuration.config_parser.set('simulation','end_date',str(datetime.date.today()))
+            configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(30)))
+            configuration.config_parser.set('breeding_site','height',str(h))
             model=Model(configuration)
             time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
-            utils.showPlot(utils.plot(model,subplots=[{'lwO':'','f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
-            title='%s '%(location.replace('_',' ').title()),
-            xaxis_title='Date',
-            yaxis_title='Number of eggs')
+            # utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','O':list([100,44,68,25,143]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2015,10,1)),
+            # title=location.capitalize(),
+            # xaxis_title='Fecha',
+            # yaxis_title='')
+
+            utils.showPlot(utils.plot(model,subplots=[{'cd':'','A1+A2':'','W':'','T':'','f':[utils.safeAdd]}],plot_start_date=datetime.date(2015,10,1)),
+            title=location.replace('_',' ').capitalize(),
+            xaxis_title='Fecha',
+            yaxis_title='')
+            #utils.showPlot(utils.plot(model,subplots=[{'E':''}],plot_start_date=datetime.date(2017,10,1)),title='Manually Filled:%scm. Height: %scm.(Oct-Nov-Dic just prom available)'%(mf,h))
+            #utils.showPlot(utils.plot(model,subplots=[{'pa':''}]))
             print(model.warnings)
+            print('h:%s Max E: %s'%(h,np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1))))
 
     if(case==7):
         configuration=Configuration('resources/1c.cfg')

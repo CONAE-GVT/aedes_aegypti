@@ -339,7 +339,7 @@ def plot(model,subplots,plot_start_date=None,color=None):
         #Water in containers(in L)
         if ('W' in subplot):
             mW=RES[:,WATER]
-            for y in applyFs(mW,subplot).transpose():
+            for y in mW.transpose():#applyFs(mW,subplot).transpose():
                 data.append(go.Scatter(x=date_range,y=y, name=subplot['W'] or 'W(t) in cm.',line = dict(color= (color)) ))
 
         #Temperature in K
@@ -401,7 +401,7 @@ def plot(model,subplots,plot_start_date=None,color=None):
                 current_date=datetime.datetime.strptime(location.replace('cordoba.full.weather-',''),'%Y-%m-%d').date()
             else:
                 current_date=datetime.date.today()
-            data.append(go.Scatter(x=[current_date,current_date],y=[0,150],name='Current Date',mode='lines'));
+            data.append(go.Scatter(x=[current_date],y=[0],name='Current Date',mode='markers',cliponaxis= False));
         #debugging plots
         #Calls
         if ('c' in subplot):
