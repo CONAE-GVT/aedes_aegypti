@@ -312,13 +312,13 @@ def runCases(case):
         utils.showPlot([go.Scatter(x=x,y=y, name='')],title='',xaxis_title='Amount of days forecast',yaxis_title='Mean relative difference(?)')
 
     names=['rmse', 'cort','pearson','fd','dtw','D','D_1','D_2','D_4']
+    d=5
     if(case==9):
         errors_by_height=np.load('errors_by_height.npy')
         for d,name in enumerate(names):
             utils.showPlot([go.Surface(z=errors_by_height[:,:,d] )],title=name,scene=dict(xaxis=dict(title='Ovitrap id'),yaxis=dict(title='Height')) )
     if(case==10):
         errors_by_height=np.load('errors_by_height.npy')
-        d=5
         for h in range(1,15):
             configuration=Configuration('resources/1c.cfg')
             configuration.config_parser.set('location','name','cordoba.full')
@@ -339,17 +339,18 @@ def runCases(case):
     if(case==11):
         errors_by_height=np.load('errors_by_height.npy')
         for d,name in enumerate(names):
-            fig = tools.make_subplots(rows=errors_by_height.shape[0], cols=1)
-            for h in range(1,errors_by_height.shape[0]):
-                fig.append_trace(go.Scatter(x=np.array(range(0,errors_by_height.shape[1])), y=errors_by_height[h,:,d],name='%scm.'%h),h,1)
-                fig['layout']['yaxis'+str(h)].update(range=[1,np.nanmax(errors_by_height[:,:,d])])
+            heights=[1,3,6,8]
+            fig = tools.make_subplots(rows=len(heights), cols=1)
+            for row,h in enumerate(heights):#range(1,errors_by_height.shape[0]):
+                fig.append_trace(go.Scatter(x=np.array(range(0,errors_by_height.shape[1])), y=errors_by_height[h,:,d],name='%scm.'%h),row+1,1)
+                #fig['layout']['yaxis'+str(h)].update(range=[1,np.nanmax(errors_by_height[:,:,d])])
             fig['layout']['title']=name
             utils.showPlot(fig)
 
     if(case==12):
         errors_by_height=np.load('errors_by_height.npy')
-        d=5#this has to be the same as test 10!
-        heights=[1,2,3,8]
+        heights=[1,3,6,8]
+        ovis=[13,143,54,122]
         fig = tools.make_subplots(rows=2, cols=2,subplot_titles=['%scm.'%h for h in heights])
         for i,h in enumerate(heights):
             configuration=Configuration('resources/1c.cfg')
@@ -358,11 +359,11 @@ def runCases(case):
             configuration.config_parser.set('breeding_site','height',str(h))
             model=Model(configuration)
             time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
-            traces=utils.plot(model,subplots=[{'lwO':'','O':list([np.nanargmin(errors_by_height[h,:,d])]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1))
+            traces=utils.plot(model,subplots=[{'lwO':'','O':list([ovis[i]]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1))#np.nanargmin(errors_by_height[h,:,d])
             for trace in traces:
                 fig.append_trace(trace,int(i/2) +1,i%2 +1)
             #fig['layout']['yaxis'+str(h)].update(range=[1,np.nanmax(errors_by_height[:,:,d])])
-        fig['layout']['title']=''
+        fig['layout']['title']=names[d]
         utils.showPlot(fig)
 
     if(case==13):
