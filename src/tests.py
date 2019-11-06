@@ -154,7 +154,7 @@ def runCases(case):
         pl.show()
 
     if(case==1):
-        h=3.
+        h=10.
         configuration=Configuration('resources/1c.cfg')
         configuration.config_parser.set('location','name','cordoba.full')
         configuration.config_parser.set('simulation','end_date',str(datetime.date.today()))
