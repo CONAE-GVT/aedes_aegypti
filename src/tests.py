@@ -157,14 +157,15 @@ def runCases(case):
         h=10.
         configuration=Configuration('resources/1c.cfg')
         configuration.config_parser.set('location','name','cordoba.full')
-        configuration.config_parser.set('simulation','end_date',str(datetime.date.today()))
+        location=configuration.getString('location','name')
+        configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(30)))
         configuration.config_parser.set('breeding_site','height',str(h))
         model=Model(configuration)
         time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
-        utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','O':list([100,44,68,25,143]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
-        title='Height: %scm.'%h,
-        xaxis_title='Fecha',
-        yaxis_title='Nº de huevos')
+        utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','O':list([143]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
+        title=location.replace('.full','').replace('_',' ').title(),
+        xaxis_title='Date',
+        yaxis_title='Eggs')
 
         #utils.showPlot(utils.plot(model,subplots=[{'E':''}],plot_start_date=datetime.date(2017,10,1)),title='Manually Filled:%scm. Height: %scm.(Oct-Nov-Dic just prom available)'%(mf,h))
         #utils.showPlot(utils.plot(model,subplots=[{'pa':''}]))
@@ -228,7 +229,7 @@ def runCases(case):
     if(case==6):
         config_parser = ConfigParser()
         config_parser.read('resources/get_weather.cfg')
-        for location in config_parser.sections():
+        for location in ['cordoba']:#config_parser.sections():
             h=10.
             configuration=Configuration('resources/1c.cfg')
             configuration.config_parser.set('location','name',location+'.full')
@@ -241,9 +242,9 @@ def runCases(case):
             # xaxis_title='Fecha',
             # yaxis_title='')
 
-            utils.showPlot(utils.plot(model,subplots=[{'cd':'','A1+A2':'','W':'','T':'','f':[utils.safeAdd]}],plot_start_date=datetime.date(2015,10,1)),
-            title=location.replace('_',' ').capitalize(),
-            xaxis_title='Fecha',
+            utils.showPlot(utils.plot(model,subplots=[{'cd':'','A1+A2':'','W':'','f':[utils.safeAdd]}],plot_start_date=datetime.date(2015,10,1)),
+            title=location.replace('_',' ').title(),
+            xaxis_title='Date',
             yaxis_title='')
             #utils.showPlot(utils.plot(model,subplots=[{'E':''}],plot_start_date=datetime.date(2017,10,1)),title='Manually Filled:%scm. Height: %scm.(Oct-Nov-Dic just prom available)'%(mf,h))
             #utils.showPlot(utils.plot(model,subplots=[{'pa':''}]))
