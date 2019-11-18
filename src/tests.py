@@ -162,7 +162,7 @@ def runCases(case):
         configuration.config_parser.set('breeding_site','height',str(h))
         model=Model(configuration)
         time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
-        utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','O':list([143]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
+        utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','f':[utils.safeAdd]}],plot_start_date=datetime.date(2015,10,1)),
         title=location.replace('.full','').replace('_',' ').title(),
         xaxis_title='Date',
         yaxis_title='Eggs')
@@ -351,7 +351,7 @@ def runCases(case):
     if(case==12):
         errors_by_height=np.load('errors_by_height.npy')
         heights=[1,3,6,8]
-        ovis=[13,143,54,122]
+        ovis=[13,134,54,122]
         fig = tools.make_subplots(rows=2, cols=2,subplot_titles=['%scm.'%h for h in heights])
         for i,h in enumerate(heights):
             configuration=Configuration('resources/1c.cfg')
@@ -361,10 +361,10 @@ def runCases(case):
             model=Model(configuration)
             time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
             traces=utils.plot(model,subplots=[{'lwO':'','O':list([ovis[i]]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1))#np.nanargmin(errors_by_height[h,:,d])
-            for trace in traces:
+            for j,trace in enumerate(traces):
                 fig.append_trace(trace,int(i/2) +1,i%2 +1)
-            #fig['layout']['yaxis'+str(h)].update(range=[1,np.nanmax(errors_by_height[:,:,d])])
-        fig['layout']['title']=names[d]
+                #fig['layout']['yaxis'+str(j+1)].update(range=[1,300])
+        fig['layout']['title']='Córdoba'
         utils.showPlot(fig)
 
     if(case==13):
