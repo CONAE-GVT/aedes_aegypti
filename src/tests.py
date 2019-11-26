@@ -93,7 +93,7 @@ def runCases(case):
 
             #errors=[[1e15,-1,-1,1e15,1e15,1e15]]*151#just to fill the ovitrap 0 that do not exist in reality
             for ovitrap_id in ovi_range:
-                OVITRAP_FILENAME='data/private/ovitrampas_2017-2018.full.csv'
+                OVITRAP_FILENAME='data/private/ovitrampas_2017-2019.full.csv'
                 values=utils.getOvitrapEggsFromCsv2(OVITRAP_FILENAME,None,None,ovitrap_id)
                 ovitrap_days=values.keys()
                 dates=[model.start_date + datetime.timedelta(t) for t in time_range]
@@ -162,7 +162,7 @@ def runCases(case):
         configuration.config_parser.set('breeding_site','height',str(h))
         model=Model(configuration)
         time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
-        utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','f':[utils.safeAdd]}],plot_start_date=datetime.date(2015,10,1)),
+        utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','O':list([85,9,54,79]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
         title=location.replace('.full','').replace('_',' ').title(),
         xaxis_title='Date',
         yaxis_title='Eggs')
@@ -242,7 +242,7 @@ def runCases(case):
             # xaxis_title='Fecha',
             # yaxis_title='')
 
-            utils.showPlot(utils.plot(model,subplots=[{'cd':'','A1+A2':'','W':'','f':[utils.safeAdd]}],plot_start_date=datetime.date(2015,10,1)),
+            utils.showPlot(utils.plot(model,subplots=[{'cd':'','A1+A2':'','W':'','f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
             title=location.replace('_',' ').title(),
             xaxis_title='Date',
             yaxis_title='')
@@ -383,13 +383,13 @@ def runCases(case):
         plt.imshow(np.uint8(matrix*255),interpolation='nearest', aspect='auto')
         plt.show()
     if(case==16):
-        mfs=[1,2,3,4]
-        fig = tools.make_subplots(rows=2, cols=2,subplot_titles=['%scm.'%mf for mf in mfs])
-        for i,mf in enumerate(mfs):
+        heights=[2,5,10,15]
+        fig = tools.make_subplots(rows=2, cols=2,subplot_titles=['%scm.'%h for h in heights])
+        for i,h in enumerate(heights):
             configuration=Configuration('resources/1c.cfg')
             configuration.config_parser.set('location','name','cordoba.full')
             configuration.config_parser.set('simulation','end_date',str(datetime.date.today()))
-            configuration.config_parser.set('breeding_site','manually_filled',str(mf))
+            configuration.config_parser.set('breeding_site','height',str(h))
             model=Model(configuration)
             model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
             traces=utils.plot(model,subplots=[{'PO':''}],plot_start_date=datetime.date(2017,10,1))

@@ -48,10 +48,6 @@ class Model:
         W0=configuration.getArray('breeding_site','initial_water')
         self.parameters.initial_condition=np.concatenate( (E0,L0,P0,initial_condition[-2:],W0) )
 
-        #experimental
-        p=configuration.getFloat('simulation','egn_corrector_p')#TODO:change p for something with meaning...
-        self.parameters.egnCorrector=utils.EgnCorrector(p,self.parameters.BS_a,self.start_date,self.end_date)
-
         WEATHER_DATA_FILENAME='data/public/'+self.parameters.location['name']+'.csv'
         self.parameters.weather=Weather(WEATHER_DATA_FILENAME,self.start_date,self.end_date)
 

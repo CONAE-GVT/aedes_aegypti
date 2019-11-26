@@ -193,24 +193,6 @@ class ProgressEquations:
         sys.stdout.flush()
         return self.diff_eqs(Y,t,parameters)
 
-class EgnCorrector:
-    def __init__(self,p,BS_a,start_date,end_date):
-        self.ovitrap_eggs=np.array(getOvitrapEggsFromCsv('data/private/ovitrampas_2017-2018.csv',start_date,end_date,153))
-        self.p=p
-        self.BS_a=BS_a
-        self.egn_corrections=[]
-
-    def __call__(self,egn,cycle_A,t):#TODO:take into account amount of containers
-        if(self.p==0): return egn
-        OE_week=self.ovitrap_eggs[int(t):int(t)+7]#TODO:check if int(t) is ok. maybe it's ceil.#also use an spline and derivative instead of /7
-        OE_week=OE_week[OE_week!=[None]]
-        if(len(OE_week)==0): return 19.#TODO:what should we return?
-        p,BS_A=self.p,self.BS_a
-        dOEdt=np.asscalar(OE_week)/7. * self.BS_a
-        self.egn_corrections.append(dOEdt/cycle_A)
-        p=self.p
-        return (dOEdt/cycle_A)*p + (1-p)*egn
-
 class OEquations:
     def __init__(self,model,diff_eqs):
         self.model=model
@@ -233,8 +215,7 @@ class OEquations:
 
         egn=63.0
         ovsp_t=ovsp(vW_t,vBS_d,vW_l,mBS_l)
-        egn_c=parameters.egnCorrector(egn,ovr1 *A1  + ovr2* A2, t)
-        dO=egn_c*( ovr1 *A1  + ovr2* A2)*ovsp_t
+        dO=egn*( ovr1 *A1  + ovr2* A2)*ovsp_t
         dY[OVIPOSITION]=dO.transpose().reshape((1,m*n))
 
         return dY
@@ -362,7 +343,7 @@ def plot(model,subplots,plot_start_date=None,color=None):
 
         if('O' in subplot):
             for ovitrap_id in subplot['O']:
-                values=getOvitrapEggsFromCsv2('data/private/ovitrampas_2017-2018.full.csv',model.start_date,model.end_date,ovitrap_id)
+                values=getOvitrapEggsFromCsv2('data/private/ovitrampas_2017-2019.full.csv',model.start_date,model.end_date,ovitrap_id)
                 ovitrap_dates=np.array([k for k in values.keys()])
                 ovi=np.array([noneMean(values[date]) for date in ovitrap_dates])
                 data.append(go.Scatter(x=ovitrap_dates[ovi!=[None]], y=applyFs(ovi,subplot)[ovi!=[None]], name='Ovitrap %s eggs'%ovitrap_id, mode = 'markers'))
@@ -371,7 +352,7 @@ def plot(model,subplots,plot_start_date=None,color=None):
             po={}
             fo={}
             for ovitrap_id in range(1,151):
-                values=getOvitrapEggsFromCsv2('data/private/ovitrampas_2017-2018.full.csv',model.start_date,model.end_date,ovitrap_id)
+                values=getOvitrapEggsFromCsv2('data/private/ovitrampas_2017-2019.full.csv',model.start_date,model.end_date,ovitrap_id)
                 for k in values:
                     a=np.array(values[k],np.float)
                     positives=np.count_nonzero(a[:2]>0)
@@ -403,9 +384,9 @@ def plot(model,subplots,plot_start_date=None,color=None):
                 current_date=getStartEndDates('data/public/'+location.replace('.full','.csv'))[1]#datetime.date.today()
                 A,B=datetime.date(2017,10,25),datetime.date(2017,11,12)
                 D,P=datetime.date(2017,11,13),datetime.date(2017,11,13)
-            #data.append(go.Scatter(x=[current_date],y=[0],name='Current Date',mode='markers',cliponaxis= False));
+            data.append(go.Scatter(x=[current_date],y=[0],name='Current Date',mode='markers',cliponaxis= False));
             #data.append(go.Scatter(x=[A,B],y=[0,0],name='%s days'%((B-A).days),mode='lines',cliponaxis= False))
-            data.append(go.Scatter(x=[D],y=[0],name='DTW group 3 MSD',mode='markers',cliponaxis= False))#,data.append(go.Scatter(x=[P],y=[0],name='PAM group 2 MSD',mode='markers',cliponaxis= False))
+            #data.append(go.Scatter(x=[D],y=[0],name='DTW group 3 MSD',mode='markers',cliponaxis= False))#,data.append(go.Scatter(x=[P],y=[0],name='PAM group 2 MSD',mode='markers',cliponaxis= False))
         #debugging plots
         #Calls
         if ('c' in subplot):
