@@ -229,11 +229,11 @@ def runCases(case):
     if(case==6):
         config_parser = ConfigParser()
         config_parser.read('resources/get_weather.cfg')
-        for location in ['cordoba']:#config_parser.sections():
+        for location in ['bahia_blanca','general_roca','cordoba','tartagal','santa_fe']:#config_parser.sections():
             h=10.
             configuration=Configuration('resources/1c.cfg')
             configuration.config_parser.set('location','name',location+'.full')
-            configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(30)))
+            configuration.config_parser.set('simulation','end_date',str(datetime.date.today()))
             configuration.config_parser.set('breeding_site','height',str(h))
             model=Model(configuration)
             time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
@@ -242,7 +242,7 @@ def runCases(case):
             # xaxis_title='Fecha',
             # yaxis_title='')
 
-            utils.showPlot(utils.plot(model,subplots=[{'cd':'','A1+A2':'','W':'','f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
+            utils.showPlot(utils.plot(model,subplots=[{'lwO':'','f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
             title=location.replace('_',' ').title(),
             xaxis_title='Date',
             yaxis_title='')
