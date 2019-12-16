@@ -1,5 +1,8 @@
 from equations import *
-import cupy as cp
+try:
+    import cupy as cp
+except ImportError:
+    pass
 
 def dvE(vE,F,vBS_d,ovr,elr):
     egn=63.0
