@@ -343,10 +343,24 @@ def plot(model,subplots,plot_start_date=None,color=None):
 
         if('O' in subplot):
             for ovitrap_id in subplot['O']:
-                values=getOvitrapEggsFromCsv2('data/private/ovitrampas_2017-2019.full.csv',model.start_date,model.end_date,ovitrap_id)
+                values=getOvitrapEggsFromCsv2('data/private/ovitrampas_2017-2019.mean.csv',model.start_date,model.end_date,ovitrap_id)
                 ovitrap_dates=np.array([k for k in values.keys()])
                 ovi=np.array([noneMean(values[date]) for date in ovitrap_dates])
-                data.append(go.Scatter(x=ovitrap_dates[ovi!=[None]], y=applyFs(ovi,subplot)[ovi!=[None]], name='Ovitrap %s eggs'%ovitrap_id, mode = 'markers'))
+                if (ovitrap_id==151):
+                    stdev=getOvitrapEggsFromCsv2('data/private/ovitrampas_2017-2019.mean.csv',model.start_date,model.end_date,152)
+                    stdev=np.array([noneMean(stdev[date]) for date in ovitrap_dates])
+                    upper=applyFs(ovi+stdev,subplot)[ovi!=[None]].tolist()
+                    lower=applyFs(ovi-stdev,subplot)[ovi!=[None]].tolist()
+                    lower=lower[::-1]
+                    x=ovitrap_dates[ovi!=[None]].tolist()
+                    x_rev=x[::-1]
+                    data.append(go.Scatter(x=x+x_rev,y=upper+lower,fill='tozerox',fillcolor='rgba(0,100,80,0.2)',line=dict(color='rgba(255,255,255,0)'),showlegend=False,name='a'))
+                    name='Mean ovitrap'
+                    mode='lines'
+                else:
+                    name='Ovitrap %s eggs'%ovitrap_id
+                    mode='markers'
+                data.append(go.Scatter(x=ovitrap_dates[ovi!=[None]], y=applyFs(ovi,subplot)[ovi!=[None]], name=name, mode = mode))
 
         if('PO' in subplot):
             po={}
