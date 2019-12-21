@@ -421,7 +421,7 @@ def showPlot(data,title='',xaxis_title='',yaxis_title='',scene=dict()):
                     font=dict(
                     family="Courier New, monospace",
                     size=18,
-                    color="#7f7f7f"
+                    color="#090909"
                     ))
     ply.plot(go.Figure(data=data,layout=layout), filename=tempfile.NamedTemporaryFile(prefix='plot_').name)
 

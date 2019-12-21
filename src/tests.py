@@ -244,31 +244,6 @@ def runCases(case):
             print(model.warnings)
             print('h:%s Max E: %s'%(h,np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1))))
 
-    if(case==62):
-        config_parser = ConfigParser()
-        config_parser.read('resources/get_weather.cfg')
-        for location in ['bahia_blanca','general_roca','cordoba','tartagal','santa_fe']:#config_parser.sections():
-            h=10.
-            configuration=Configuration('resources/1c.cfg')
-            configuration.config_parser.set('location','name',location+'.full')
-            configuration.config_parser.set('simulation','end_date',str(datetime.date.today()))
-            configuration.config_parser.set('breeding_site','height',str(h))
-            model=Model(configuration)
-            time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
-            # utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','O':list([100,44,68,25,143]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2015,10,1)),
-            # title=location.capitalize(),
-            # xaxis_title='Fecha',
-            # yaxis_title='')
-
-            utils.showPlot(utils.plot(model,subplots=[{'lwO':'','f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
-            title=location.replace('_',' ').title(),
-            xaxis_title='Date',
-            yaxis_title='')
-            #utils.showPlot(utils.plot(model,subplots=[{'E':''}],plot_start_date=datetime.date(2017,10,1)),title='Manually Filled:%scm. Height: %scm.(Oct-Nov-Dic just prom available)'%(mf,h))
-            #utils.showPlot(utils.plot(model,subplots=[{'pa':''}]))
-            print(model.warnings)
-            print('h:%s Max E: %s'%(h,np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1))))
-
     if(case==7):
         configuration=Configuration('resources/1c.cfg')
         configuration.config_parser.set('location','name','cordoba.full')
@@ -357,43 +332,61 @@ def runCases(case):
 
     if(case==11):
         errors_by_height=np.load('errors_by_height.npy')
-        for d,name in enumerate(names):
+        for d,name in enumerate(['D']):
             heights=[1,3,6,8]
             fig = tools.make_subplots(rows=len(heights), cols=1)
             for row,h in enumerate(heights):#range(1,errors_by_height.shape[0]):
                 fig.append_trace(go.Scatter(x=np.array(range(0,errors_by_height.shape[1])), y=errors_by_height[h,:,d],name='%scm.'%h),row+1,1)
                 #fig['layout']['yaxis'+str(h)].update(range=[1,np.nanmax(errors_by_height[:,:,d])])
-            fig['layout']['title']=name
+            fig['layout']['title'] = name
+            #fig['layout']['xaxis'] = dict(title = 'Ovitrap identifier')
+            #fig['layout']['yaxis'] = dict(title = 'D')
+            fig['layout']['font'] = dict(family="Courier New, monospace",size=18,color="#090909")
             utils.showPlot(fig)
 
     if(case==12):
-        errors_by_height=np.load('errors_by_height.npy')
-        heights=[1,3,6,8]
-        ovis=[13,134,54,122]
-        fig = tools.make_subplots(rows=2, cols=2,subplot_titles=['%scm.'%h for h in heights])
+        heights=[1,3,6,8,10]
+        ovis=[13,134,54,122,151]
         for i,h in enumerate(heights):
             configuration=Configuration('resources/1c.cfg')
             configuration.config_parser.set('location','name','cordoba.full')
-            configuration.config_parser.set('simulation','end_date',str(datetime.date.today()))
+            configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(30)))
             configuration.config_parser.set('breeding_site','height',str(h))
             model=Model(configuration)
             time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
-            traces=utils.plot(model,subplots=[{'lwO':'','O':list([ovis[i]]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1))#np.nanargmin(errors_by_height[h,:,d])
-            for j,trace in enumerate(traces):
-                fig.append_trace(trace,int(i/2) +1,i%2 +1)
-                #fig['layout']['yaxis'+str(j+1)].update(range=[1,300])
-        fig['layout']['title']='Córdoba'
-        utils.showPlot(fig)
+            utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','O':list([ovis[i]]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
+            title='%scm.'%h,
+            xaxis_title='Date',
+            yaxis_title='Eggs')
+            print('h:%s Max E: %s'%(h,np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1))))
+            print(model.warnings)
+
 
     if(case==13):
         errors_by_height=np.load('errors_by_height.npy')
         a=[-1]+[np.nanmin(errors_by_height[:,o,5]) for o in range(1,151)]
         idx=np.argsort(a)
         print(idx[-5:])
+
     if(case==14):
-        errors_by_height=np.load('errors_by_height.npy')
-        d=5
-        utils.showPlot([go.Heatmap(z=errors_by_height[:,:,d])])
+        config_parser = ConfigParser()
+        config_parser.read('resources/get_weather.cfg')
+        for location in ['bahia_blanca','general_roca','cordoba','tartagal','santa_fe']:#config_parser.sections():
+            h=10.
+            configuration=Configuration('resources/1c.cfg')
+            configuration.config_parser.set('location','name',location+'.full')
+            configuration.config_parser.set('simulation','end_date',str(datetime.date.today()))
+            configuration.config_parser.set('breeding_site','height',str(h))
+            model=Model(configuration)
+            time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
+
+            utils.showPlot(utils.plot(model,subplots=[{'lwO':'','f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
+            title=location.replace('_',' ').title(),
+            xaxis_title='Date',
+            yaxis_title='')
+            print(model.warnings)
+            print('h:%s Max E: %s'%(h,np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1))))
+
     if(case==15):
         errors_by_height=np.load('errors_by_height.npy')
         matrix=errors_by_height[:,:,3:6]
@@ -414,7 +407,10 @@ def runCases(case):
             for trace in traces:
                 fig.append_trace(trace,int(i/2) +1,i%2 +1)
         utils.showPlot(fig)
-
+    if(case==17):
+        errors_by_height=np.load('errors_by_height.npy')
+        d=5
+        utils.showPlot([go.Heatmap(z=errors_by_height[:,:,d])])
 
 try:
     from otero_precipitation_wrapper import ModelWrapper as _Model
