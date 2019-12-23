@@ -338,10 +338,10 @@ def runCases(case):
             for row,h in enumerate(heights):#range(1,errors_by_height.shape[0]):
                 fig.append_trace(go.Scatter(x=np.array(range(0,errors_by_height.shape[1])), y=errors_by_height[h,:,d],name='%scm.'%h),row+1,1)
                 #fig['layout']['yaxis'+str(h)].update(range=[1,np.nanmax(errors_by_height[:,:,d])])
-            fig['layout']['title'] = name
+            fig['layout']['title'] = ''
             #fig['layout']['xaxis'] = dict(title = 'Ovitrap identifier')
             #fig['layout']['yaxis'] = dict(title = 'D')
-            fig['layout']['font'] = dict(family="Courier New, monospace",size=18,color="#090909")
+            fig['layout']['font'] = dict(family="Courier New, monospace",size=24,color="#090909")
             utils.showPlot(fig)
 
     if(case==12):
@@ -383,7 +383,7 @@ def runCases(case):
             utils.showPlot(utils.plot(model,subplots=[{'lwO':'','f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
             title=location.replace('_',' ').title(),
             xaxis_title='Date',
-            yaxis_title='')
+            yaxis_title='Eggs')
             print(model.warnings)
             print('h:%s Max E: %s'%(h,np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1))))
 
@@ -411,6 +411,26 @@ def runCases(case):
         errors_by_height=np.load('errors_by_height.npy')
         d=5
         utils.showPlot([go.Heatmap(z=errors_by_height[:,:,d])])
+
+    if(case==18):
+        config_parser = ConfigParser()
+        config_parser.read('resources/get_weather.cfg')
+        for stage,title in {'E':'Eggs population','L':'Larvae population','P':'Pupae population','A1+A2':'Adults population'}.items():
+            h=10.
+            configuration=Configuration('resources/1c.cfg')
+            configuration.config_parser.set('location','name','cordoba.full')
+            configuration.config_parser.set('simulation','end_date',str(datetime.date.today()))
+            configuration.config_parser.set('breeding_site','height',str(h))
+            configuration.config_parser.set('breeding_site','amount','1')
+            model=Model(configuration)
+            time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
+
+            utils.showPlot(utils.plot(model,subplots=[{stage:'','f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
+            title='',
+            xaxis_title='Date',
+            yaxis_title=title)
+            print(model.warnings)
+            print('h:%s Max E: %s'%(h,np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1))))
 
 try:
     from otero_precipitation_wrapper import ModelWrapper as _Model

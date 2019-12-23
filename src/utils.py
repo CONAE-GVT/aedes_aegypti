@@ -290,11 +290,11 @@ def plot(model,subplots,plot_start_date=None,color=None):
                 label='E in [%.1f,%.1f)cm'%(bs_i*BS_lh,(bs_i+1)*BS_lh)
                 data.append(go.Bar(x=date_range,y=y,name=label,text=label))
                 #data.append(go.Scatter(x=date_range,y=y, name='E in [%.1f,%.1f)cm'%(bs_i*BS_lh,(bs_i+1)*BS_lh)))
-        if ('E' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,EGG],subplot)*1e-2, name='Eggs . 10e-2'))
-        if ('L' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,LARVAE],subplot), name='L'))
-        if ('P' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,PUPAE],subplot), name='P'))
-        if ('A1' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,ADULT1],subplot), name='A1'))
-        if ('A2' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,ADULT2],subplot), name='A2'))
+        if ('E' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,EGG],subplot), name='Eggs'))
+        if ('L' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,LARVAE],subplot), name='Larvae'))
+        if ('P' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,PUPAE],subplot), name='Pupae'))
+        if ('A1' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,ADULT1],subplot), name='Adults1'))
+        if ('A2' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,ADULT2],subplot), name='Adults2'))
         if ('A1+A2' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,ADULT2]+RES[:,ADULT1],subplot), name=subplot['A1+A2'] or 'Adults',line = dict(color= (color)) ))
 
         if('lwO' in subplot):
@@ -415,12 +415,12 @@ def plot(model,subplots,plot_start_date=None,color=None):
 
 def showPlot(data,title='',xaxis_title='',yaxis_title='',scene=dict()):
     layout=go.Layout(title=title,barmode='stack',
-                    xaxis = dict(title = xaxis_title),
-                    yaxis = dict(title = yaxis_title),
+                    xaxis = dict(title = xaxis_title, automargin=True),
+                    yaxis = dict(title = yaxis_title, automargin=True),
                     scene=scene,
                     font=dict(
                     family="Courier New, monospace",
-                    size=18,
+                    size=24,
                     color="#090909"
                     ))
     ply.plot(go.Figure(data=data,layout=layout), filename=tempfile.NamedTemporaryFile(prefix='plot_').name)

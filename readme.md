@@ -135,3 +135,7 @@ right click cities layer and click properties:
     In Text>"label with" select city
     in Buffer > draw buffer
 source: http://transnationalhistory.net/mapping/tutorials/pointvectorlayers/
+
+
+#AT plots
+python src/tests.py 18;python src/tests.py 8;python src/tests.py 8;python src/tests.py 11;python src/tests.py 12;python src/tests.py 14;
