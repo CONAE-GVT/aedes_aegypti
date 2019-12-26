@@ -338,10 +338,13 @@ def runCases(case):
             for row,h in enumerate(heights):#range(1,errors_by_height.shape[0]):
                 fig.append_trace(go.Scatter(x=np.array(range(0,errors_by_height.shape[1])), y=errors_by_height[h,:,d],name='%scm.'%h),row+1,1)
                 #fig['layout']['yaxis'+str(h)].update(range=[1,np.nanmax(errors_by_height[:,:,d])])
-            fig['layout']['title'] = ''
-            #fig['layout']['xaxis'] = dict(title = 'Ovitrap identifier')
-            #fig['layout']['yaxis'] = dict(title = 'D')
+            fig['layout']['title'] = ''#https://community.plot.ly/t/subplots-how-to-add-master-axis-titles/13927
+            fig['layout']['annotations']=[go.layout.Annotation(x=0.5,y=-0.15,showarrow=False,text="Ovitrap identifier",xref="paper",yref="paper",),
+                                            go.layout.Annotation(x=-0.07,y=0.5,showarrow=False,text="Dissimilarity Index  D",textangle=-90,xref="paper",yref="paper")]
             fig['layout']['font'] = dict(family="Courier New, monospace",size=24,color="#090909")
+            fig['layout']['autosize']=True
+            fig['layout']['margin']=dict(l=120,b=120)
+
             utils.showPlot(fig)
 
     if(case==12):
