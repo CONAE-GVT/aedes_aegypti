@@ -303,7 +303,7 @@ def runCases(case):
         utils.showPlot(data_A,title='Adults in '+LOCATION.title(),xaxis_title='Date',yaxis_title='Individuals')
         utils.showPlot(data_O,title='Oviposition in '+LOCATION.title(),xaxis_title='Date',yaxis_title='Eggs')
         utils.showPlot(data_W,title='Water in '+LOCATION.title(),xaxis_title='Date',yaxis_title='cm.')
-        utils.showPlot([go.Scatter(x=x,y=y, name='')],title='',xaxis_title='Amount of days forecast',yaxis_title='Mean relative difference(?)')
+        utils.showPlot([go.Scatter(x=x,y=y, name='')],title='',xaxis_title='Days',yaxis_title=u'\u03B4')
 
     names=['rmse', 'cort','pearson','fd','dtw','D','D_1','D_2','D_4']
     d=5
@@ -336,7 +336,7 @@ def runCases(case):
             heights=[1,3,6,8]
             fig = tools.make_subplots(rows=len(heights), cols=1)
             for row,h in enumerate(heights):#range(1,errors_by_height.shape[0]):
-                fig.append_trace(go.Scatter(x=np.array(range(0,errors_by_height.shape[1])), y=errors_by_height[h,:,d],name='%scm.'%h),row+1,1)
+                fig.append_trace(go.Scatter(x=np.array(range(0,errors_by_height.shape[1])), y=errors_by_height[h,:,d],name='%scm.'%h, mode='markers'),row+1,1)
                 #fig['layout']['yaxis'+str(h)].update(range=[1,np.nanmax(errors_by_height[:,:,d])])
             fig['layout']['title'] = ''#https://community.plot.ly/t/subplots-how-to-add-master-axis-titles/13927
             fig['layout']['annotations']=[go.layout.Annotation(x=0.5,y=-0.15,showarrow=False,text="Ovitrap identifier",xref="paper",yref="paper",),
@@ -353,11 +353,11 @@ def runCases(case):
         for i,h in enumerate(heights):
             configuration=Configuration('resources/1c.cfg')
             configuration.config_parser.set('location','name','cordoba.full')
-            configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(30)))
+            configuration.config_parser.set('simulation','end_date',str(datetime.date.today()))
             configuration.config_parser.set('breeding_site','height',str(h))
             model=Model(configuration)
             time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
-            utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','O':list([ovis[i]]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
+            utils.showPlot(utils.plot(model,subplots=[{'lwO':'','O':list([ovis[i]]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
             title='%scm.'%h,
             xaxis_title='Date',
             yaxis_title='Eggs')

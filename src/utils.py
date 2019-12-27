@@ -415,14 +415,15 @@ def plot(model,subplots,plot_start_date=None,color=None):
 
 def showPlot(data,title='',xaxis_title='',yaxis_title='',scene=dict()):
     layout=go.Layout(title=title,barmode='stack',
-                    xaxis = dict(title = xaxis_title, automargin=True),
-                    yaxis = dict(title = yaxis_title, automargin=True),
+                    xaxis = dict(title = xaxis_title),
+                    yaxis = dict(title = yaxis_title),
                     scene=scene,
                     font=dict(
                     family="Courier New, monospace",
                     size=24,
                     color="#090909"
-                    ))
+                    ),
+                    margin=dict(l=120,b=120))
     ply.plot(go.Figure(data=data,layout=layout), filename=tempfile.NamedTemporaryFile(prefix='plot_').name)
 
 ###############################################################Animation################################################################
