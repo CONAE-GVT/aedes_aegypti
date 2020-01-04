@@ -80,10 +80,14 @@ or
 >python setup.py build_ext --inplace
 
 **Installing Boost**
->sudo apt install libboost-python1.65-dev
+>sudo apt install libboost-python-dev
+
+**Installing Eigen**
+>git clone https://gitlab.com/libeigen/eigen.git
+>sudo cp Eigen /usr/include/  -r
 
 **c++ binding**
->g++ -O3 -Wall -I/usr/include/python3.6m/   -fpic  src/cpp/otero_precipitation_wrapper.cpp -shared  -lboost_python-py36 -lpython3.6m -o src/otero_precipitation_wrapper.so
+>g++ -std=c++17 -O3 -march=native -Wall -I/usr/include/python3.6m/   -fpic  src/cpp/otero_precipitation_wrapper.cpp -shared  -lboost_python-py36  -o src/otero_precipitation_wrapper.so
 
 **To create an animation**
 >ffmpeg -framerate 250 -i out/A_%04d.png  out/A.webm
