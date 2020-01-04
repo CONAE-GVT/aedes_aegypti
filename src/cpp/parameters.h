@@ -26,12 +26,12 @@ struct Parameters{
     //dynamic
     unsigned int m;
     unsigned int n;
-    std::slice EGG;
-    std::slice LARVAE;
-    std::slice PUPAE;
+    Eigen::ArithmeticSequence<long int, long int> EGG=Eigen::seq(0,0);
+    Eigen::ArithmeticSequence<long int, long int> LARVAE=Eigen::seq(0,0);
+    Eigen::ArithmeticSequence<long int, long int> PUPAE=Eigen::seq(0,0);
     unsigned int ADULT1;
     unsigned int ADULT2;
-    std::slice WATER;
+    Eigen::ArithmeticSequence<long int, long int> WATER=Eigen::seq(0,0);
     Weather weather;
     std::function<scalar(scalar)> mf;
 

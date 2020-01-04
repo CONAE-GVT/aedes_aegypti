@@ -40,7 +40,9 @@ class Configuration
         std::vector<std::string> tokens=Utils::parseLine(value.c_str(),",");
         std::vector<scalar> values=std::vector<scalar>();
         for(std::string token:tokens) values.push_back(std::stod(token));//TODO: here we have an implicit double->scalar conversion
-        return tensor(values.data(),values.size());
+        tensor t=tensor(values.size());
+        for(unsigned int i=0;i<values.size();i++) t(i)=values[i];
+        return t;
     }
 
 };

@@ -1,4 +1,4 @@
-//g++ -O3 -Wall -I/usr/include/python3.6m/   -fpic  src/cpp/otero_precipitation_wrapper.cpp -shared  -lboost_python3 -lpython3.6m -o src/otero_precipitation_wrapper.so
+//g++ -std=c++17 -O3 -march=native -Wall -I/usr/include/python3.6m/   -fpic  src/cpp/otero_precipitation_wrapper.cpp -shared  -lboost_python-py36  -o src/otero_precipitation_wrapper.so
 #include <boost/python.hpp>
 #include "otero_precipitation.h"
 #include "configuration.h"

@@ -83,41 +83,15 @@ class Utils{
         return s;
     }
 
-    static matrix tensorToMatrix(const tensor& v,unsigned int m,unsigned int n){
-        matrix M=matrix(tensor(n),m);//m rows n columns
-        for(unsigned int i=0;i<v.size();i++) M[int(i/n)][i%n]=v[i];
-        return M;//we used m just to define the matrix, but with v.size and n, we would have enough info to build the matrix
-    }
-    static tensor matrixToTensor(const matrix& M){
-        unsigned int m=M.size();
-        unsigned int n=M[0].size();
-        tensor v=tensor(m*n);
-        for(unsigned int i=0;i<m;i++) for(unsigned int j=0;j<n;j++) v[i*n+j]=M[i][j];
-        return v;
-    }
-    static tensor sumAxis0(const matrix& M){//TODO:check this
-        unsigned int m=M.size();
-        unsigned int n=M[0].size();
-        tensor v=tensor(0.,n);
-        for(unsigned int i=0;i<m;i++) for(unsigned int j=0;j<n;j++) v[j]=v[j]+M[i][j];
-        return v;
-    }
-
-    static tensor concatenate(const std::vector<tensor>& tensors){
-        std::vector<scalar> c=std::vector<scalar>();
-        for(tensor t:tensors) for(scalar s:t) c.push_back(s);
-        return tensor(c.data(),c.size());
+    static tensor sumAxis0(const matrix& M){
+        return M.colwise().sum();
     }
 
     static tensor minimum(const tensor& tensor1,const tensor& tensor2){
-        tensor minimum=tensor(tensor1.size());
-        for(unsigned int i=0;i<minimum.size();i++) minimum[i]=std::min(tensor1[i],tensor2[i]);
-        return minimum;
+        return tensor1.min(tensor2);
     }
     static tensor maximum(const tensor& tensor1,const tensor& tensor2){
-        tensor maximum=tensor(tensor1.size());
-        for(unsigned int i=0;i<maximum.size();i++) maximum[i]=std::max(tensor1[i],tensor2[i]);
-        return maximum;
+        return tensor1.max(tensor2);
     }
 };
 

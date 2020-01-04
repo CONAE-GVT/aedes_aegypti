@@ -439,15 +439,17 @@ try:
     from otero_precipitation_wrapper import ModelWrapper as _Model
 except ImportError:
     pass
-
+import time
 def runCpp():
+    start = time.process_time()
     model=_Model('resources/otero_precipitation.cfg')
     Y1=np.array(model.solveEquations())
-    print(np.linalg.norm(Y1),Y1.shape)
+    print(np.linalg.norm(Y1),Y1.shape,time.process_time() - start,'s')
 
+    start = time.process_time()
     model=Model(Configuration('resources/otero_precipitation.cfg'))
     time_range,initial_condition,Y2=model.solveEquations(method='rk' )
-    print(np.linalg.norm(Y2),Y2.shape)
+    print(np.linalg.norm(Y2),Y2.shape,time.process_time() - start,'s')
 
     print('||Y1-Y2||=%s'%np.linalg.norm(Y1-Y2))
 
