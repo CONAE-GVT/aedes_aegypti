@@ -23,7 +23,9 @@ class ModelWrapper
             _Y.append(_Y_i);
         }
         this->Y=_Y;
-        return _Y;
+        boost::python::list ret;
+        ret.append(this->time_range);ret.append(this->Y);
+        return ret;
     }
 };
 

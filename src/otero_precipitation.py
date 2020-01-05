@@ -97,4 +97,4 @@ class Model:
             Y=rk.scipy_solve(equations,initial_condition,time_range,'dopri',{'max_step':time_range[1]-time_range[0],'rtol':1e-3, 'atol':1e-6}, args=(self.parameters,))
 
         self.Y=Y
-        return time_range,initial_condition,Y
+        return time_range,Y
