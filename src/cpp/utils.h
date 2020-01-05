@@ -27,7 +27,7 @@ class Utils{
           std::string line;
   		    std::getline(file,line);
           if(line=="") continue;
-          std::vector<std::string> tokens=parseLine(line.c_str(),",");
+          std::vector<std::string> tokens=parseLine(line,",");
           date current_date=stringToDate(tokens[0]);
           if(start_date<=current_date && current_date<end_date){
             date_values.emplace(current_date,std::stod(tokens[value_column]));
@@ -41,11 +41,13 @@ class Utils{
 
     static date stringToDate(std::string date_str){
       if(date_str.find("-")==std::string::npos) return date();
-      std::vector<std::string> tokens=parseLine(date_str.c_str(),"-");
+      std::vector<std::string> tokens=parseLine(date_str,"-");
       date the_date={std::stoi(tokens[0]),std::stoi(tokens[1]),std::stoi(tokens[2])};//year,month,day
       return the_date;
     }
-    static std::vector<std::string> parseLine(const char* constLine,const char* delimiter){
+    static std::vector<std::string> parseLine(std::string strLine, const char* delimiter){
+        strLine.erase(std::remove_if(strLine.begin(), strLine.end(), ::isspace), strLine.end());//remove spaces
+        const char* constLine=strLine.c_str();
         char* line=strdup(constLine);
         std::vector<std::string> tokens;
         char* token=strtok(line,delimiter);

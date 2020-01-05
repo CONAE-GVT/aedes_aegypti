@@ -19,7 +19,7 @@ class Configuration
           if(line=="") continue;
           if(line=="["+section+"]") in_section=true;
           if(in_section){
-              std::vector<std::string> tokens=Utils::parseLine(line.c_str(),"=");
+              std::vector<std::string> tokens=Utils::parseLine(line,"=");
               if(tokens[0]==option){
                   file.close();
                   return tokens[1];
@@ -37,7 +37,7 @@ class Configuration
     }
     tensor getTensor(const std::string& section, const std::string& option){
         std::string value=get(section,option);
-        std::vector<std::string> tokens=Utils::parseLine(value.c_str(),",");
+        std::vector<std::string> tokens=Utils::parseLine(value,",");
         std::vector<scalar> values=std::vector<scalar>();
         for(std::string token:tokens) values.push_back(std::stod(token));//TODO: here we have an implicit double->scalar conversion
         tensor t=tensor(values.size());
