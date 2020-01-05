@@ -149,7 +149,7 @@ def runCases(case):
                      ', '.join(map(str,ovi_sorted[-N-1:-1])), ', '.join(map(str,f[ovi_sorted[-N-1:-1]]))
                      ))
 
-        np.save('errors_by_height.npy',errors_by_height)
+        np.save('out/errors_by_height.npy',errors_by_height)
         print(errors_by_height.shape)
         pl.show()
 
@@ -308,11 +308,11 @@ def runCases(case):
     names=['rmse', 'cort','pearson','fd','dtw','D','D_1','D_2','D_4']
     d=5
     if(case==9):
-        errors_by_height=np.load('errors_by_height.npy')
+        errors_by_height=np.load('out/errors_by_height.npy')
         for d,name in enumerate(names):
             utils.showPlot([go.Surface(z=errors_by_height[:,:,d] )],title=name,scene=dict(xaxis=dict(title='Ovitrap id'),yaxis=dict(title='Height')) )
     if(case==10):
-        errors_by_height=np.load('errors_by_height.npy')
+        errors_by_height=np.load('out/errors_by_height.npy')
         for h in range(1,15):
             configuration=Configuration('resources/1c.cfg')
             configuration.config_parser.set('location','name','cordoba.full')
@@ -331,7 +331,7 @@ def runCases(case):
                     yaxis_title='Nº de huevos')
 
     if(case==11):
-        errors_by_height=np.load('errors_by_height.npy')
+        errors_by_height=np.load('out/errors_by_height.npy')
         for d,name in enumerate(['D']):
             heights=[1,3,6,8]
             fig = tools.make_subplots(rows=len(heights), cols=1)
@@ -366,7 +366,7 @@ def runCases(case):
 
 
     if(case==13):
-        errors_by_height=np.load('errors_by_height.npy')
+        errors_by_height=np.load('out/errors_by_height.npy')
         a=[-1]+[np.nanmin(errors_by_height[:,o,5]) for o in range(1,151)]
         idx=np.argsort(a)
         print(idx[-5:])
@@ -391,7 +391,7 @@ def runCases(case):
             print('h:%s Max E: %s'%(h,np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1))))
 
     if(case==15):
-        errors_by_height=np.load('errors_by_height.npy')
+        errors_by_height=np.load('out/errors_by_height.npy')
         matrix=errors_by_height[:,:,3:6]
         matrix/=np.nanmax(matrix,axis=(0,1))#normalize
         plt.imshow(np.uint8(matrix*255),interpolation='nearest', aspect='auto')
@@ -411,7 +411,7 @@ def runCases(case):
                 fig.append_trace(trace,int(i/2) +1,i%2 +1)
         utils.showPlot(fig)
     if(case==17):
-        errors_by_height=np.load('errors_by_height.npy')
+        errors_by_height=np.load('out/errors_by_height.npy')
         d=5
         utils.showPlot([go.Heatmap(z=errors_by_height[:,:,d])])
 
