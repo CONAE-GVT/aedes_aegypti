@@ -31,6 +31,7 @@ class Model:
         self.parameters.ADULT1=(2+m)*n#in R
         self.parameters.ADULT2=(2+m)*n+1#in R
         self.parameters.WATER=slice((2+m)*n+2,(3+m)*n+2)#in R^n
+        self.parameters.OVIPOSITION=slice((3+m)*n+2,(3+2*m)*n+2)#in R^(mxn)
         self.parameters.vAlpha0=configuration.getArray('biology','alpha0')#constant to be fitted
 
         #Cordoba
@@ -46,7 +47,8 @@ class Model:
         L0=initial_condition[1]*self.parameters.vBS_d
         P0=initial_condition[2]*self.parameters.vBS_d
         W0=configuration.getArray('breeding_site','initial_water')
-        self.parameters.initial_condition=np.concatenate( (E0,L0,P0,initial_condition[-2:],W0) )
+        O0=np.zeros((m*n))
+        self.parameters.initial_condition=np.concatenate( (E0,L0,P0,initial_condition[-2:],W0,O0) )
 
         WEATHER_DATA_FILENAME='data/public/'+self.parameters.location['name']+'.csv'
         self.parameters.weather=Weather(WEATHER_DATA_FILENAME,self.start_date,self.end_date)
@@ -78,7 +80,7 @@ class Model:
         return results_filename
 
 
-    def solveEquations(self,equations=equations.diff_eqs,method='odeint'):
+    def solveEquations(self,equations=equations.diff_eqs,method='rk'):
         time_range=self.time_range
         initial_condition=self.parameters.initial_condition
         Y=None

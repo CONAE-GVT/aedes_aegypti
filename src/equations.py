@@ -55,7 +55,7 @@ def ovsp(vW,vBS_d,vW_l,mBS_l):#OViposition Site Preference
 def wetMask(vW_l,mBS_l):
     return np.where(mBS_l<=vW_l,1,0)
 
-def dvE(mE,vL,A1,A2,vW_t,BS_a,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l):
+def dmE(mE,vL,A1,A2,vW_t,BS_a,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l):
     egn=63.0
     me=0.01#mortality of the egg, for T in [278,303]
     ovsp_t=ovsp(vW_t,vBS_d,vW_l,mBS_l)
@@ -81,6 +81,13 @@ def dA2(A1,A2,ovr1):
     ma=0.09#for T in [278,303]
     return ovr1*A1 - ma*A2
 
+def dmO(A1,A2,vW_t,vBS_d,ovr1,ovr2,vW_l,mBS_l):
+    egn=63.0
+    me=0.01#mortality of the egg, for T in [278,303]
+    ovsp_t=ovsp(vW_t,vBS_d,vW_l,mBS_l)
+    return egn*( ovr1 *A1  + ovr2* A2)*ovsp_t
+
+
 def diff_eqs(Y,t,h,parameters):
     '''The main set of equations'''
     T_t=parameters.weather.T(t)
@@ -88,7 +95,7 @@ def diff_eqs(Y,t,h,parameters):
     RH_t=parameters.weather.RH(t)
     elr,lpr,par,ovr1,ovr2=vR_D(T_t)
     BS_a,BS_lh,vBS_d,vBS_h,vAlpha0,m,n,mBS_l=parameters.BS_a,parameters.BS_lh,parameters.vBS_d,parameters.vBS_h,parameters.vAlpha0,parameters.m,parameters.n,parameters.mBS_l
-    EGG,LARVAE,PUPAE,ADULT1,ADULT2,WATER=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.ADULT2,parameters.WATER
+    EGG,LARVAE,PUPAE,ADULT1,ADULT2,WATER,OVIPOSITION=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.ADULT2,parameters.WATER,parameters.OVIPOSITION
 
     vE,vL,vP,A1,A2,vW=Y[EGG].reshape((n,m)).transpose(),Y[LARVAE],Y[PUPAE],Y[ADULT1],Y[ADULT2],Y[WATER]
     vW_l=vW/BS_lh
@@ -96,10 +103,12 @@ def diff_eqs(Y,t,h,parameters):
     vmf_t=parameters.mf(t)*parameters.vBS_mf*10.# cm -> mm
 
     dY=np.empty(Y.shape)
-    dY[EGG]    = dvE(vE,vL,A1,A2,vW,BS_a,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l).transpose().reshape((1,m*n))
+    dY[EGG]    = dmE(vE,vL,A1,A2,vW,BS_a,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l).transpose().reshape((1,m*n))
     dY[LARVAE] = dvL(vE,vL,vW,T_t,BS_a,vBS_d,elr,lpr,vAlpha0,wet_mask)
     dY[PUPAE]  = dvP(vL,vP,T_t,lpr,par)
     dY[ADULT1] = dA1(vP,A1,par,ovr1)
     dY[ADULT2] = dA2(A1,A2,ovr1)
     dY[WATER] = dW(vW,vBS_h,T_t,p_t+vmf_t,RH_t,h)
+    dY[OVIPOSITION]    = dmO(A1,A2,vW,vBS_d,ovr1,ovr2,vW_l,mBS_l).transpose().reshape((1,m*n))
+
     return dY   # For odeint

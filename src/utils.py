@@ -193,32 +193,6 @@ class ProgressEquations:
         sys.stdout.flush()
         return self.diff_eqs(Y,t,parameters)
 
-class OEquations:
-    def __init__(self,model,diff_eqs):
-        self.model=model
-        self.diff_eqs=diff_eqs
-        m,n=model.parameters.m,model.parameters.n
-        OVIPOSITION_START=len(model.parameters.initial_condition)
-        model.parameters.OVIPOSITION=slice(OVIPOSITION_START,OVIPOSITION_START + m*n)#in R^(mxn)
-        model.parameters.initial_condition=np.append(model.parameters.initial_condition,np.zeros(m*n))
-        assert model.parameters.initial_condition[model.parameters.ADULT1]==model.parameters.initial_condition[model.parameters.ADULT2]==0#otherwise the above statement is false.
-
-    def __call__(self,Y,t,h,parameters):
-        dY=self.diff_eqs(Y,t,h,parameters)
-        T_t=parameters.weather.T(t)
-        elr,lpr,par,ovr1,ovr2=vR_D(T_t)
-        BS_lh,vBS_d,m,n,mBS_l=parameters.BS_lh,parameters.vBS_d,parameters.m,parameters.n,parameters.mBS_l
-        ADULT1,ADULT2,WATER,OVIPOSITION=parameters.ADULT1,parameters.ADULT2,parameters.WATER,parameters.OVIPOSITION
-
-        A1,A2,vW_t=Y[ADULT1],Y[ADULT2],Y[WATER]
-        vW_l=vW_t/BS_lh
-
-        egn=63.0
-        ovsp_t=ovsp(vW_t,vBS_d,vW_l,mBS_l)
-        dO=egn*( ovr1 *A1  + ovr2* A2)*ovsp_t
-        dY[OVIPOSITION]=dO.transpose().reshape((1,m*n))
-
-        return dY
 
 ###############################################################Plot################################################################
 def normalize(values):#TODO:change name.

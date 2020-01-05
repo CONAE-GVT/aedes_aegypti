@@ -89,7 +89,7 @@ def runCases(case):
             configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(20)))# uncomment these two
             configuration.config_parser.set('breeding_site','height',str(h))
             model=Model(configuration)
-            time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
+            time_range,initial_condition,Y=model.solveEquations()
 
             #errors=[[1e15,-1,-1,1e15,1e15,1e15]]*151#just to fill the ovitrap 0 that do not exist in reality
             for ovitrap_id in ovi_range:
@@ -161,7 +161,7 @@ def runCases(case):
         configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(30)))
         configuration.config_parser.set('breeding_site','height',str(h))
         model=Model(configuration)
-        time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
+        time_range,initial_condition,Y=model.solveEquations()
         utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','O':list([151]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
         title=location.replace('.full','').replace('_',' ').title(),
         xaxis_title='Date',
@@ -185,7 +185,7 @@ def runCases(case):
             configuration.config_parser.set('breeding_site','manually_filled',str(mf))
             h=configuration.getArray('breeding_site','height')[0]
             model=Model(configuration)
-            time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
+            time_range,initial_condition,Y=model.solveEquations()
             utils.showPlot(utils.plot(model,subplots=[{'E':''}],plot_start_date=datetime.date(2017,10,1)),title='Manually Filled:%scm. Height: %scm.'%(mf,h))
             print(model.warnings)
 
@@ -219,7 +219,7 @@ def runCases(case):
             start_date,end_date=utils.getStartEndDates('data/public/'+location+'.csv')
             configuration.config_parser.set('simulation','end_date',str(end_date))
             model=Model(configuration)
-            time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
+            time_range,initial_condition,Y=model.solveEquations()
             utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','O':list([143]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
             title=location.replace('.full.weather-',' ').title(),
             xaxis_title='Date',
@@ -236,7 +236,7 @@ def runCases(case):
             configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(30)))
             configuration.config_parser.set('breeding_site','height',str(h))
             model=Model(configuration)
-            time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
+            time_range,initial_condition,Y=model.solveEquations()
             utils.showPlot(utils.plot(model,subplots=[{'cd':'','A1+A2':'','W':'','f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
             title=location.replace('_',' ').title(),
             xaxis_title='Date',
@@ -249,7 +249,7 @@ def runCases(case):
         configuration.config_parser.set('location','name','cordoba.full')
         configuration.config_parser.set('simulation','end_date',str(datetime.date.today()))
         model=Model(configuration)
-        time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
+        time_range,initial_condition,Y=model.solveEquations()
         utils.showPlot(utils.plot(model,subplots=[{'E':':','A1+A2':'','f':[utils.safeAdd]}]),
             title='Cordoba',
             xaxis_title='Date',
@@ -284,7 +284,7 @@ def runCases(case):
             configuration.config_parser.set('location','name','.history/'+filename.replace('.csv',''))
             configuration.config_parser.set('simulation','end_date',str(PLOT_END_DATE))
             model=Model(configuration)
-            time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
+            time_range,initial_condition,Y=model.solveEquations()
             data_A+=utils.plot(model,subplots=[{'A1+A2':str(simulation_date),'f':[utils.safeAdd]}],plot_start_date=PLOT_START_DATE,color=color)
             data_O+=utils.plot(model,subplots=[{'lwO':str(simulation_date)  ,'f':[utils.safeAdd]}],plot_start_date=PLOT_START_DATE,color=color)
             data_W+=utils.plot(model,subplots=[{'W':str(simulation_date)    ,'f':[]             }],plot_start_date=PLOT_START_DATE,color=color)
@@ -319,7 +319,7 @@ def runCases(case):
             configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(30)))
             configuration.config_parser.set('breeding_site','height',str(h))
             model=Model(configuration)
-            time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
+            time_range,initial_condition,Y=model.solveEquations()
             o_h=[]
             for i in range(1,151):
                 if np.nanargmin(errors_by_height[:,i,d])==h: o_h+=[i]
@@ -356,7 +356,7 @@ def runCases(case):
             configuration.config_parser.set('simulation','end_date',str(datetime.date.today()))
             configuration.config_parser.set('breeding_site','height',str(h))
             model=Model(configuration)
-            time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
+            time_range,initial_condition,Y=model.solveEquations()
             utils.showPlot(utils.plot(model,subplots=[{'lwO':'','O':list([ovis[i]]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
             title='%scm.'%h,
             xaxis_title='Date',
@@ -381,7 +381,7 @@ def runCases(case):
             configuration.config_parser.set('simulation','end_date',str(datetime.date.today()))
             configuration.config_parser.set('breeding_site','height',str(h))
             model=Model(configuration)
-            time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
+            time_range,initial_condition,Y=model.solveEquations()
 
             utils.showPlot(utils.plot(model,subplots=[{'lwO':'','f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
             title=location.replace('_',' ').title(),
@@ -405,7 +405,7 @@ def runCases(case):
             configuration.config_parser.set('simulation','end_date',str(datetime.date.today()))
             configuration.config_parser.set('breeding_site','height',str(h))
             model=Model(configuration)
-            model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
+            model.solveEquations()
             traces=utils.plot(model,subplots=[{'PO':''}],plot_start_date=datetime.date(2017,10,1))
             for trace in traces:
                 fig.append_trace(trace,int(i/2) +1,i%2 +1)
@@ -426,7 +426,7 @@ def runCases(case):
             configuration.config_parser.set('breeding_site','height',str(h))
             configuration.config_parser.set('breeding_site','amount','1')
             model=Model(configuration)
-            time_range,initial_condition,Y=model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
+            time_range,initial_condition,Y=model.solveEquations()
 
             utils.showPlot(utils.plot(model,subplots=[{stage:'','f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
             title='',
