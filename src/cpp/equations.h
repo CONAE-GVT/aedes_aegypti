@@ -67,7 +67,7 @@ matrix wetMask(const tensor& vW_l, const matrix& mBS_l){
     return (mBS_l<=vW_l.replicate(mBS_l.rows(),1)).cast<scalar>();//this cast seems obscure.https://stackoverflow.com/questions/50009258/how-to-do-element-wise-comparison-with-eigen
 }
 
-matrix dvE(const matrix& mE,const tensor& vL,scalar A1,scalar A2,const tensor& vW_t, scalar BS_a,const tensor&  vBS_d,scalar elr,scalar ovr1, scalar ovr2,const matrix& wet_mask,const tensor& vW_l,const matrix& mBS_l){
+matrix dmE(const matrix& mE,const tensor& vL,scalar A1,scalar A2,const tensor& vW_t, scalar BS_a,const tensor&  vBS_d,scalar elr,scalar ovr1, scalar ovr2,const matrix& wet_mask,const tensor& vW_l,const matrix& mBS_l){
     scalar egn=63.0;
     scalar me=0.01;//#mortality of the egg, for T in [278,303]
     matrix ovsp_t=ovsp(vW_t,vBS_d,vW_l,mBS_l);
@@ -96,6 +96,12 @@ scalar dA1(const tensor& vP,scalar A1, scalar par,scalar ovr1){
 scalar dA2(scalar A1,scalar A2,scalar ovr1){
     scalar ma=0.09;//#for T in [278,303]
     return ovr1*A1 - ma*A2;
+}
+
+matrix dmO(scalar A1,scalar A2,const tensor& vW_t, const tensor&  vBS_d,scalar ovr1, scalar ovr2, const tensor& vW_l,const matrix& mBS_l){
+    scalar egn=63.0;
+    matrix ovsp_t=ovsp(vW_t,vBS_d,vW_l,mBS_l);
+    return egn*( ovr1 *A1  + ovr2* A2)*ovsp_t;
 }
 
 
@@ -131,12 +137,13 @@ tensor diff_eqs(const tensor& Y,scalar t,scalar h,Parameters& parameters){
     tensor vmf_t=parameters.mf(t)*parameters.vBS_mf*10.;//# cm -> mm
 
     tensor dY=tensor(Y.size());
-    dY(parameters.EGG)    = dvE(mE,vL,A1,A2,vW,BS_a,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l).reshaped(1,m*n);
+    dY(parameters.EGG)    = dmE(mE,vL,A1,A2,vW,BS_a,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l).reshaped(1,m*n);
     dY(parameters.LARVAE) = dvL(mE,vL,vW,T_t,      BS_a,vBS_d,elr,lpr,vAlpha0,wet_mask);
     dY(parameters.PUPAE)  = dvP(vL,vP,T_t,lpr,par);
     dY(parameters.ADULT1) = dA1(vP,A1,par,ovr1);
     dY(parameters.ADULT2) = dA2(A1,A2,ovr1);
     dY(parameters.WATER) = dW(vW,vBS_h,T_t,p_t+vmf_t,RH_t,h);
+    dY(parameters.OVIPOSITION) = dmO(A1,A2,vW,vBS_d,ovr1,ovr2,vW_l,mBS_l).reshaped(1,m*n);
 
     return dY;//   # For odeint
 }

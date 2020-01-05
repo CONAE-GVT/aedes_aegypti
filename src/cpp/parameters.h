@@ -32,6 +32,7 @@ struct Parameters{
     unsigned int ADULT1;
     unsigned int ADULT2;
     Eigen::ArithmeticSequence<long int, long int> WATER=Eigen::seq(0,0);
+    Eigen::ArithmeticSequence<long int, long int> OVIPOSITION=Eigen::seq(0,0);
     Weather weather;
     std::function<scalar(scalar)> mf;
 

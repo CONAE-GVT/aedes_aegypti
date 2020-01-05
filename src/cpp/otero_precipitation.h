@@ -30,12 +30,13 @@ class Model
 
 
         unsigned int m=this->parameters.m;unsigned int n=this->parameters.n;
-        this->parameters.EGG=Eigen::seqN(0,m*n);//#in R^n
+        this->parameters.EGG=Eigen::seqN(0,m*n);//#in R^(mxn)
         this->parameters.LARVAE=Eigen::seqN(m*n,n);//#in R^n
         this->parameters.PUPAE=Eigen::seqN((1+m)*n,n);//#in R^n
         this->parameters.ADULT1=(2+m)*n;//#in R
         this->parameters.ADULT2=(2+m)*n+1;//#in R
         this->parameters.WATER=Eigen::seqN((2+m)*n+2,n);//#in R^n
+        this->parameters.OVIPOSITION=Eigen::seqN((3+m)*n+2,m*n);//#in R^(mxn)
 
         this->parameters.vAlpha0=configuration.getTensor("biology","alpha0");//#constant to be fitted
 
@@ -52,8 +53,9 @@ class Model
         tensor P0=initial_condition[2]*this->parameters.vBS_d;
         tensor A0=initial_condition(Eigen::seqN(3,2));//index change, bug in previos code?
         tensor W0=configuration.getTensor("breeding_site","initial_water");
-        this->parameters.initial_condition=tensor(E0.cols()+L0.cols()+P0.cols()+2+W0.cols());//Utils::concatenate( { E0,L0,P0,initial_condition[std::slice(4,2,1)],W0 } );
-        this->parameters.initial_condition<<E0,L0,P0,A0,W0;
+        tensor O0=tensor(m*n);
+        this->parameters.initial_condition=tensor(E0.cols()+L0.cols()+P0.cols()+2+W0.cols()+O0.cols());
+        this->parameters.initial_condition<<E0,L0,P0,A0,W0,O0;
 
         std::string WEATHER_DATA_FILENAME="data/public/"+this->parameters.location+".csv";
         this->parameters.weather=Weather(WEATHER_DATA_FILENAME, this->start_date ,this->end_date );
