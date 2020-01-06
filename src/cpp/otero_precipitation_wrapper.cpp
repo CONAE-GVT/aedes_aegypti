@@ -7,10 +7,14 @@ class ModelWrapper
 {
     public:
     Model model;
+    std::string start_date;
+    std::string end_date;
     boost::python::list time_range;
     boost::python::list Y;
 
     ModelWrapper(std::string filename): model(Configuration(filename)){//we initialize this->model this way to avoid default constructor
+      this->start_date=model.start_date;
+      this->end_date=model.end_date;
       for(unsigned int i=0;i<model.time_range.size();i++) this->time_range.append(model.time_range[i]);
     }
 
@@ -33,6 +37,8 @@ BOOST_PYTHON_MODULE(otero_precipitation_wrapper)
 {
     boost::python::class_<ModelWrapper>("ModelWrapper",boost::python::init<std::string>())
                     .def("solveEquations", &ModelWrapper::solveEquations)
-                    .add_property("Y", &ModelWrapper::Y)
-                    .add_property("time_range", &ModelWrapper::time_range);
+                    .add_property("start_date", &ModelWrapper::start_date)
+                    .add_property("end_date", &ModelWrapper::end_date)
+                    .add_property("time_range", &ModelWrapper::time_range)
+                    .add_property("Y", &ModelWrapper::Y);
 }

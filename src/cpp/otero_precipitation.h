@@ -15,6 +15,7 @@ class Model
     std::string start_date;
     std::string end_date;
     std::vector<scalar> time_range;
+    std::vector<tensor> Y;
 
     Model():Model(Configuration("resources/otero_precipitation.cfg")){}
 
@@ -71,6 +72,7 @@ class Model
         std::vector<scalar> time_range= this->time_range;
         tensor Y0=this->parameters.initial_condition;
         std::vector<tensor> Y=RK::solve(diff_eqs,Y0,time_range,this->parameters,20);
+        this->Y=Y;
         return Y;
     }
 
