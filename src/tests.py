@@ -485,6 +485,11 @@ def rewritehistory():
         open('data/public/out/'+filename,'w').write(content)
         #print(start_date,end_date)
 
+def weeks():
+    date=datetime.date(2019,1,1)
+    for i in range(0,54):
+        print(i+1,' :',date+ datetime.timedelta(i*7))
+
 
 if(__name__ == '__main__'):
     if(len(sys.argv)>1 and sys.argv[1]=='spatial'):
@@ -495,6 +500,8 @@ if(__name__ == '__main__'):
         runInfo(sys.argv[2])
     elif(len(sys.argv)>1 and sys.argv[1]=='rewrite'):
         rewritehistory()
+    elif(len(sys.argv)>1 and sys.argv[1]=='weeks'):
+        weeks()
     else:#the default is just a number indicating which test case to run, or none (test case 1 will will be default)
         if(len(sys.argv)<2):
             case=1
