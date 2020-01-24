@@ -89,6 +89,10 @@ or
 **c++ binding**
 >g++ -std=c++17 -O3 -march=native -Wall -I/usr/include/python3.6m/   -fpic  src/cpp/otero_precipitation_wrapper.cpp -shared  -lboost_python-py36  -o src/otero_precipitation_wrapper.so
 
+**c++ profiling**
+>g++ -std=c++17 -O3 -march=native src/cpp/main.cpp; sudo perf record -g ./a.out;sudo perf report
+>g++ -std=c++17 -O3 -march=native src/cpp/main.cpp -pg;  time ./a.out ;gprof -l > gprof2.txt
+
 **To create an animation**
 >ffmpeg -framerate 250 -i out/A_%04d.png  out/A.webm
 
