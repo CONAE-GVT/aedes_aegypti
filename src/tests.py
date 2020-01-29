@@ -490,6 +490,34 @@ def weeks():
     for i in range(0,54):
         print(i+1,' :',date+ datetime.timedelta(i*7))
 
+import math
+def rates():
+    temperatures=np.array([22.13,20.73,18.89,12.98])+273.15
+
+    for T_t in temperatures:
+        elr,lpr,par,ovr1,ovr2=vR_D(T_t)
+        print('*'*30 + str(round(T_t-273.15,2)) + '*'*30 )
+        print('Development Time (in days)')
+        #print('-'*65)
+        print('\t Egg->Larva: %s'%(1/elr))
+        print('\t Larvae->Pupa: %s'%(1/lpr))
+        print('\t Pupa->Adult1: %s'%(1/par))
+        print('\t Adult1->Adult2: %s'%(1/ovr1))
+        print('Survival (in days)')
+        #print('-'*65)
+        me=0.01#mortality of the egg, for T in [278,303]
+        ml=0.01 + 0.9725 * math.exp(-(T_t-278.0)/2.7035)#mortality of the larvae, for T in [278,303]
+        mp=0.01 + 0.9725 * math.exp(-(T_t-278.0)/2.7035)#death of pupae
+        print('\t Egg: %s'%(1/me))
+        print('\t Larva: %s'%(1/ml))
+        print('\t Pupa: %s'%(1/mp))
+        #print('-'*65)
+        print('Proportion:')
+        print('\t Female: 50.0')
+        print('\t Male: 50.0')
+        #print('-'*65)
+        print('\n')
+
 
 if(__name__ == '__main__'):
     if(len(sys.argv)>1 and sys.argv[1]=='spatial'):
@@ -502,6 +530,8 @@ if(__name__ == '__main__'):
         rewritehistory()
     elif(len(sys.argv)>1 and sys.argv[1]=='weeks'):
         weeks()
+    elif(len(sys.argv)>1 and sys.argv[1]=='rates'):
+        rates()
     else:#the default is just a number indicating which test case to run, or none (test case 1 will will be default)
         if(len(sys.argv)<2):
             case=1
