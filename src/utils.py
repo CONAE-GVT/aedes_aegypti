@@ -393,11 +393,14 @@ def showPlot(data,title='',xaxis_title='',yaxis_title='',scene=dict()):
                     yaxis = dict(title = yaxis_title),
                     scene=scene,
                     font=dict(
-                    family="Courier New, monospace",
-                    size=24,
+                    family="Arial",
+                    size=45,
                     color="#090909"
                     ),
-                    margin=dict(l=120,b=120))
+                    margin=dict(l=160,b=220,r=160))
+    for scatter in data:
+        scatter['marker']=marker=dict(size=12, line=dict(width=2))
+
     ply.plot(go.Figure(data=data,layout=layout), filename=tempfile.NamedTemporaryFile(prefix='plot_').name)
 
 ###############################################################Animation################################################################
