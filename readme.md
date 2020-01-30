@@ -79,15 +79,17 @@ or
 >cd src
 >python setup.py build_ext --inplace
 
-**Installing Boost**
->sudo apt install libboost-python-dev
+**Installing pybind11**
+>sudo apt install python3-dev
+>git clone https://github.com/pybind/pybind11.git
+>sudo cp pybind11/include/pybind11 /usr/include/  -r
 
 **Installing Eigen**
 >git clone https://gitlab.com/libeigen/eigen.git
->sudo cp Eigen /usr/include/  -r
+>sudo cp eigen/Eigen /usr/include/  -r
 
 **c++ binding**
->g++ -std=c++17 -O3 -march=native -Wall -I/usr/include/python3.6m/   -fpic  src/cpp/otero_precipitation_wrapper.cpp -shared  -lboost_python-py36  -o src/otero_precipitation_wrapper.so
+>g++ -std=c++17 -Wall -O3 -march=native -shared -fPIC -I/usr/include/python3.6m src/cpp/otero_precipitation_wrapper.cpp -o src/otero_precipitation_wrapper.so
 
 **c++ profiling**
 >g++ -std=c++17 -O3 -march=native src/cpp/main.cpp; sudo perf record -g ./a.out;sudo perf report

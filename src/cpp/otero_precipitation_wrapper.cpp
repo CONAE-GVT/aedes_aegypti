@@ -1,44 +1,18 @@
-//g++ -std=c++17 -O3 -march=native -Wall -I/usr/include/python3.6m/   -fpic  src/cpp/otero_precipitation_wrapper.cpp -shared  -lboost_python-py36  -o src/otero_precipitation_wrapper.so
-#include <boost/python.hpp>
+//g++ -std=c++17 -Wall -O3 -march=native -shared -fPIC -I/usr/include/python3.6m src/cpp/otero_precipitation_wrapper.cpp -o src/otero_precipitation_wrapper.so
 #include "otero_precipitation.h"
 #include "configuration.h"
+//order is important! if I put the pybind includes before mine, the result contains nans or infs.(The problem seems to be just with the eigen import)
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+#include <pybind11/eigen.h>
 
-class ModelWrapper
-{
-    public:
-    Model model;
-    std::string start_date;
-    std::string end_date;
-    boost::python::list time_range;
-    boost::python::list Y;
-
-    ModelWrapper(std::string filename): model(Configuration(filename)){//we initialize this->model this way to avoid default constructor
-      this->start_date=model.start_date;
-      this->end_date=model.end_date;
-      for(unsigned int i=0;i<model.time_range.size();i++) this->time_range.append(model.time_range[i]);
-    }
-
-    boost::python::list solveEquations(){
-        std::vector<tensor> Y =this->model.solveEquations();
-        boost::python::list _Y=boost::python::list();
-        for(unsigned int i=0;i<Y.size();i++){
-            boost::python::list _Y_i=boost::python::list();
-            for(unsigned int j=0;j<Y[i].size();j++) _Y_i.append(Y[i][j]);
-            _Y.append(_Y_i);
-        }
-        this->Y=_Y;
-        boost::python::list ret;
-        ret.append(this->time_range);ret.append(this->Y);
-        return ret;
-    }
-};
-
-BOOST_PYTHON_MODULE(otero_precipitation_wrapper)
-{
-    boost::python::class_<ModelWrapper>("ModelWrapper",boost::python::init<std::string>())
-                    .def("solveEquations", &ModelWrapper::solveEquations)
-                    .add_property("start_date", &ModelWrapper::start_date)
-                    .add_property("end_date", &ModelWrapper::end_date)
-                    .add_property("time_range", &ModelWrapper::time_range)
-                    .add_property("Y", &ModelWrapper::Y);
+//https://pybind11.readthedocs.io/en/stable/classes.html
+PYBIND11_MODULE(otero_precipitation_wrapper, m) {
+    pybind11::class_<Model>(m, "Model")
+        .def(pybind11::init<const std::string>())
+        .def("solveEquations", &Model::solveEquations)
+        .def_readonly("start_date", &Model::start_date)
+        .def_readonly("end_date", &Model::end_date)
+        .def_readonly("time_range", &Model::time_range)
+        .def_readonly("Y", &Model::Y);
 }

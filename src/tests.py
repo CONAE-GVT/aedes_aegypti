@@ -436,7 +436,7 @@ def runCases(case):
             print('h:%s Max E: %s'%(h,np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1))))
 
 try:
-    from otero_precipitation_wrapper import ModelWrapper as _Model
+    from otero_precipitation_wrapper import Model as _Model
 except ImportError:
     pass
 import time

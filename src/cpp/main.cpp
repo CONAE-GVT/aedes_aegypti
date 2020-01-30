@@ -10,8 +10,9 @@
 
 int main(){
   Model model=Model(Configuration("resources/otero_precipitation.cfg"));
-  std::vector<tensor> Y=model.solveEquations();
-  std::vector<scalar> time_range=model.time_range;
+  std::vector<tensor> Y;
+  std::vector<scalar> time_range;
+  std::tie(time_range,Y)=model.solveEquations();
   for(unsigned int i=0;i<time_range.size();i++){
     std::cout << time_range[i] << '\t';
     for(unsigned int j=0;j<Y[i].size();j++) std::cout << Y[i][j] << '\t';

@@ -17,8 +17,8 @@ class Model
     std::vector<scalar> time_range;
     std::vector<tensor> Y;
 
-    Model():Model(Configuration("resources/otero_precipitation.cfg")){}
-
+    Model():Model("resources/otero_precipitation.cfg"){}
+    Model(const std::string& filename):Model(Configuration(filename)){}
     explicit Model(Configuration configuration){//explicit is just to avoid a cpp check warning
         this->parameters.BS_a=configuration.getScalar("breeding_site","amount");
         this->parameters.BS_lh=configuration.getScalar("breeding_site","level_height");//#in cm
@@ -68,12 +68,12 @@ class Model
     }
 
 
-    std::vector<tensor> solveEquations(){
+    std::tuple<std::vector<scalar>,std::vector<tensor>> solveEquations(){
         std::vector<scalar> time_range= this->time_range;
         tensor Y0=this->parameters.initial_condition;
         std::vector<tensor> Y=RK::solve(diff_eqs,Y0,time_range,this->parameters,20);
         this->Y=Y;
-        return Y;
+        return std::tie(this->time_range,this->Y);
     }
 
 };
