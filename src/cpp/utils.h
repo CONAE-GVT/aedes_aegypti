@@ -17,7 +17,7 @@ class Utils{
     static std::vector<scalar> getValuesFromCsv(const std::string& filename, const std::string& start_date_str, const std::string& end_date_str,int value_column){
       std::ifstream file = std::ifstream(filename,std::ifstream::in);
       if( file.fail() ){
-        std::cout << "Couldn't open the file"<<std::endl;
+        std::cout << "Couldn't open the file "<<filename<<std::endl;
         exit(0);
       }
       std::map<date,scalar> date_values;
