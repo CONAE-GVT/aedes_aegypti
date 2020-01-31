@@ -440,20 +440,30 @@ try:
 except ImportError:
     pass
 import time
+import tempfile
 def runCpp():
-    start = time.process_time()
-    model=_Model('resources/otero_precipitation.cfg')
-    time_range,Y1=model.solveEquations()
-    time_range=np.array(time_range)
-    Y1=np.array(Y1)
-    print(np.linalg.norm(Y1),Y1.shape,time.process_time() - start,'s')
+    for i in range(0,100):
+        configuration=Configuration('resources/otero_precipitation.cfg')
+        n=configuration.getArray('breeding_site','distribution').shape[0]
+        vr=np.random.rand(n)
+        configuration.config_parser.set('breeding_site','distribution',', '.join( map(str,vr/vr.sum()) ))
+        configuration.config_parser.set('breeding_site','height', ', '.join( map(str,vr*300 + 1) ) )
+        config_filename=tempfile.NamedTemporaryFile(suffix='.cfg').name
+        with open(config_filename, 'w') as configfile:
+            configuration.config_parser.write(configfile)
 
-    start = time.process_time()
-    model=Model(Configuration('resources/otero_precipitation.cfg'))
-    time_range,Y2=model.solveEquations(method='rk' )
-    print(np.linalg.norm(Y2),Y2.shape,time.process_time() - start,'s')
+        start = time.process_time()
+        model=_Model(config_filename)
+        time_range,Y1=model.solveEquations()
+        Y1=np.array(Y1)
+        elapsed1=time.process_time() - start
 
-    print('||Y1-Y2||=%s'%np.linalg.norm(Y1-Y2))
+        start = time.process_time()
+        model=Model(Configuration(config_filename))
+        time_range,Y2=model.solveEquations()
+        elapsed2=time.process_time() - start
+
+        print('||Y2-Y1||/||Y2|| * 100=%s , t2/t1=%s, %s'%(np.linalg.norm(Y2-Y1)/np.linalg.norm(Y2) *100, elapsed2/elapsed1,config_filename) )
 
 import netCDF4 as nc
 def runInfo(nc_filename):
