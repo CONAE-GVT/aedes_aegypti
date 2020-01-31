@@ -2,7 +2,6 @@ import os
 import tempfile
 import datetime
 import numpy as np
-from otero_precipitation import Model as pyModel
 from config import Configuration
 
 try:
@@ -10,6 +9,18 @@ try:
 except ImportError:
     os.system('g++ -std=c++17 -Wall -O3 -march=native -shared -fPIC -I/usr/include/python3.6m src/cpp/otero_precipitation_wrapper.cpp -o src/otero_precipitation_wrapper.so')
     from otero_precipitation_wrapper import ModelWrapper as _Model
+
+class ParametersDecorator:
+    def __init__(self,parameters):
+        self.parameters=parameters
+    def __getattr__(self, name):
+        attribute=getattr(self.parameters,name)
+        if(name in ['EGG','LARVAE','PUPAE','WATER','OVIPOSITION']):
+            return slice(attribute.first(),attribute.first()+attribute.size())
+        elif(name in ['location']):
+            return {'name':attribute}
+        else:
+            return attribute
 
 class Model:
     config_filename=tempfile.NamedTemporaryFile(suffix='.cfg').name
@@ -22,10 +33,9 @@ class Model:
         self.start_date=datetime.datetime.strptime(self._model.start_date,'%Y-%m-%d').date()
         self.end_date=datetime.datetime.strptime(self._model.end_date,'%Y-%m-%d').date()
         self.time_range=np.array(self._model.time_range)
+        self.parameters=ParametersDecorator(self._model.parameters)
         self.warnings=['warnings not implemented']
-        #TODO:we are cheating here!
-        python_model=pyModel(configuration)
-        self.parameters=python_model.parameters
+
 
     def solveEquations(self):
         self._model.solveEquations()
