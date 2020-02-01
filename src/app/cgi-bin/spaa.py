@@ -7,51 +7,31 @@ os.chdir('../../../')
 sys.path.append('./src')
 import utils
 from config import Configuration
-from otero_precipitation import Model
+from otero_precipitation_wrapper_wrapper import Model
 from equations import diff_eqs
 
-SCENARIO_FULLNAMES={'rc':'condiciones_regulares','it':'temperatura_aumentada','dt':'temperatura_disminuida','ip':'precipitacion_aumentada','dp':'precipitacion_disminuida','oc':'contenedores_externos','ic':'contenedores_internos'}
+SCENARIO_FULLNAMES={'rc':'condiciones_regulares','it':'temperatura_aumentada','dt':'temperatura_disminuida','ip':'precipitacion_aumentada','dp':'precipitacion_disminuida'}
 
 def daysSinceEpoch(start_datetime,days):
     epoch = datetime.datetime.utcfromtimestamp(0)
     return (start_datetime + datetime.timedelta(days=days) - epoch).total_seconds() * 1000.0
 
-def applyScenario(model,scenario):
+def applyScenario(location,scenario):
     if(scenario in ['it','dt']):
         if(scenario=='it'):#increased temperature
             a=1.2
         elif(scenario=='dt'):#decreased temperature
             a=0.8
-        T=model.parameters.weather.T
-        model.parameters.weather.T=lambda t: (T(t)-273.15)*a + 273.15
+        location=utils.scaleWeatherConditions('data/public/',location,2,a)
 
     if(scenario in ['ip','dp']):
         if(scenario=='ip'):#increased precipitation
             a=1.2
         elif(scenario=='dp'):#decreased precipitation
             a=0.8
-        p=model.parameters.weather.p
-        model.parameters.weather.p=lambda t: p(t)*a
+        location=utils.scaleWeatherConditions('data/public/',location,4,a)
 
-
-    return model
-
-def getConfig(configuration,scenario):
-    if(scenario in ['oc','ic']):
-        if(scenario=='oc'):#80% outside containers
-            a=0.8
-        elif(scenario=='ic'):#80% inside containers
-            a=0.2
-        vBS_od=configuration.getArray('breeding_site','outside_distribution')
-        vBS_id=configuration.getArray('breeding_site','inside_distribution')
-
-        vBS_od=a*vBS_od/np.sum(vBS_od)
-        vBS_id=(1-a)*vBS_id/np.sum(vBS_id)
-        assert 1-(np.sum(vBS_od)+np.sum(vBS_id))<1e-6, 'vBS_od+vBS_id=%s'%(np.sum(vBS_od)+np.sum(vBS_id))
-        configuration.config_parser.set('breeding_site','outside_distribution',','.join([str(value) for value in vBS_od ]))
-        configuration.config_parser.set('breeding_site','inside_distribution',','.join([str(value) for value in vBS_id ]))
-
-    return configuration
+    return location
 
 def runSimulation(GET):
     start_datetime=datetime.datetime.strptime(GET.get('start_date'),'%Y-%m-%d')
@@ -59,19 +39,19 @@ def runSimulation(GET):
     end_date=datetime.datetime.strptime(GET.get('end_date'),'%Y-%m-%d').date()
     location=GET.get('location')
     scenario=GET.get('scenario')
+    location=applyScenario(location+'.full', scenario)
     configuration=Configuration('resources/1c.cfg',
         {'simulation':{
             'start_date':start_date,
             'end_date':end_date,
             },
         'location':{
-            'name':str(location)+'.full'#unicode to str
+            'name':str(location)#unicode to str
         },
         })
-    configuration=getConfig(configuration,scenario)
-    model=applyScenario(Model(configuration), scenario)
+    model=Model(configuration)
 
-    time_range,initial_condition,Y= model.solveEquations(equations=utils.OEquations(model,diff_eqs),method='rk')
+    time_range,Y= model.solveEquations()
     EGG,LARVAE,ADULT1,ADULT2,OVIPOSITION=model.parameters.EGG,model.parameters.LARVAE,model.parameters.ADULT1,model.parameters.ADULT2,model.parameters.OVIPOSITION
     BS_a=configuration.getFloat('breeding_site','amount')
     indexOf=lambda t: (np.abs(time_range-t)).argmin()
@@ -85,10 +65,10 @@ def runSimulation(GET):
     O=[ [ daysSinceEpoch(start_datetime,t), np.sum(lwO_mean[i])/BS_a ] for i,t in enumerate(time_range)]
 
     weather=model.parameters.weather
-    precipitations = utils.getPrecipitationsFromCsv('data/public/'+location+'.full.csv',start_date,end_date)
+    precipitations = utils.getPrecipitationsFromCsv('data/public/'+location+'.csv',start_date,end_date)
     p=[ [ daysSinceEpoch(start_datetime,t), precipitations[int(t)] ] for t in time_range]
-    T=[ [ daysSinceEpoch(start_datetime,t), np.asscalar(weather.T(t)) - 273.15 ] for t in time_range]
-    RH=[ [ daysSinceEpoch(start_datetime,t), np.asscalar(weather.RH(t)) ] for t in time_range]
+    T=[ [ daysSinceEpoch(start_datetime,t), float(weather.T(t)) - 273.15 ] for t in time_range]
+    RH=[ [ daysSinceEpoch(start_datetime,t), float(weather.RH(t)) ] for t in time_range]
 
     return json.dumps({
                         'population':[{'name':'Huevos','data':E,'type':'scatter'},{'name':'Larvas','data':L,'type':'scatter'},{'name':'Adultos','data':A,'type':'scatter'},{'name':'Oviposicion','data':O,'type':'scatter'}],

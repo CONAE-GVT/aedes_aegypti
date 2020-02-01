@@ -18,7 +18,7 @@ $(document).ready(function() {
       }
     });
 
-    $('#start_date').datepicker('update','2017-7-1');
+    $('#start_date').datepicker('update','2015-8-1');
     var end_date=new Date();
     end_date.setDate(end_date.getDate() + 29);//Doesn't take the last day.conflict with validation endDate: '+30d'.
     $("#end_date").datepicker("update",end_date);

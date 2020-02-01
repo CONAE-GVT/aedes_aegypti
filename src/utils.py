@@ -6,7 +6,10 @@ import collections
 import numpy as np
 import datetime
 import tempfile
+import atexit
 import sys
+import os
+
 
 ###############################################################I/O###############################################################
 def daterange(start_date, end_date):
@@ -118,6 +121,22 @@ def getLocations():
     config_parser = ConfigParser()
     config_parser.read('resources/get_weather.cfg')
     return config_parser.sections()
+
+def scaleWeatherConditions(folder,location,column,factor):
+    with open(folder+location+'.csv') as f:
+        content = f.readlines()
+    #content = [x.strip() for x in content[1:]]#strip trailing \n's and remove header
+    scaled_content=content[0]#header
+    for i,line in enumerate(content):
+        if i==0: continue
+        splitted_line=line.strip().split(',')
+        splitted_line[column]=str(float(splitted_line[column])*factor)
+        scaled_content+=', '.join(splitted_line) + '\n'
+
+    scaled_filename=tempfile.NamedTemporaryFile(dir=folder,prefix='_tmp_',suffix='.csv').name
+    open(scaled_filename,'w').write(scaled_content)
+    atexit.register(lambda: os.remove(scaled_filename))
+    return scaled_filename.split('/')[-1].replace('.csv','')
 
 #Reduce the resolution to leave pixels as blocks of 100mx100m (10mx10m --> 100mx100m)
 def getReducedMatrix(S,block_size=10):
@@ -369,7 +388,7 @@ def plot(model,subplots,plot_start_date=None,color=None):
             if('cordoba.full.weather-' in location):
                 current_date=datetime.datetime.strptime(location.replace('cordoba.full.weather-',''),'%Y-%m-%d').date()
             else:
-                current_date=getStartEndDates('data/public/'+location.replace('.full','.csv'))[1]#datetime.date.today()
+                current_date=getStartEndDates('data/public/'+location.replace('.full','')+'.csv')[1]#datetime.date.today()
                 A,B=datetime.date(2017,10,25),datetime.date(2017,11,12)
                 D,P=datetime.date(2017,11,13),datetime.date(2017,11,13)
             data.append(go.Scatter(x=[current_date],y=[0],name='Current Date',mode='markers',cliponaxis= False));
