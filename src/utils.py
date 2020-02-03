@@ -125,7 +125,7 @@ def getLocations():
 def scaleWeatherConditions(folder,location,column,factor):
     with open(folder+location+'.csv') as f:
         content = f.readlines()
-    #content = [x.strip() for x in content[1:]]#strip trailing \n's and remove header
+
     scaled_content=content[0]#header
     for i,line in enumerate(content):
         if i==0: continue
