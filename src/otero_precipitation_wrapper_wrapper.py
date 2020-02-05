@@ -23,9 +23,8 @@ class ParametersDecorator:
             return attribute
 
 class Model:
-    config_filename=tempfile.NamedTemporaryFile(suffix='.cfg').name
-
     def __init__(self, configuration=Configuration('resources/otero_precipitation.cfg')):
+        self.config_filename=tempfile.NamedTemporaryFile(suffix='.cfg').name
         with open(self.config_filename, 'w') as configfile:
             configuration.config_parser.write(configfile)
 

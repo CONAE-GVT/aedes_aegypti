@@ -107,6 +107,7 @@ def getOvitrapEggsFromCsv2(filename,start_date,end_date,column):#amount
 
 def getStartEndDates(filename):
     dates=[line.split(',')[0] for line in open(filename,'r').readlines()]
+    dates=[date for date in dates if date]
     return datetime.datetime.strptime(dates[1], '%Y-%m-%d').date(),datetime.datetime.strptime(dates[-1], '%Y-%m-%d').date()
 
 def getDailyResults(time_range,RES,start_date,end_date):
