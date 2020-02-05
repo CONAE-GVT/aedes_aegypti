@@ -13,10 +13,11 @@ MINIMIZE_METHOD='differential_evolution'
 OVITRAP_FILENAME='data/private/ovitrampas_2017-2019.mean.csv'
 
 def getConfiguration(x=None,n=None):
-    if(x is None and n is None): return Configuration('resources/1c.cfg')#no arguments passed, return default configuration
+    CONFIGURATION_FILENAME='resources/1c.cfg'
+    if(x is None and n is None): return Configuration(CONFIGURATION_FILENAME)#no arguments passed, return default configuration
 
     start_date,end_date=utils.getStartEndDates(OVITRAP_FILENAME)
-    configuration=Configuration('resources/2c.cfg',
+    configuration=Configuration(CONFIGURATION_FILENAME,
         {
         'breeding_site':{
             'manually_filled':x[0:n]
