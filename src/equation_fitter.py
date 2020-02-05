@@ -13,7 +13,7 @@ MINIMIZE_METHOD='differential_evolution'
 OVITRAP_FILENAME='data/private/ovitrampas_2017-2019.mean.csv'
 
 def getConfiguration(x=None,n=None):
-    if(x is None and n is None): return Configuration('resources/2c.cfg')#no arguments passed, return default configuration
+    if(x is None and n is None): return Configuration('resources/1c.cfg')#no arguments passed, return default configuration
 
     start_date,end_date=utils.getStartEndDates(OVITRAP_FILENAME)
     configuration=Configuration('resources/2c.cfg',
@@ -58,6 +58,7 @@ def error(x,ovitrap_eggs_i_with_id):
     time_range,Y=model.solveEquations()
     lwO,error,rho,p_value=calculateMetrics(time_range,model,ovitrap_eggs_i)
     title='ovitrap:%s\nmf:%s\n' r'$\alpha_0$:%s' '\n' r'Error:%s $\rho$:%s p value:%s'%(ovitrap_id,model.parameters.vBS_mf.tolist(),model.parameters.vAlpha0.tolist(),error,rho,p_value)
+    #print(title)
     #pl.clf()
     #utils.plot(model,subplots=[{'lwO':'','f':[utils.replaceNegativesWithZeros,perOvitrap(model)],'O':[int(ovitrap_id)]}],title=title,figure=False)
     return error
@@ -72,7 +73,7 @@ def getOptimalParameters(ovitrap_eggs_i_with_id):
     #Σ vBS_d[i] = 1
     constraints = ()#({'type': 'eq', 'fun': lambda x:  1 - sum(x[0:-1])})#TODO:not agnostic
     #0<=x<=1,0<=ws_s<=1.
-    bounds=tuple((1e-8,1) for x in vmf )+ tuple((1.5,3.5) for x in vAlpha0)#TODO:not agnostic
+    bounds=tuple((1e-8,1) for x in vmf )+ tuple((1.5,1.5) for x in vAlpha0)#TODO:not agnostic
 
     if(MINIMIZE_METHOD=='SLSQP'):
         opt=minimize(error,x0,ovitrap_eggs_i_with_id,method='SLSQP',bounds=bounds,constraints=constraints,options={'eps': 1e-02, 'ftol': 1e-01})
@@ -82,7 +83,7 @@ def getOptimalParameters(ovitrap_eggs_i_with_id):
     #save the model
     # model=Model(getConfiguration(opt.x,int(len(opt.x)/2)))#TODO:not agnostic
     # model.solveEquations(method='rk')
-    # results_filename='out/equation_fitter/_ovi%s.csv'%ovitrap_eggs_i_with_id[0]#ovitrap_eggs_i_with_id[0] is the ovitrap_id
+    results_filename='out/equation_fitter/_ovi%s.csv'%ovitrap_eggs_i_with_id[0]#ovitrap_eggs_i_with_id[0] is the ovitrap_id
     # model.save(results_filename)
     open(results_filename.replace('.csv','.txt'),'w').write(str(opt))
 
