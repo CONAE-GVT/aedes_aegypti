@@ -20,14 +20,14 @@ def getConfiguration(x=None,n=None):
     configuration=Configuration(CONFIGURATION_FILENAME,
         {
         'breeding_site':{
-            'manually_filled':x[0:n]
+            'height':x[0:n],
+            'manually_filled':x[n:2*n],
+            'bare':x[2*n:3*n],
+            'evaporation_factor':x[3*n:]
             },
         'simulation':{
-            'start_date':start_date,
+            #'start_date':start_date,#TODO:start date should be fixed, not the same as ovitrap start date
             'end_date':end_date
-            },
-        'biology':{
-            'alpha0':x[n:]
             }
         })
     return configuration
@@ -38,10 +38,8 @@ def calculateMetrics(time_range,model,ovitrap_eggs_i):
     indexOf=lambda t: (np.abs(time_range-t)).argmin()
     lwO=np.array([ (Y[indexOf(t),OVIPOSITION]-Y[indexOf(t-7),OVIPOSITION]).reshape(m,n).sum(axis=0) for t in time_range])
     lwO=lwO[:,0]#if multiple container w assume the first one is ovitrap and the rest are wild containers
-    d=sum([(ovitrap_eggs_i[t]-lwO[t] )**2  for t in range(0,len(ovitrap_eggs_i)) if ovitrap_eggs_i[t]] )/len(ovitrap_eggs_i[ovitrap_eggs_i!=[None]])
-    rho,p_value=stats.pearsonr(ovitrap_eggs_i[ovitrap_eggs_i!=[None]],lwO[ovitrap_eggs_i!=[None]])
-    error=d*(2-rho)*p_value
-    return lwO,error,rho,p_value
+    d=utils.rmse(ovitrap_eggs_i[ovitrap_eggs_i!=[None]], lwO[ovitrap_eggs_i!=[None]])
+    return d
 
 def populate(time_range,start_date,ovitrap_eggs):
     result=np.array([None]*len(time_range))
@@ -54,46 +52,44 @@ def populate(time_range,start_date,ovitrap_eggs):
 def error(x,ovitrap_eggs_i_with_id):
     #return np.dot(x,x)
     ovitrap_id,ovitrap_eggs_i=ovitrap_eggs_i_with_id
-    model=Model(getConfiguration(x,int(len(x)/2)))#TODO:not agnostic
+    model=Model(getConfiguration(x,int(len(x)/4)))#TODO:not agnostic
     ovitrap_eggs_i=populate(model.time_range,model.start_date,ovitrap_eggs_i)
     time_range,Y=model.solveEquations()
-    lwO,error,rho,p_value=calculateMetrics(time_range,model,ovitrap_eggs_i)
-    title='ovitrap:%s\nmf:%s\n' r'$\alpha_0$:%s' '\n' r'Error:%s $\rho$:%s p value:%s'%(ovitrap_id,model.parameters.vBS_mf.tolist(),model.parameters.vAlpha0.tolist(),error,rho,p_value)
+    error=calculateMetrics(time_range,model,ovitrap_eggs_i)
+    #title='ovitrap:%s\nmf:%s\n' r'$\alpha_0$:%s' '\n' r'Error:%s $\rho$:%s p value:%s'%(ovitrap_id,model.parameters.vBS_mf.tolist(),model.parameters.vAlpha0.tolist(),error,rho,p_value)
     #print(title)
-    #pl.clf()
-    #utils.plot(model,subplots=[{'lwO':'','f':[utils.replaceNegativesWithZeros,perOvitrap(model)],'O':[int(ovitrap_id)]}],title=title,figure=False)
     return error
 
 def getOptimalParameters(ovitrap_eggs_i_with_id):
-    #pl.figure()#hack
     configuration=getConfiguration()
+    vBS_h=configuration.getArray('breeding_site','height')
     vmf=configuration.getArray('breeding_site','manually_filled')
-    vAlpha0=configuration.getArray('biology','alpha0')
+    vBS_b=configuration.getArray('breeding_site','bare')
+    vBS_ef=configuration.getArray('breeding_site','evaporation_factor')
     #initial value
-    x0=np.append( vmf, vAlpha0)
+    x0=np.concatenate( (vBS_h, vmf,vBS_b,vBS_ef) )
     #Σ vBS_d[i] = 1
     constraints = ()#({'type': 'eq', 'fun': lambda x:  1 - sum(x[0:-1])})#TODO:not agnostic
     #0<=x<=1,0<=ws_s<=1.
-    bounds=tuple((1e-8,1) for x in vmf )+ tuple((1.5,1.5) for x in vAlpha0)#TODO:not agnostic
+    bounds=tuple((2,20) for x in vBS_h) + tuple((1e-8,1) for x in vmf ) + tuple((0,1) for x in vBS_b) + tuple((0,2) for x in vBS_ef)#TODO:not agnostic
 
     if(MINIMIZE_METHOD=='SLSQP'):
         opt=minimize(error,x0,ovitrap_eggs_i_with_id,method='SLSQP',bounds=bounds,constraints=constraints,options={'eps': 1e-02, 'ftol': 1e-01})
     else:
-        opt=differential_evolution(error,bounds,args=(ovitrap_eggs_i_with_id,))
+        opt=differential_evolution(error,bounds,args=(ovitrap_eggs_i_with_id,))#, workers=mp.cpu_count()-2 for scipy>1.3
 
-    #save the model
-    # model=Model(getConfiguration(opt.x,int(len(opt.x)/2)))#TODO:not agnostic
-    # model.solveEquations(method='rk')
-    results_filename='out/equation_fitter/_ovi%s.csv'%ovitrap_eggs_i_with_id[0]#ovitrap_eggs_i_with_id[0] is the ovitrap_id
-    # model.save(results_filename)
-    open(results_filename.replace('.csv','.txt'),'w').write(str(opt))
+    open('out/equation_fitter/_ovi%s.txt'%ovitrap_eggs_i_with_id[0],'w').write(str(opt)+'\n\n')#ovitrap_eggs_i_with_id[0] is the ovitrap_id
 
     return opt
 
 if(__name__ == '__main__'):
     start_date,end_date=utils.getStartEndDates(OVITRAP_FILENAME)
-    ovitrap_eggs=[[ovitrap_id,utils.getOvitrapEggsFromCsv2(OVITRAP_FILENAME,start_date,end_date,ovitrap_id)] for ovitrap_id in range(2,151)]
+    ovitrap_eggs=[[ovitrap_id,utils.getOvitrapEggsFromCsv2(OVITRAP_FILENAME,start_date,end_date,ovitrap_id)] for ovitrap_id in range(1,152)]
 
     print('Starting...')
     vOpt=mp.Pool(mp.cpu_count()-2).map(getOptimalParameters, ovitrap_eggs)
+    # vOpt=[]
+    # for i,ovitrap_eggs_i_with_id in enumerate(ovitrap_eggs):
+    #     vOpt+=[getOptimalParameters(ovitrap_eggs_i_with_id)]
+    #     print('\r %s'%(round(float(i)/len(ovitrap_eggs)*100,2) ), end='')
     print(vOpt)
