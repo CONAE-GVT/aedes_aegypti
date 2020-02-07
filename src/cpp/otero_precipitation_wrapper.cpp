@@ -31,6 +31,8 @@ PYBIND11_MODULE(otero_precipitation_wrapper, m) {
       .def_readonly("vBS_h", &Parameters::vBS_h)
       .def_readonly("vBS_W0", &Parameters::vBS_W0)
       .def_readonly("vBS_mf", &Parameters::vBS_mf)
+      .def_readonly("vBS_b", &Parameters::vBS_b)
+      .def_readonly("vBS_ef", &Parameters::vBS_ef)
       .def_readonly("mBS_l", &Parameters::mBS_l)
       .def_readonly("location", &Parameters::location)
       .def_readonly("start_date", &Parameters::start_date)

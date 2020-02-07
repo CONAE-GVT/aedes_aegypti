@@ -21,6 +21,8 @@ class Model:
         self.parameters.vBS_s=configuration.getArray('breeding_site','surface')#in cm^2
         self.parameters.vBS_d=configuration.getArray('breeding_site','distribution')#distribution of BS. Sum must be equals to 1
         self.parameters.vBS_mf=configuration.getArray('breeding_site','manually_filled')#in cm
+        self.parameters.vBS_b=configuration.getArray('breeding_site','bare')#in [0,1]
+        self.parameters.vBS_ef=configuration.getArray('breeding_site','evaporation_factor')#in [0,2]
         self.parameters.n=len(self.parameters.vBS_d)
         self.parameters.m=int(np.max(np.ceil(self.parameters.vBS_h/self.parameters.BS_lh)))
 

@@ -14,6 +14,8 @@ struct Parameters{
     tensor vBS_h;
     tensor vBS_W0;
     tensor vBS_mf;
+    tensor vBS_b;
+    tensor vBS_ef;
     matrix mBS_l;
 
     std::string location;

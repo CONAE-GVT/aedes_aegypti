@@ -25,7 +25,9 @@ class Model
         this->parameters.vBS_h=configuration.getTensor("breeding_site","height");//#in cm
         this->parameters.vBS_s=configuration.getTensor("breeding_site","surface");//#in cm^2
         this->parameters.vBS_d=configuration.getTensor("breeding_site","distribution");//#distribution of BS. Sum must be equals to 1
-        this->parameters.vBS_mf=configuration.getTensor("breeding_site","manually_filled");//#in percentage of capacity
+        this->parameters.vBS_mf=configuration.getTensor("breeding_site","manually_filled");//#in cm
+        this->parameters.vBS_b=configuration.getTensor("breeding_site","bare");//#in [0,1]
+        this->parameters.vBS_ef=configuration.getTensor("breeding_site","evaporation_factor");//#in [0,2]
         this->parameters.n=this->parameters.vBS_d.size();
         this->parameters.m=ceil((this->parameters.vBS_h/this->parameters.BS_lh).maxCoeff());////<---- this is implemented a bit different in python
 

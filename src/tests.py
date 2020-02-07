@@ -448,6 +448,8 @@ def runCpp():
         vr=np.random.rand(n)
         configuration.config_parser.set('breeding_site','distribution',', '.join( map(str,vr/vr.sum()) ))
         configuration.config_parser.set('breeding_site','height', ', '.join( map(str,vr*300 + 1) ) )
+        configuration.config_parser.set('breeding_site','bare', ', '.join( map(str,vr) ) )
+        configuration.config_parser.set('breeding_site','evaporation_factor', ', '.join( map(str,vr*2) ) )
         config_filename=tempfile.NamedTemporaryFile(suffix='.cfg').name
         with open(config_filename, 'w') as configfile:
             configuration.config_parser.write(configfile)

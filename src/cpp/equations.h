@@ -15,10 +15,10 @@ tensor vDeltaH_H=(tensor(5)<< 100000.0,55990.0,-472379.00,1756481.0,1756481.0).f
 tensor vT_1_2H=(tensor(5)<< 14184.0,304.6,148.0,447.2,447.2).finished();
 
 //<precipitation related functionality>
-tensor dW(tensor& vW, tensor& vBS_h, scalar T_t, tensor p_t, scalar RH_t, scalar h){//#in cm/day
+tensor dW(tensor& vW, tensor& vBS_h, tensor& vBS_ef, scalar T_t, tensor p_t, scalar RH_t, scalar h){//#in cm/day
     tensor QG_t=p_t*0.1;//#cm/day
     scalar QR_t=6e-5* std::pow(25 + T_t-273.15, 2) * (100.-RH_t) * 0.1;//#cm/day. #Ivanov
-    tensor dW_t=QG_t-QR_t;
+    tensor dW_t=QG_t- vBS_ef*QR_t;
     return Utils::minimum(Utils::maximum(dW_t,-vW/h),(vBS_h-vW)/h);
 }
 
@@ -121,6 +121,8 @@ tensor diff_eqs(const tensor& Y,scalar t,scalar h,Parameters& parameters){
     tensor vBS_h=parameters.vBS_h;
     scalar BS_lh=parameters.BS_lh;
     tensor vBS_d=parameters.vBS_d;
+    tensor vBS_b=parameters.vBS_b;
+    tensor vBS_ef=parameters.vBS_ef;
     tensor vAlpha0=parameters.vAlpha0;
     unsigned int m=parameters.m;
     unsigned int n=parameters.n;
@@ -142,7 +144,7 @@ tensor diff_eqs(const tensor& Y,scalar t,scalar h,Parameters& parameters){
     dY(parameters.PUPAE)  = dvP(vL,vP,T_t,lpr,par);
     dY(parameters.ADULT1) = dA1(vP,A1,par,ovr1);
     dY(parameters.ADULT2) = dA2(A1,A2,ovr1);
-    dY(parameters.WATER) = dW(vW,vBS_h,T_t,p_t+vmf_t,RH_t,h);
+    dY(parameters.WATER) = dW(vW,vBS_h,vBS_ef,T_t,vBS_b*p_t+vmf_t,RH_t,h);
     dY(parameters.OVIPOSITION) = dmO(A1,A2,vW,vBS_d,ovr1,ovr2,vW_l,mBS_l).reshaped(1,m*n);
 
     return dY;//   # For odeint
