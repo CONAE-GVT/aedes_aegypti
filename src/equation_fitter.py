@@ -36,7 +36,7 @@ def calculateMetrics(time_range,model,ovitrap_eggs_i):
     BS_a,vBS_d,m,n,OVIPOSITION=model.parameters.BS_a,model.parameters.vBS_d,model.parameters.m,model.parameters.n,model.parameters.OVIPOSITION
     Y=model.Y
     indexOf=lambda t: (np.abs(time_range-t)).argmin()
-    lwO=np.array([ (Y[indexOf(t),OVIPOSITION]-Y[indexOf(t-7),OVIPOSITION]).reshape(m,n).sum(axis=0) for t in time_range])
+    lwO=np.array([ (Y[indexOf(t),OVIPOSITION]-Y[indexOf(t-7),OVIPOSITION]).reshape(m,n).sum(axis=0) for t in time_range])/(BS_a*vBS_d)
     lwO=lwO[:,0]#if multiple container w assume the first one is ovitrap and the rest are wild containers
     d=utils.rmse(ovitrap_eggs_i[ovitrap_eggs_i!=[None]], lwO[ovitrap_eggs_i!=[None]])
     return d
@@ -71,7 +71,7 @@ def getOptimalParameters(ovitrap_eggs_i_with_id):
     #Σ vBS_d[i] = 1
     constraints = ()#({'type': 'eq', 'fun': lambda x:  1 - sum(x[0:-1])})#TODO:not agnostic
     #0<=x<=1,0<=ws_s<=1.
-    bounds=tuple((2,20) for x in vBS_h) + tuple((1e-8,1) for x in vmf ) + tuple((0,1) for x in vBS_b) + tuple((0,2) for x in vBS_ef)#TODO:not agnostic
+    bounds=tuple((2,20) for x in vBS_h) + tuple((0,2) for x in vmf ) + tuple((0,1) for x in vBS_b) + tuple((0,2) for x in vBS_ef)#TODO:not agnostic
 
     if(MINIMIZE_METHOD=='SLSQP'):
         opt=minimize(error,x0,ovitrap_eggs_i_with_id,method='SLSQP',bounds=bounds,constraints=constraints,options={'eps': 1e-02, 'ftol': 1e-01})
