@@ -570,8 +570,10 @@ def plotFittedOvitrap(ovitrap_id,title=''):
     yaxis_title='Eggs')
 
 def plotFittedResults():
-    values=[]
+    lwO_values=[]
+    A_values=[]
     O_PLUS_STD=260.
+    A_MAX=35./15.
     best_ovi={'id':0,'fun':500}
     worst_ovi={'id':0,'fun':0}
     for ovitrap_id in range(1,152):
@@ -583,13 +585,15 @@ def plotFittedResults():
         configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(30)))
         model=Model(configuration)
         time_range,Y=model.solveEquations()
-        BS_a,vBS_d,m,n,OVIPOSITION=model.parameters.BS_a,model.parameters.vBS_d,model.parameters.m,model.parameters.n,model.parameters.OVIPOSITION
+        BS_a,vBS_d,m,n,OVIPOSITION,ADULT1,ADULT2=model.parameters.BS_a,model.parameters.vBS_d,model.parameters.m,model.parameters.n,model.parameters.OVIPOSITION,model.parameters.ADULT1,model.parameters.ADULT2
         Y=model.Y
         indexOf=lambda t: (np.abs(time_range-t)).argmin()
         lwO=np.array([ (Y[indexOf(t),OVIPOSITION]-Y[indexOf(t-7),OVIPOSITION]).reshape(m,n).sum(axis=0) for t in time_range])/(BS_a*vBS_d)#here index and day number are equal
         lwO=lwO[:,0]#if multiple container w assume the first one is ovitrap and the rest are wild containers
+        A=(Y[:,ADULT1]+Y[:,ADULT2])/BS_a
         lat,lon=utils.getCoord('data/private/coord.csv',ovitrap_id)
-        values.append([[lat,lon,lwO_d/O_PLUS_STD + 1e-4] for lwO_d in lwO ])#d in days#for some reason weght 0 is not allowed and produce an spasmodic result
+        lwO_values.append([[lat,lon,lwO_d/O_PLUS_STD + 1e-4] for lwO_d in lwO ])#d in days#for some reason weght 0 is not allowed and produce an spasmodic result
+        A_values.append([[lat,lon,A_d/A_MAX + 1e-4] for A_d in A ])#d in days#for some reason weght 0 is not allowed and produce an spasmodic result
         date_range=[str(model.start_date+datetime.timedelta(days=d)) for d in time_range]
 
         #Saver worst/best performing ovi to plot later
@@ -597,13 +601,20 @@ def plotFittedResults():
         if(fun<best_ovi['fun']):best_ovi={'id':ovitrap_id,'fun':fun}
         if(fun>worst_ovi['fun']):worst_ovi={'id':ovitrap_id,'fun':fun}
 
-    values=np.moveaxis(np.array(values),0,1).tolist()
+    #lwO map
+    lwO_values=np.moveaxis(np.array(lwO_values),0,1).tolist()
     base_map = folium.Map(location=[-31.420082,-64.188774])
-    HeatMapWithTime(values,index=date_range,radius=25, gradient={0.0: 'blue', 0.2: 'lime', 0.4: 'orange', 1: 'red'}, auto_play=True,scale_radius=False).add_to(base_map)
-    base_map.save('out/map.html')
+    HeatMapWithTime(lwO_values,index=date_range,radius=25, gradient={0.0: 'blue', 0.2: 'lime', 0.4: 'orange', 1: 'red'}, auto_play=True,max_opacity=1).add_to(base_map)
+    base_map.save('out/lwO_map.html')
+    #Adults map
+    A_values=np.moveaxis(np.array(A_values),0,1).tolist()
+    base_map = folium.Map(location=[-31.420082,-64.188774])
+    HeatMapWithTime(A_values,index=date_range,radius=25, gradient={0.0: 'blue', 0.2: 'lime', 0.4: 'orange', 1: 'red'}, auto_play=True,max_opacity=1).add_to(base_map)
+    base_map.save('out/A_map.html')
 
     #plot results
-    webbrowser.open('out/map.html')
+    webbrowser.open('out/lwO_map.html')
+    webbrowser.open('out/A_map.html')
     plotFittedOvitrap(best_ovi['id'],best_ovi['fun'])
     plotFittedOvitrap(worst_ovi['id'],worst_ovi['fun'])
     plotFittedOvitrap(151)
