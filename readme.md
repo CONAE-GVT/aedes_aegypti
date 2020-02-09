@@ -1,7 +1,6 @@
 **Dependencies**
 >sudo apt install python3-scipy python3-grib python3-netcdf4 python3-matplotlib python3-gdal python3-line-profiler nvidia-cuda-toolkit python3-skimage python3-plotly ffmpeg python3-msgpack python3-pandas
->sudo -H pip install moviepy cupy
->pip install plotly --upgrade --user
+>pip install plotly folium moviepy cupy --upgrade --user
 **Run**
 >python src/otero_precipitation.py
 >python src/tests.py

@@ -1,5 +1,6 @@
 #coding: utf-8
 import os
+import sys
 import utils
 import datetime
 import numpy as np
@@ -84,12 +85,17 @@ def getOptimalParameters(ovitrap_eggs_i_with_id):
 
 if(__name__ == '__main__'):
     start_date,end_date=utils.getStartEndDates(OVITRAP_FILENAME)
-    ovitrap_eggs=[[ovitrap_id,utils.getOvitrapEggsFromCsv2(OVITRAP_FILENAME,start_date,end_date,ovitrap_id)] for ovitrap_id in range(1,152)]
+    if(len(sys.argv)>1):
+        ovitrap_id=int(sys.argv[1])
+        ovitrap_eggs_i_with_id=[ovitrap_id,utils.getOvitrapEggsFromCsv2(OVITRAP_FILENAME,start_date,end_date,ovitrap_id)]
+        vOpt=getOptimalParameters(ovitrap_eggs_i_with_id)
+    else:
+        ovitrap_eggs=[[ovitrap_id,utils.getOvitrapEggsFromCsv2(OVITRAP_FILENAME,start_date,end_date,ovitrap_id)] for ovitrap_id in range(1,152)]
 
-    print('Starting...')
-    vOpt=mp.Pool(mp.cpu_count()-2).map(getOptimalParameters, ovitrap_eggs)
-    # vOpt=[]
-    # for i,ovitrap_eggs_i_with_id in enumerate(ovitrap_eggs):
-    #     vOpt+=[getOptimalParameters(ovitrap_eggs_i_with_id)]
-    #     print('\r %s'%(round(float(i)/len(ovitrap_eggs)*100,2) ), end='')
-    print(vOpt)
+        print('Starting...')
+        vOpt=mp.Pool(mp.cpu_count()-2).map(getOptimalParameters, ovitrap_eggs)
+        # vOpt=[]
+        # for i,ovitrap_eggs_i_with_id in enumerate(ovitrap_eggs):
+        #     vOpt+=getOptimalParameters(ovitrap_eggs_i_with_id)
+        #     print('\r %s'%(round(float(i)/len(ovitrap_eggs)*100,2) ), end='')
+        print(vOpt)

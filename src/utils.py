@@ -123,6 +123,12 @@ def getLocations():
     config_parser.read('resources/get_weather.cfg')
     return config_parser.sections()
 
+def getCoord(filename,id):
+    for line in open(filename).readlines()[1:]:
+        line=line.split(',')
+        if (int(line[0])==id):
+            return float(line[1]),float(line[2])
+
 def scaleWeatherConditions(folder,location,column,factor):
     with open(folder+location+'.csv') as f:
         content = f.readlines()

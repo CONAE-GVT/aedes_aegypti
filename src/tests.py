@@ -5,9 +5,10 @@ import sys
 import utils
 import datetime
 import numpy as np
+import multiprocessing as mp
 from config import Configuration
 from configparser import ConfigParser
-from otero_precipitation import Model
+from otero_precipitation_wrapper_wrapper import Model
 from equations import diff_eqs,vR_D
 import equations
 from spatial_equations import diff_eqs as spatial_diff_eqs
@@ -78,6 +79,7 @@ def calculateMetrics(time_range,lwO_mean,ovitrap_eggs_i):
 
 import equation_fitter
 from matplotlib import pyplot as plt
+import gc
 def runCases(case):
     if(case==0):
         ovi_range=range(1,151)
@@ -434,6 +436,16 @@ def runCases(case):
             yaxis_title=title)
             print(model.warnings)
             print('h:%s Max E: %s'%(h,np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1))))
+    if(case==19):
+        MAX=50000
+        model=Y=time_range=None
+        for i in range(1,MAX):
+            configuration=Configuration('resources/1c.cfg')
+            configuration.config_parser.set('location','name','cordoba.full')
+            configuration.config_parser.set('simulation','end_date',str(datetime.date.today()))
+            model=Model(configuration)
+            time_range,Y=model.solveEquations()
+            print('\r %s%%'%round(i/MAX * 100,2), end='')
 
 try:
     from otero_precipitation_wrapper import Model as _Model
@@ -530,6 +542,73 @@ def rates():
         #print('-'*65)
         print('\n')
 
+def call_fitter(ovitrap_id):
+    return os.system('python src/equation_fitter.py %s'%ovitrap_id)
+
+def fit():
+    mp.Pool(mp.cpu_count()-2).map(call_fitter, range(1,152))
+
+#https://towardsdatascience.com/data-101s-spatial-visualizations-and-analysis-in-python-with-folium-39730da2adf
+import folium
+from folium.plugins import HeatMapWithTime
+from equation_fitter import getConfiguration
+import webbrowser
+
+OVI_FIT='out/equation_fitter/_ovi%s.txt'
+
+def getConfigurationFor(ovitrap_id):
+    x=re.findall(r'.*x: .*\(\[(.*)\]\)',open(OVI_FIT%ovitrap_id).read().replace('\n',''))[0]
+    x=np.fromstring(x, dtype=float, sep=',')
+    return getConfiguration(x,int(len(x)/4))#TODO:not agnostic)
+
+def plotFittedOvitrap(ovitrap_id,title=''):
+    model=Model(getConfigurationFor(ovitrap_id))
+    time_range,Y=model.solveEquations()
+    utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','O':list([ovitrap_id]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
+    title=title,
+    xaxis_title='Date',
+    yaxis_title='Eggs')
+
+def plotFittedResults():
+    values=[]
+    O_PLUS_STD=260.
+    best_ovi={'id':0,'fun':500}
+    worst_ovi={'id':0,'fun':0}
+    for ovitrap_id in range(1,152):
+        if(not os.path.isfile(OVI_FIT%ovitrap_id)):
+            print('%s not found'%(ovitrap_id))
+            continue
+        #solve the model fot the fitted parameters
+        configuration=getConfigurationFor(ovitrap_id)
+        configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(30)))
+        model=Model(configuration)
+        time_range,Y=model.solveEquations()
+        BS_a,vBS_d,m,n,OVIPOSITION=model.parameters.BS_a,model.parameters.vBS_d,model.parameters.m,model.parameters.n,model.parameters.OVIPOSITION
+        Y=model.Y
+        indexOf=lambda t: (np.abs(time_range-t)).argmin()
+        lwO=np.array([ (Y[indexOf(t),OVIPOSITION]-Y[indexOf(t-7),OVIPOSITION]).reshape(m,n).sum(axis=0) for t in time_range])/(BS_a*vBS_d)#here index and day number are equal
+        lwO=lwO[:,0]#if multiple container w assume the first one is ovitrap and the rest are wild containers
+        lat,lon=utils.getCoord('data/private/coord.csv',ovitrap_id)
+        values.append([[lat,lon,lwO_d/O_PLUS_STD + 1e-4] for lwO_d in lwO ])#d in days#for some reason weght 0 is not allowed and produce an spasmodic result
+        date_range=[str(model.start_date+datetime.timedelta(days=d)) for d in time_range]
+
+        #Saver worst/best performing ovi to plot later
+        fun=float(re.findall(r'.*fun: ([0-9]+\.[0-9]+)',open(OVI_FIT%ovitrap_id).read().replace('\n',''))[0])
+        if(fun<best_ovi['fun']):best_ovi={'id':ovitrap_id,'fun':fun}
+        if(fun>worst_ovi['fun']):worst_ovi={'id':ovitrap_id,'fun':fun}
+
+    values=np.moveaxis(np.array(values),0,1).tolist()
+    base_map = folium.Map(location=[-31.420082,-64.188774])
+    HeatMapWithTime(values,index=date_range,radius=25, gradient={0.0: 'blue', 0.2: 'lime', 0.4: 'orange', 1: 'red'}, auto_play=True,scale_radius=False).add_to(base_map)
+    base_map.save('out/map.html')
+
+    #plot results
+    webbrowser.open('out/map.html')
+    plotFittedOvitrap(best_ovi['id'],best_ovi['fun'])
+    plotFittedOvitrap(worst_ovi['id'],worst_ovi['fun'])
+    plotFittedOvitrap(151)
+
+
 
 if(__name__ == '__main__'):
     if(len(sys.argv)>1 and sys.argv[1]=='spatial'):
@@ -544,6 +623,10 @@ if(__name__ == '__main__'):
         weeks()
     elif(len(sys.argv)>1 and sys.argv[1]=='rates'):
         rates()
+    elif(len(sys.argv)>1 and sys.argv[1]=='fit'):
+        fit()
+    elif(len(sys.argv)>1 and sys.argv[1]=='plotFit'):
+        plotFittedResults()
     else:#the default is just a number indicating which test case to run, or none (test case 1 will will be default)
         if(len(sys.argv)<2):
             case=1
