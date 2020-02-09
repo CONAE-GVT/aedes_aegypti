@@ -1,6 +1,7 @@
 from configparser import ConfigParser
 import plotly.graph_objs as go
 from equations import diff_eqs,ovsp,vR_D
+from equation_fitter import getConfiguration
 import plotly.offline as ply
 import collections
 import numpy as np
@@ -9,6 +10,7 @@ import tempfile
 import atexit
 import sys
 import os
+import re
 
 
 ###############################################################I/O###############################################################
@@ -128,6 +130,11 @@ def getCoord(filename,id):
         line=line.split(',')
         if (int(line[0])==id):
             return float(line[1]),float(line[2])
+
+def getFittedConfiguration(filename):
+    x=re.findall(r'.*x: .*\(\[(.*)\]\)',open(filename).read().replace('\n',''))[0]
+    x=np.fromstring(x, dtype=float, sep=',')
+    return getConfiguration(x,int(len(x)/4))#TODO:not agnostic)
 
 def scaleWeatherConditions(folder,location,column,factor):
     with open(folder+location+'.csv') as f:
@@ -428,6 +435,66 @@ def showPlot(data,title='',xaxis_title='',yaxis_title='',scene=dict()):
         scatter['marker']=marker=dict(size=12, line=dict(width=2))
 
     ply.plot(go.Figure(data=data,layout=layout), filename=tempfile.NamedTemporaryFile(prefix='plot_').name)
+
+
+#plot maps
+def clamp(x):
+  return max(0, min(x, 255))
+def RGBtoHex(r,g,b):
+    return "#{0:02x}{1:02x}{2:02x}".format(clamp(r), clamp(g), clamp(b))
+
+def getColor(weight):
+    gradient=[ [0.0,[0,0,255]],[0.2,[50,205,50]], [0.4,[255,165,0]],[1.,[255,0,0]] ]
+    for i in range(len(gradient)-1):
+        a,b=gradient[i][0],gradient[i+1][0]
+        if(a<=weight<=b):
+            c1,c2=np.array(gradient[i][1]),np.array(gradient[i+1][1])
+            rgb=(weight-a)/(b-a) * (c2-c1) + c1
+            return RGBtoHex(int(rgb[0]),int(rgb[1]),int(rgb[2]))
+
+def getGeojsonFeatures(values,date_range):
+    features = []
+    for d,points in enumerate(values):
+        for point in points:
+            lat,lon,weight=point
+            feature = {
+                'type': 'Feature',
+                'geometry': {
+                    'type':'Point',
+                    'coordinates':[lon,lat]
+                },
+                'properties': {
+                    'time': date_range[d],
+                    'style': {'color' :getColor(weight)},
+                    'icon': 'circle',
+                    'iconstyle':{
+                        'fillColor': getColor(weight),
+                        'fillOpacity': 0.8,
+                        'stroke': 'true',
+                        'radius': 7
+                    }
+                }
+            }
+            features.append(feature)
+    return {'type': 'FeatureCollection','features': features}
+
+#https://towardsdatascience.com/data-101s-spatial-visualizations-and-analysis-in-python-with-folium-39730da2adf
+import folium
+from folium.plugins import HeatMapWithTime,TimestampedGeoJson
+import webbrowser
+def plotHeatMap(values,date_range):
+    base_map = folium.Map(location=[-31.420082,-64.188774])
+    HeatMapWithTime(values,index=date_range,radius=25, gradient={0.0: 'blue', 0.2: 'lime', 0.4: 'orange', 1: 'red'}, auto_play=True,max_opacity=1).add_to(base_map)
+    filename=tempfile.NamedTemporaryFile(prefix='heatmap_').name+'.html'
+    base_map.save(filename)
+    webbrowser.open(filename)
+
+def plotPointMap(values,date_range):
+    base_map = folium.Map(location=[-31.420082,-64.188774])
+    TimestampedGeoJson(getGeojsonFeatures(values,date_range), date_options='YYYY/MM/DD',auto_play=True).add_to(base_map)
+    filename=tempfile.NamedTemporaryFile(prefix='pointmap_').name+'.html'
+    base_map.save(filename)
+    webbrowser.open(filename)
 
 ###############################################################Animation################################################################
 from PIL import ImageFont, ImageDraw,Image

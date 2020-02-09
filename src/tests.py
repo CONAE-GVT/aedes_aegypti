@@ -548,21 +548,9 @@ def call_fitter(ovitrap_id):
 def fit():
     mp.Pool(mp.cpu_count()-2).map(call_fitter, range(1,152))
 
-#https://towardsdatascience.com/data-101s-spatial-visualizations-and-analysis-in-python-with-folium-39730da2adf
-import folium
-from folium.plugins import HeatMapWithTime
-from equation_fitter import getConfiguration
-import webbrowser
-
 OVI_FIT='out/equation_fitter/_ovi%s.txt'
-
-def getConfigurationFor(ovitrap_id):
-    x=re.findall(r'.*x: .*\(\[(.*)\]\)',open(OVI_FIT%ovitrap_id).read().replace('\n',''))[0]
-    x=np.fromstring(x, dtype=float, sep=',')
-    return getConfiguration(x,int(len(x)/4))#TODO:not agnostic)
-
 def plotFittedOvitrap(ovitrap_id,title=''):
-    model=Model(getConfigurationFor(ovitrap_id))
+    model=Model(utils.getFittedConfiguration(OVI_FIT%ovitrap_id))
     time_range,Y=model.solveEquations()
     utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','O':list([ovitrap_id]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
     title=title,
@@ -578,10 +566,10 @@ def plotFittedResults():
     worst_ovi={'id':0,'fun':0}
     for ovitrap_id in range(1,152):
         if(not os.path.isfile(OVI_FIT%ovitrap_id)):
-            print('%s not found'%(ovitrap_id))
+            print('%s, '%(ovitrap_id),end='')
             continue
         #solve the model fot the fitted parameters
-        configuration=getConfigurationFor(ovitrap_id)
+        configuration=utils.getFittedConfiguration(OVI_FIT%ovitrap_id)
         configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(30)))
         model=Model(configuration)
         time_range,Y=model.solveEquations()
@@ -601,25 +589,18 @@ def plotFittedResults():
         if(fun<best_ovi['fun']):best_ovi={'id':ovitrap_id,'fun':fun}
         if(fun>worst_ovi['fun']):worst_ovi={'id':ovitrap_id,'fun':fun}
 
-    #lwO map
+    #lwO heat map and point map
     lwO_values=np.moveaxis(np.array(lwO_values),0,1).tolist()
-    base_map = folium.Map(location=[-31.420082,-64.188774])
-    HeatMapWithTime(lwO_values,index=date_range,radius=25, gradient={0.0: 'blue', 0.2: 'lime', 0.4: 'orange', 1: 'red'}, auto_play=True,max_opacity=1).add_to(base_map)
-    base_map.save('out/lwO_map.html')
-    #Adults map
+    utils.plotHeatMap(lwO_values,date_range)
+    utils.plotPointMap(lwO_values,date_range)
+    #Adults map and point map
     A_values=np.moveaxis(np.array(A_values),0,1).tolist()
-    base_map = folium.Map(location=[-31.420082,-64.188774])
-    HeatMapWithTime(A_values,index=date_range,radius=25, gradient={0.0: 'blue', 0.2: 'lime', 0.4: 'orange', 1: 'red'}, auto_play=True,max_opacity=1).add_to(base_map)
-    base_map.save('out/A_map.html')
-
+    utils.plotHeatMap(A_values,date_range)
+    utils.plotPointMap(A_values,date_range)
     #plot results
-    webbrowser.open('out/lwO_map.html')
-    webbrowser.open('out/A_map.html')
     plotFittedOvitrap(best_ovi['id'],best_ovi['fun'])
     plotFittedOvitrap(worst_ovi['id'],worst_ovi['fun'])
     plotFittedOvitrap(151)
-
-
 
 if(__name__ == '__main__'):
     if(len(sys.argv)>1 and sys.argv[1]=='spatial'):
