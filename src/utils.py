@@ -136,6 +136,23 @@ def getFittedConfiguration(filename):
     x=np.fromstring(x, dtype=float, sep=',')
     return getConfiguration(x,int(len(x)/4))#TODO:not agnostic)
 
+from sklearn.cluster import MiniBatchKMeans
+def kmeansFittedConfiguration(filenames,clusters=3):
+    X=[]
+    for filename in filenames:
+        x=re.findall(r'.*x: .*\(\[(.*)\]\)',open(filename).read().replace('\n',''))[0]
+        x=np.fromstring(x, dtype=float, sep=',')
+        X.append(x)
+
+    kmeans=MiniBatchKMeans(n_clusters=clusters).fit(X)
+    C=np.array(kmeans.cluster_centers_)
+    #plot
+    X=np.array(X)
+    data=[go.Scatter3d(x=X[:,0],y=X[:,1],z=X[:,2],mode='markers'), go.Scatter3d(x=C[:,0],y=C[:,1],z=C[:,2],mode='markers',marker=dict(size=12,color=0.5))]
+    ply.plot(go.Figure(data=data), filename=tempfile.NamedTemporaryFile(prefix='plot_').name)
+
+    return kmeans
+
 def scaleWeatherConditions(folder,location,column,factor):
     with open(folder+location+'.csv') as f:
         content = f.readlines()
