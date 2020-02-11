@@ -142,13 +142,14 @@ def kmeansFittedConfiguration(filenames,clusters=3):
     for filename in filenames:
         x=re.findall(r'.*x: .*\(\[(.*)\]\)',open(filename).read().replace('\n',''))[0]
         x=np.fromstring(x, dtype=float, sep=',')
+        x=( x- np.array([2,0,0,0]))/np.array([18,2,1,2])
         X.append(x)
 
     kmeans=MiniBatchKMeans(n_clusters=clusters).fit(X)
     C=np.array(kmeans.cluster_centers_)
     #plot
     X=np.array(X)
-    data=[go.Scatter3d(x=X[:,0],y=X[:,1],z=X[:,2],mode='markers'), go.Scatter3d(x=C[:,0],y=C[:,1],z=C[:,2],mode='markers',marker=dict(size=12,color=0.5))]
+    data=[go.Scatter3d(x=X[:,0],y=X[:,1],z=X[:,2],mode='markers',marker=dict(color=X[:,3])), go.Scatter3d(x=C[:,0],y=C[:,1],z=C[:,2],mode='markers',marker=dict(size=22,color=C[:,3]))]
     ply.plot(go.Figure(data=data), filename=tempfile.NamedTemporaryFile(prefix='plot_').name)
 
     return kmeans

@@ -543,10 +543,11 @@ def rates():
         print('\n')
 
 def call_fitter(ovitrap_id):
+    if(os.path.isfile(OVI_FIT%ovitrap_id)): return # if the ovitrap has been already fitted, skip
     return os.system('python src/equation_fitter.py %s'%ovitrap_id)
 
 def fit():
-    mp.Pool(mp.cpu_count()-2).map(call_fitter, range(1,152))
+    mp.Pool(mp.cpu_count()-4).map(call_fitter, range(1,152))
 
 OVI_FIT='out/equation_fitter/_ovi%s.txt'
 def plotFittedOvitrap(ovitrap_id,title=''):
@@ -619,6 +620,8 @@ if(__name__ == '__main__'):
         fit()
     elif(len(sys.argv)>1 and sys.argv[1]=='plotFit'):
         plotFittedResults()
+    elif(len(sys.argv)>1 and sys.argv[1]=='plotFitConf'):
+        utils.kmeansFittedConfiguration([OVI_FIT%ovitrap_id for ovitrap_id in range(1,152)],clusters=3)
     else:#the default is just a number indicating which test case to run, or none (test case 1 will will be default)
         if(len(sys.argv)<2):
             case=1
