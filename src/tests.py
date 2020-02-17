@@ -1,6 +1,5 @@
 #coding: utf-8
 import os
-import re
 import sys
 import utils
 import datetime
@@ -585,7 +584,7 @@ def plotFittedResults():
         date_range=[str(model.start_date+datetime.timedelta(days=d)) for d in time_range]
 
         #Saver worst/best performing ovi to plot later
-        fun=float(re.findall(r'.*fun: ([0-9]+\.[0-9]+)',open( OVI_FIT%(sys.argv[2],ovitrap_id) ).read().replace('\n',''))[0])
+        fun=float(utils.extractPattern(utils.FITTED_FUN, OVI_FIT%(sys.argv[2],ovitrap_id)))
         if(fun<best_ovi['fun']):best_ovi={'id':ovitrap_id,'fun':fun}
         if(fun>worst_ovi['fun']):worst_ovi={'id':ovitrap_id,'fun':fun}
 

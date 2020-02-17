@@ -2,8 +2,8 @@ from configparser import ConfigParser
 import plotly.graph_objs as go
 from equations import diff_eqs,ovsp,vR_D
 from equation_fitter import getConfiguration
+from collections import OrderedDict
 import plotly.offline as ply
-import collections
 import numpy as np
 import datetime
 import tempfile
@@ -131,17 +131,24 @@ def getCoord(filename,id):
         if (int(line[0])==id):
             return float(line[1]),float(line[2])
 
-from collections import OrderedDict
+FITTED_FUN=r'.*fun: ([0-9]+\.[0-9]+)'
+FITTED_X=r'.*x: array\(\[(.*)\]\)'
+FITTED_DOMAIN=r'.*OrderedDict\(.*\)'
+def extractPattern(pattern,filename):
+    return re.findall(pattern,open(filename).read(),re.MULTILINE|re. DOTALL)[0]
+
 def getFittedConfiguration(filename):
-    x=re.findall(r'.*x: .*\(\[(.*)\]\)',open(filename).read().replace('\n',''))[0]
+    x=extractPattern(FITTED_X,filename)
     x=np.fromstring(x, dtype=float, sep=',')
-    return getConfiguration(x,OrderedDict({'height':(2,20),'bare':(0,1),'evaporation_factor':(0,2)}))#TODO:not agnostic)#domain should be extracted from filename
+    domain=extractPattern(FITTED_DOMAIN,filename)
+    domain=eval(domain)#eval is not recommended, maybe save the domain as json.
+    return getConfiguration(x,domain)
 
 from sklearn.cluster import MiniBatchKMeans
 def kmeansFittedConfiguration(filenames,clusters=3):
     X=[]
     for filename in filenames:
-        x=re.findall(r'.*x: .*\(\[(.*)\]\)',open(filename).read().replace('\n',''))[0]
+        x=extractPattern(FITTED_X,filename)
         x=np.fromstring(x, dtype=float, sep=',')
         x=( x- np.array([2,0,0,0]))/np.array([18,2,1,2])
         X.append(x)
