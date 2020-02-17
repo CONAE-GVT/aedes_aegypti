@@ -6,6 +6,7 @@ import datetime
 import numpy as np
 import scipy.stats as stats
 import multiprocessing as mp
+import similaritymeasures as sm
 from config import Configuration
 from collections import OrderedDict
 from otero_precipitation_wrapper_wrapper import Model
@@ -13,6 +14,28 @@ from scipy.optimize import minimize,differential_evolution
 
 MINIMIZE_METHOD='differential_evolution'
 OVITRAP_FILENAME='data/private/ovitrampas_2017-2019.mean.csv'
+
+RMSE,FRECHET,DTW,D='rmse','frechet','dtw','D'
+OVI_FIT='out/equation_fitter/%s/_ovi%s.txt'
+
+def distance(ovitrap_eggs_i,lwO):
+    if(sys.argv[2]==RMSE):
+        return utils.rmse(ovitrap_eggs_i[ovitrap_eggs_i!=[None]], lwO[ovitrap_eggs_i!=[None]])
+    elif(sys.argv[2]==D):
+        return utils.D(ovitrap_eggs_i[ovitrap_eggs_i!=[None]], lwO[ovitrap_eggs_i!=[None]])
+    elif(sys.argv[2] in [FRECHET,DTW]):
+        ovitrap_eggs_i=np.array(ovitrap_eggs_i,dtype=np.float)#this change None for np.nan
+        valid_ovi_idx=~np.isnan(ovitrap_eggs_i)
+        reversed_valid_ovi_idx=valid_ovi_idx[::-1]
+        first,last=np.argmax(valid_ovi_idx), len(reversed_valid_ovi_idx)-np.argmax(reversed_valid_ovi_idx)-1
+        x=np.array([[time_range[idx],lwO[idx]] for idx in range(first,last)])
+        y=np.array([ [time_range[idx],ovitrap_eggs_i[idx] ] for idx,isValid in enumerate(valid_ovi_idx) if isValid])
+        if(sys.argv[2]==FRECHET): return sm.frechet_dist(x,y)
+        if(sys.argv[2]==DTW): return sm.dtw(x,y)[0]
+    else:
+        print('Metric %s not found'%sys.argv[2])
+        quit()
+
 
 def getConfiguration(x=None,domain=None):
     CONFIGURATION_FILENAME='resources/1c.cfg'
@@ -71,15 +94,17 @@ def getOptimalParameters(ovitrap_eggs_i_with_id):
     else:
         opt=differential_evolution(error,bounds,args=(ovitrap_eggs_i_with_id,))#, workers=mp.cpu_count()-2 for scipy>1.3
 
-    open('out/equation_fitter/_ovi%s.txt'%ovitrap_eggs_i_with_id[0],'w').write(str(opt)+'\n'+str(domain)+'\n\n')#ovitrap_eggs_i_with_id[0] is the ovitrap_id
+    open(OVI_FIT%(sys.argv[2],ovitrap_eggs_i_with_id[0]),'w').write(str(opt)+'\n'+str(domain)+'\n\n')#ovitrap_eggs_i_with_id[0] is the ovitrap_id
 
     return opt
 
 if(__name__ == '__main__'):
     start_date,end_date=utils.getStartEndDates(OVITRAP_FILENAME)
-    domain=OrderedDict({'height':(2,20),'manually_filled':(0,2),'bare':(0,1),'evaporation_factor':(0,2)})
+    domain=OrderedDict({'height':(2,20),'bare':(0,1),'evaporation_factor':(0,2)})
     if(len(sys.argv)>1):
         ovitrap_id=int(sys.argv[1])
+        if(os.path.isfile(OVI_FIT%(sys.argv[2],ovitrap_id))): quit() # if the ovitrap has been already fitted, skip
+
         ovitrap_eggs_i_with_id=[ovitrap_id,utils.getOvitrapEggsFromCsv2(OVITRAP_FILENAME,start_date,end_date,ovitrap_id),domain]
         vOpt=getOptimalParameters(ovitrap_eggs_i_with_id)
     else:

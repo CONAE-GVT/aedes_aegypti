@@ -131,10 +131,11 @@ def getCoord(filename,id):
         if (int(line[0])==id):
             return float(line[1]),float(line[2])
 
+from collections import OrderedDict
 def getFittedConfiguration(filename):
     x=re.findall(r'.*x: .*\(\[(.*)\]\)',open(filename).read().replace('\n',''))[0]
     x=np.fromstring(x, dtype=float, sep=',')
-    return getConfiguration(x,int(len(x)/4))#TODO:not agnostic)
+    return getConfiguration(x,OrderedDict({'height':(2,20),'bare':(0,1),'evaporation_factor':(0,2)}))#TODO:not agnostic)#domain should be extracted from filename
 
 from sklearn.cluster import MiniBatchKMeans
 def kmeansFittedConfiguration(filenames,clusters=3):

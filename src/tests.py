@@ -543,15 +543,14 @@ def rates():
         print('\n')
 
 def call_fitter(ovitrap_id):
-    if(os.path.isfile(OVI_FIT%ovitrap_id)): return # if the ovitrap has been already fitted, skip
-    return os.system('python src/equation_fitter.py %s'%ovitrap_id)
+    return os.system('python src/equation_fitter.py %s %s'%(ovitrap_id,sys.argv[2]) )
 
 def fit():
     mp.Pool(mp.cpu_count()-4).map(call_fitter, range(1,152))
 
-OVI_FIT='out/equation_fitter/_ovi%s.txt'
+from equation_fitter import OVI_FIT
 def plotFittedOvitrap(ovitrap_id,title=''):
-    model=Model(utils.getFittedConfiguration(OVI_FIT%ovitrap_id))
+    model=Model(utils.getFittedConfiguration( OVI_FIT%(sys.argv[2],ovitrap_id) ))
     time_range,Y=model.solveEquations()
     utils.showPlot(utils.plot(model,subplots=[{'cd':'','lwO':'','O':list([ovitrap_id]),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1)),
     title=title,
@@ -566,11 +565,11 @@ def plotFittedResults():
     best_ovi={'id':0,'fun':500}
     worst_ovi={'id':0,'fun':0}
     for ovitrap_id in range(1,152):
-        if(not os.path.isfile(OVI_FIT%ovitrap_id)):
+        if(not os.path.isfile( OVI_FIT%(sys.argv[2],ovitrap_id) )):
             print('%s, '%(ovitrap_id),end='')
             continue
         #solve the model fot the fitted parameters
-        configuration=utils.getFittedConfiguration(OVI_FIT%ovitrap_id)
+        configuration=utils.getFittedConfiguration( OVI_FIT%(sys.argv[2],ovitrap_id) )
         configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(30)))
         model=Model(configuration)
         time_range,Y=model.solveEquations()
@@ -586,7 +585,7 @@ def plotFittedResults():
         date_range=[str(model.start_date+datetime.timedelta(days=d)) for d in time_range]
 
         #Saver worst/best performing ovi to plot later
-        fun=float(re.findall(r'.*fun: ([0-9]+\.[0-9]+)',open(OVI_FIT%ovitrap_id).read().replace('\n',''))[0])
+        fun=float(re.findall(r'.*fun: ([0-9]+\.[0-9]+)',open( OVI_FIT%(sys.argv[2],ovitrap_id) ).read().replace('\n',''))[0])
         if(fun<best_ovi['fun']):best_ovi={'id':ovitrap_id,'fun':fun}
         if(fun>worst_ovi['fun']):worst_ovi={'id':ovitrap_id,'fun':fun}
 
@@ -621,7 +620,7 @@ if(__name__ == '__main__'):
     elif(len(sys.argv)>1 and sys.argv[1]=='plotFit'):
         plotFittedResults()
     elif(len(sys.argv)>1 and sys.argv[1]=='plotFitConf'):
-        utils.kmeansFittedConfiguration([OVI_FIT%ovitrap_id for ovitrap_id in range(1,152)],clusters=3)
+        utils.kmeansFittedConfiguration([ OVI_FIT%(sys.argv[2],ovitrap_id) for ovitrap_id in range(1,152)],clusters=3)
     else:#the default is just a number indicating which test case to run, or none (test case 1 will will be default)
         if(len(sys.argv)<2):
             case=1
