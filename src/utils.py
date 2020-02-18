@@ -133,7 +133,7 @@ def getCoord(filename,id):
 
 FITTED_FUN=r'.*fun: ([0-9]+\.[0-9]+)'
 FITTED_X=r'.*x: array\(\[(.*)\]\)'
-FITTED_DOMAIN=r'.*OrderedDict\(.*\)'
+FITTED_DOMAIN=r'.*(OrderedDict\(.*\))'
 def extractPattern(pattern,filename):
     return re.findall(pattern,open(filename).read(),re.MULTILINE|re. DOTALL)[0]
 
@@ -150,7 +150,14 @@ def kmeansFittedConfiguration(filenames,clusters=3):
     for filename in filenames:
         x=extractPattern(FITTED_X,filename)
         x=np.fromstring(x, dtype=float, sep=',')
-        x=( x- np.array([2,0,0,0]))/np.array([18,2,1,2])
+        domain=extractPattern(FITTED_DOMAIN,filename)
+        domain=eval(domain)#eval is not recommended, maybe save the domain as json.
+        a,b=[],[]
+        for key in domain:
+            a.append(domain[key][0])
+            b.append(domain[key][1])
+        a,b=np.array(a),np.array(b)
+        x=(x- a)/(b-a)
         X.append(x)
 
     kmeans=MiniBatchKMeans(n_clusters=clusters).fit(X)
