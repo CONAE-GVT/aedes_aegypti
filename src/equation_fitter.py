@@ -100,7 +100,7 @@ def getOptimalParameters(ovitrap_eggs_i_with_id):
 
 if(__name__ == '__main__'):
     start_date,end_date=utils.getStartEndDates(OVITRAP_FILENAME)
-    domain=OrderedDict({'height':(2,20),'bare':(0,1),'evaporation_factor':(0,2)})
+    domain=OrderedDict({'height':(2,20),'manually_filled':(0,2),'bare':(0,1),'evaporation_factor':(0,2)})
     if(len(sys.argv)>1):
         ovitrap_id=int(sys.argv[1])
         if(os.path.isfile(OVI_FIT%(sys.argv[2],ovitrap_id))): quit() # if the ovitrap has been already fitted, skip
