@@ -446,6 +446,28 @@ def runCases(case):
             time_range,Y=model.solveEquations()
             print('\r %s%%'%round(i/MAX * 100,2), end='')
 
+    if(case==20):
+        dataO,dataA=[],[]
+        for location in ['balnearia','marull','rio_cuarto','unquillo','san_francisco','cordoba']:
+            h=10.
+            configuration=Configuration('resources/1c.cfg')
+            configuration.config_parser.set('location','name',location+'.full')
+            location=configuration.getString('location','name')
+            configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(30)))
+            configuration.config_parser.set('breeding_site','height',str(h))
+            configuration.config_parser.set('breeding_site','amount','1')
+            model=Model(configuration)
+            time_range,Y=model.solveEquations()
+            location_label=location.replace('.full','').replace('_',' ').title()
+            dataO+=utils.plot(model,subplots=[{'lwO':location_label,'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1))
+            dataA+=utils.plot(model,subplots=[{'A1+A2':location_label,'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1))
+            print('h:%s Max E: %s'%(h,np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1))))
+            print(model.warnings)
+        dataO+=utils.plot(model,subplots=[{'cd':''}])
+        dataA+=utils.plot(model,subplots=[{'cd':''}])
+        utils.showPlot(dataO,title='Oviposición',xaxis_title='Fecha',yaxis_title='Huevos')
+        utils.showPlot(dataA,title='Hembra Adulta por criadero',xaxis_title='Fecha',yaxis_title='Adultos')
+
 try:
     from otero_precipitation_wrapper import Model as _Model
 except ImportError:
