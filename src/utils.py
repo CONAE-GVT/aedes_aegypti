@@ -438,7 +438,7 @@ def plot(model,subplots,plot_start_date=None,color=None):
                 current_date=getStartEndDates('data/public/'+location.replace('.full','')+'.csv')[1]#datetime.date.today()
                 A,B=datetime.date(2017,10,25),datetime.date(2017,11,12)
                 D,P=datetime.date(2017,11,13),datetime.date(2017,11,13)
-            data.append(go.Scatter(x=[current_date],y=[0],name='Current Date',mode='markers',cliponaxis= False));
+            data.append(go.Scatter(x=[current_date],y=[0],name='Current Date',mode='markers'));
             #data.append(go.Scatter(x=[A,B],y=[0,0],name='%s days'%((B-A).days),mode='lines',cliponaxis= False))
             #data.append(go.Scatter(x=[D],y=[0],name='DTW group 3 MSD',mode='markers',cliponaxis= False))#,data.append(go.Scatter(x=[P],y=[0],name='PAM group 2 MSD',mode='markers',cliponaxis= False))
         #debugging plots
