@@ -11,10 +11,10 @@ from otero_precipitation_wrapper_wrapper import Model
 from equations import diff_eqs,vR_D
 import equations
 from spatial_equations import diff_eqs as spatial_diff_eqs
-import pylab as pl
 import similaritymeasures as sm
 import plotly.graph_objs as go
 from plotly import tools
+import equation_fitter
 
 def runSpatial():
     configuration=Configuration('resources/otero_precipitation.cfg')
@@ -76,9 +76,6 @@ def calculateMetrics(time_range,lwO_mean,ovitrap_eggs_i):
 
     return rmse, cort,pearson,fd,dtw,D,D_1,D_2,D_4
 
-import equation_fitter
-from matplotlib import pyplot as plt
-import gc
 def runCases(case):
     if(case==0):
         ovi_range=range(1,151)
@@ -152,7 +149,6 @@ def runCases(case):
 
         np.save('out/errors_by_height.npy',errors_by_height)
         print(errors_by_height.shape)
-        pl.show()
 
     if(case==1):
         h=10.

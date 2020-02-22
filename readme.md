@@ -149,3 +149,12 @@ source: http://transnationalhistory.net/mapping/tutorials/pointvectorlayers/
 
 #AT plots
 python src/tests.py 18;python src/tests.py 8;python src/tests.py 8;python src/tests.py 11;python src/tests.py 12;python src/tests.py 14;
+
+#Strange error
+error:
+python: /usr/include/Eigen/src/Core/Block.h:147: Eigen::Block<XprType, BlockRows, BlockCols, InnerPanel>::Block(XprType&, Eigen::Index, Eigen::Index, Eigen::Index, Eigen::Index) [with XprType = Eigen::Array<double, -1, -1>; int BlockRows = 1; int BlockCols = -1; bool InnerPanel = false; Eigen::Index = long int]: Assertion `startRow >= 0 && blockRows >= 0 && startRow <= xpr.rows() - blockRows && startCol >= 0 && blockCols >= 0 && startCol <= xpr.cols() - blockCols' failed.
+Aborted (core dumped)
+Aparently when you import matplotlib, it changes the behaviour of std::stod (wtf!) , so in the pybind module, the configuration::getScalar returned vBS_lh=0 (instead 0.1), so m=0 (instead of 100) and that ended up messing the line
+mE0(0,Eigen::all)= initial_condition(0)*this->parameters.vBS_d;
+otero_precipitation.h
+Solution: remove matplotlib
