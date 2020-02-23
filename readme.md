@@ -26,11 +26,26 @@ To exequiel@pluton.hopto.org:/home/exequiel/repositories/aedes_aegypti.git
 
 *Not sure if I should on the local, create a repo and push it to the origin (instead of cloning, changing and pushing). like in https://feeding.cloud.geek.nz/posts/setting-up-centralied-git-repository/*
 
+**Git over http (Optional)**
+On the remote server:
+>sudo ln -s /home/exequiel/repositories /var/www/html/
+>sudo vim /etc/apache2/conf-available/cgi-enabled.conf
+    <Directory "/usr/lib/git-core/">
+      Options +ExecCGI
+      Require all granted
+    </Directory>
+    SetEnv GIT_PROJECT_ROOT /var/www/html/repositories
+    SetEnv GIT_HTTP_EXPORT_ALL
+    ScriptAlias /repositories /usr/lib/git-core/git-http-backend
+>sudo service apache2 restart
+source:https://www.webmasterworld.com/apache/4711334.htm
 
 **To clone the project**
 >git clone exequiel@pluton.hopto.org:/home/exequiel/repositories/aedes_aegypti.git
 or
 >git clone ssh://exequiel@pluton.hopto.org:8080/home/exequiel/repositories/aedes_aegypti.git
+or
+>git clone http://pluton/repositories/aedes_aegypti.git
 
 **To create a new branch**
 >git checkout -b development
@@ -152,9 +167,8 @@ python src/tests.py 18;python src/tests.py 8;python src/tests.py 8;python src/te
 
 #Strange error
 error:
-python: /usr/include/Eigen/src/Core/Block.h:147: Eigen::Block<XprType, BlockRows, BlockCols, InnerPanel>::Block(XprType&, Eigen::Index, Eigen::Index, Eigen::Index, Eigen::Index) [with XprType = Eigen::Array<double, -1, -1>; int BlockRows = 1; int BlockCols = -1; bool InnerPanel = false; Eigen::Index = long int]: Assertion `startRow >= 0 && blockRows >= 0 && startRow <= xpr.rows() - blockRows && startCol >= 0 && blockCols >= 0 && startCol <= xpr.cols() - blockCols' failed.
-Aborted (core dumped)
-Aparently when you import matplotlib, it changes the behaviour of std::stod (wtf!) , so in the pybind module, the configuration::getScalar returned vBS_lh=0 (instead 0.1), so m=0 (instead of 100) and that ended up messing the line
-mE0(0,Eigen::all)= initial_condition(0)*this->parameters.vBS_d;
-otero_precipitation.h
+  python: /usr/include/Eigen/src/Core/Block.h:147: Eigen::Block<XprType, BlockRows, BlockCols, InnerPanel>::Block(XprType&, Eigen::Index, Eigen::Index, Eigen::Index, Eigen::Index) [with XprType = Eigen::Array<double, -1, -1>; int BlockRows = 1; int BlockCols = -1; bool InnerPanel = false; Eigen::Index = long int]: Assertion 'startRow >= 0 && blockRows >= 0 && startRow <= xpr.rows() - blockRows && startCol >= 0 && blockCols >= 0 && startCol <= xpr.cols() - blockCols' failed.
+  Aborted (core dumped)
+Aparently when you import matplotlib, it changes the behaviour of std::stod (wtf!) , so in the pybind module, the configuration::getScalar returned vBS_lh=0 (instead 0.1), so m=0 (instead of 100) and that ended up messing the line mE0(0,Eigen::all)= initial_condition(0)*this->parameters.vBS_d; in otero_precipitation.h
 Solution: remove matplotlib
+Source: https://github.com/pybind/pybind11/issues/2042

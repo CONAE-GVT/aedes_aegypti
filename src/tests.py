@@ -91,13 +91,8 @@ def runCases(case):
 
             #errors=[[1e15,-1,-1,1e15,1e15,1e15]]*151#just to fill the ovitrap 0 that do not exist in reality
             for ovitrap_id in ovi_range:
-                OVITRAP_FILENAME='data/private/ovitrampas_2017-2019.full.csv'
-                values=utils.getOvitrapEggsFromCsv2(OVITRAP_FILENAME,None,None,ovitrap_id)
-                ovitrap_days=values.keys()
-                dates=[model.start_date + datetime.timedelta(t) for t in time_range]
-
-                ovi=[utils.noneMean(values[date]) if date in values else None for date in dates]#TODO:WARNING!this will repeat values if model granularity is not 1 value per day.
-                ovi=np.array(equation_fitter.populate(model.time_range,ovi))
+                values=utils.getOvitrapEggsFromCsv('data/private/ovitrampas_2017-2019.full.csv' ,ovitrap_id)
+                ovi=np.array(equation_fitter.populate(model.time_range,model.start_date,values))
                 ovi=np.array(ovi,dtype=np.float)#this change None for np.nan
 
                 indexOf=lambda t: (np.abs(time_range-t)).argmin()
@@ -197,7 +192,7 @@ def runCases(case):
         ovi_mean=[1e10]*151
         for ovitrap_id in ovi_range:
             OVITRAP_FILENAME='data/private/ovitrampas_2017-2018.full.csv'
-            values=utils.getOvitrapEggsFromCsv2(OVITRAP_FILENAME,None,None,ovitrap_id)
+            values=utils.getOvitrapEggsFromCsv(OVITRAP_FILENAME,ovitrap_id)
             dates=values.keys()
             ovi_a=[values[date][0] if date in values else None for date in dates]#TODO:WARNING!this will repeat values if model granularity is not 1 value per day.
             ovi_a=np.array(ovi_a,dtype=np.float)#this change None for np.nan
