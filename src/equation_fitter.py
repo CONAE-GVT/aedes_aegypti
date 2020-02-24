@@ -103,6 +103,7 @@ if(__name__ == '__main__'):
     if(len(sys.argv)>1):
         ovitrap_id=int(sys.argv[1])
         if(os.path.isfile(OVI_FIT%(sys.argv[2],ovitrap_id))): quit() # if the ovitrap has been already fitted, skip
+        if(not os.path.exists( (OVI_FIT%(sys.argv[2],'')).replace('/_ovi.txt','') ) ): os.makedirs( (OVI_FIT%(sys.argv[2],'')).replace('/_ovi.txt','') )#if folder doesn't exists, create it
 
         ovitrap_eggs_i_with_id=[ovitrap_id,utils.getOvitrapEggsFromCsv(OVITRAP_FILENAME,ovitrap_id),domain]
         vOpt=getOptimalParameters(ovitrap_eggs_i_with_id)
