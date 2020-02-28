@@ -83,10 +83,7 @@ def  getRelativeHumidityFromCsv(filename,start_date,end_date):#in percentage
 def  getMeanWindSpeedFromCsv(filename,start_date,end_date):#in km/h
     return [x if x else None for x in getValuesFromCsv(filename,start_date,end_date,7)]
 
-def  getOvitrapEggsFromCsv(filename,start_date,end_date,ovitrap):#amount
-    return [x for x in getValuesFromCsv(filename,start_date,end_date,ovitrap,False)]
-
-def getOvitrapEggsFromCsv2(filename,start_date,end_date,column):#amount
+def getOvitrapEggsFromCsv(filename,column):#amount
     lines=[line.strip().split(',') for line in open(filename).readlines()[1:]]
     values={}
     last_date=None
@@ -383,11 +380,11 @@ def plot(model,subplots,plot_start_date=None,color=None):
 
         if('O' in subplot):
             for ovitrap_id in subplot['O']:
-                values=getOvitrapEggsFromCsv2('data/private/ovitrampas_2017-2019.mean.csv',model.start_date,model.end_date,ovitrap_id)
+                values=getOvitrapEggsFromCsv('data/private/ovitrampas_2017-2019.mean.csv',ovitrap_id)
                 ovitrap_dates=np.array([k for k in values.keys()])
                 ovi=np.array([noneMean(values[date]) for date in ovitrap_dates])
                 if (ovitrap_id==151):
-                    stdev=getOvitrapEggsFromCsv2('data/private/ovitrampas_2017-2019.mean.csv',model.start_date,model.end_date,152)
+                    stdev=getOvitrapEggsFromCsv('data/private/ovitrampas_2017-2019.mean.csv',152)
                     stdev=np.array([noneMean(stdev[date]) for date in ovitrap_dates])
                     upper=applyFs(ovi+stdev,subplot)[ovi!=[None]].tolist()
                     lower=applyFs(ovi-stdev,subplot)[ovi!=[None]].tolist()
@@ -406,7 +403,7 @@ def plot(model,subplots,plot_start_date=None,color=None):
             po={}
             fo={}
             for ovitrap_id in range(1,151):
-                values=getOvitrapEggsFromCsv2('data/private/ovitrampas_2017-2019.full.csv',model.start_date,model.end_date,ovitrap_id)
+                values=getOvitrapEggsFromCsv('data/private/ovitrampas_2017-2019.full.csv',ovitrap_id)
                 for k in values:
                     a=np.array(values[k],np.float)
                     positives=np.count_nonzero(a[:2]>0)
@@ -438,7 +435,7 @@ def plot(model,subplots,plot_start_date=None,color=None):
                 current_date=getStartEndDates('data/public/'+location.replace('.full','')+'.csv')[1]#datetime.date.today()
                 A,B=datetime.date(2017,10,25),datetime.date(2017,11,12)
                 D,P=datetime.date(2017,11,13),datetime.date(2017,11,13)
-            data.append(go.Scatter(x=[current_date],y=[0],name='Current Date',mode='markers',cliponaxis= False));
+            data.append(go.Scatter(x=[current_date],y=[0],name='Current Date',mode='markers'));
             #data.append(go.Scatter(x=[A,B],y=[0,0],name='%s days'%((B-A).days),mode='lines',cliponaxis= False))
             #data.append(go.Scatter(x=[D],y=[0],name='DTW group 3 MSD',mode='markers',cliponaxis= False))#,data.append(go.Scatter(x=[P],y=[0],name='PAM group 2 MSD',mode='markers',cliponaxis= False))
         #debugging plots

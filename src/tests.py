@@ -11,10 +11,10 @@ from otero_precipitation_wrapper_wrapper import Model
 from equations import diff_eqs,vR_D
 import equations
 from spatial_equations import diff_eqs as spatial_diff_eqs
-import pylab as pl
 import similaritymeasures as sm
 import plotly.graph_objs as go
 from plotly import tools
+import equation_fitter
 
 def runSpatial():
     configuration=Configuration('resources/otero_precipitation.cfg')
@@ -76,9 +76,6 @@ def calculateMetrics(time_range,lwO_mean,ovitrap_eggs_i):
 
     return rmse, cort,pearson,fd,dtw,D,D_1,D_2,D_4
 
-import equation_fitter
-from matplotlib import pyplot as plt
-import gc
 def runCases(case):
     if(case==0):
         ovi_range=range(1,151)
@@ -94,13 +91,8 @@ def runCases(case):
 
             #errors=[[1e15,-1,-1,1e15,1e15,1e15]]*151#just to fill the ovitrap 0 that do not exist in reality
             for ovitrap_id in ovi_range:
-                OVITRAP_FILENAME='data/private/ovitrampas_2017-2019.full.csv'
-                values=utils.getOvitrapEggsFromCsv2(OVITRAP_FILENAME,None,None,ovitrap_id)
-                ovitrap_days=values.keys()
-                dates=[model.start_date + datetime.timedelta(t) for t in time_range]
-
-                ovi=[utils.noneMean(values[date]) if date in values else None for date in dates]#TODO:WARNING!this will repeat values if model granularity is not 1 value per day.
-                ovi=np.array(equation_fitter.populate(model.time_range,ovi))
+                values=utils.getOvitrapEggsFromCsv('data/private/ovitrampas_2017-2019.full.csv' ,ovitrap_id)
+                ovi=np.array(equation_fitter.populate(model.time_range,model.start_date,values))
                 ovi=np.array(ovi,dtype=np.float)#this change None for np.nan
 
                 indexOf=lambda t: (np.abs(time_range-t)).argmin()
@@ -152,7 +144,6 @@ def runCases(case):
 
         np.save('out/errors_by_height.npy',errors_by_height)
         print(errors_by_height.shape)
-        pl.show()
 
     if(case==1):
         h=10.
@@ -201,7 +192,7 @@ def runCases(case):
         ovi_mean=[1e10]*151
         for ovitrap_id in ovi_range:
             OVITRAP_FILENAME='data/private/ovitrampas_2017-2018.full.csv'
-            values=utils.getOvitrapEggsFromCsv2(OVITRAP_FILENAME,None,None,ovitrap_id)
+            values=utils.getOvitrapEggsFromCsv(OVITRAP_FILENAME,ovitrap_id)
             dates=values.keys()
             ovi_a=[values[date][0] if date in values else None for date in dates]#TODO:WARNING!this will repeat values if model granularity is not 1 value per day.
             ovi_a=np.array(ovi_a,dtype=np.float)#this change None for np.nan

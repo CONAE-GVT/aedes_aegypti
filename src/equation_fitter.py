@@ -99,16 +99,16 @@ def getOptimalParameters(ovitrap_eggs_i_with_id):
     return opt
 
 if(__name__ == '__main__'):
-    start_date,end_date=utils.getStartEndDates(OVITRAP_FILENAME)
     domain=OrderedDict({'height':(2,20),'manually_filled':(0,2),'bare':(0,1),'evaporation_factor':(0,2)})
     if(len(sys.argv)>1):
         ovitrap_id=int(sys.argv[1])
         if(os.path.isfile(OVI_FIT%(sys.argv[2],ovitrap_id))): quit() # if the ovitrap has been already fitted, skip
+        if(not os.path.exists( (OVI_FIT%(sys.argv[2],'')).replace('/_ovi.txt','') ) ): os.makedirs( (OVI_FIT%(sys.argv[2],'')).replace('/_ovi.txt','') )#if folder doesn't exists, create it
 
-        ovitrap_eggs_i_with_id=[ovitrap_id,utils.getOvitrapEggsFromCsv2(OVITRAP_FILENAME,start_date,end_date,ovitrap_id),domain]
+        ovitrap_eggs_i_with_id=[ovitrap_id,utils.getOvitrapEggsFromCsv(OVITRAP_FILENAME,ovitrap_id),domain]
         vOpt=getOptimalParameters(ovitrap_eggs_i_with_id)
     else:
-        ovitrap_eggs=[[ovitrap_id,utils.getOvitrapEggsFromCsv2(OVITRAP_FILENAME,start_date,end_date,ovitrap_id),domain] for ovitrap_id in range(1,152)]
+        ovitrap_eggs=[[ovitrap_id,utils.getOvitrapEggsFromCsv(OVITRAP_FILENAME,ovitrap_id),domain] for ovitrap_id in range(1,152)]
 
         print('Starting...')
         vOpt=mp.Pool(mp.cpu_count()-2).map(getOptimalParameters, ovitrap_eggs)

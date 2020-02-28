@@ -20,6 +20,8 @@ class Model
     Model():Model("resources/otero_precipitation.cfg"){}
     Model(const std::string& filename):Model(Configuration(filename)){}
     explicit Model(Configuration configuration){//explicit is just to avoid a cpp check warning
+        std::setlocale(LC_NUMERIC,"C");//force default locale. More in "Strange error" in the readme.md
+
         this->parameters.BS_a=configuration.getScalar("breeding_site","amount");
         this->parameters.BS_lh=configuration.getScalar("breeding_site","level_height");//#in cm
         this->parameters.vBS_h=configuration.getTensor("breeding_site","height");//#in cm
