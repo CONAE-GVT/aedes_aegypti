@@ -10,10 +10,10 @@ vT_1_2H=np.array([14184.0,304.6,148.0,447.2,447.2])
 
 
 #<precipitation related functionality v>
-def dW(vW,vBS_h,vBS_ef,T_t,p_t,RH_t,h):#in cm/day
+def dW(vW,vBS_h,vBS_ef,T_t,p_t,RH_t,h,wc):#in cm/day
     QG_t=p_t*0.1#cm/day
     QR_t=6e-5*(25 + T_t-273.15)**2 * (100.-RH_t) * 0.1#cm/day. #Ivanov
-    dW_t=QG_t- vBS_ef*QR_t
+    dW_t=QG_t- vBS_ef*QR_t - wc*vW
     return np.minimum(np.maximum(dW_t,-vW/h),(vBS_h-vW)/h)
 
 def a0(W):
@@ -55,31 +55,31 @@ def ovsp(vW,vBS_d,vW_l,mBS_l):#OViposition Site Preference
 def wetMask(vW_l,mBS_l):
     return np.where(mBS_l<=vW_l,1,0)
 
-def dmE(mE,vL,A1,A2,vW_t,BS_a,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l):
+def dmE(mE,vL,A1,A2,vW_t,BS_a,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l,mec):
     egn=63.0
     me=0.01#mortality of the egg, for T in [278,303]
     ovsp_t=ovsp(vW_t,vBS_d,vW_l,mBS_l)
-    return egn*( ovr1 *A1  + ovr2* A2)*ovsp_t - me * mE - elr* (1-vGamma(vL,BS_a*vBS_d,vW_t)) * mE*wet_mask
+    return egn*( ovr1 *A1  + ovr2* A2)*ovsp_t - (me+mec) * mE - elr* (1-vGamma(vL,BS_a*vBS_d,vW_t)) * mE*wet_mask
 
-def dvL(mE,vL,vW,T_t,BS_a,vBS_d,elr,lpr,vAlpha0,wet_mask):
+def dvL(mE,vL,vW,T_t,BS_a,vBS_d,elr,lpr,vAlpha0,wet_mask,mlc):
     ml=0.01 + 0.9725 * math.exp(-(T_t-278.0)/2.7035)#mortality of the larvae, for T in [278,303]
     epsilon=1e-4
     mdl=2.*(1.- vW/(vW+epsilon))#mortality of dry larvae.TODO:Unjustified!
     vAlpha=vAlpha0/(BS_a*vBS_d)
-    return elr* (1-vGamma(vL,BS_a*vBS_d,vW)) * np.sum(mE*wet_mask,axis=0) - ml*vL - mdl*vL - vAlpha* vL*vL - lpr *vL
+    return elr* (1-vGamma(vL,BS_a*vBS_d,vW)) * np.sum(mE*wet_mask,axis=0) - (ml+mlc)*vL - mdl*vL - vAlpha* vL*vL - lpr *vL
 
-def dvP(vL,vP,T_t,lpr,par):
+def dvP(vL,vP,T_t,lpr,par,mpc):
     mp=0.01 + 0.9725 * math.exp(-(T_t-278.0)/2.7035)#death of pupae
-    return lpr*vL - mp*vP  - par*vP
+    return lpr*vL - (mp+mpc)*vP  - par*vP
 
-def dA1(vP,A1,par,ovr1):
+def dA1(vP,A1,par,ovr1,ma1c):
     ef=0.83#emergence factor
     ma=0.09#for T in [278,303]
-    return np.sum(par*ef*vP/2.0) - ma*A1 - ovr1*A1
+    return np.sum(par*ef*vP/2.0) - (ma+ma1c)*A1 - ovr1*A1
 
-def dA2(A1,A2,ovr1):
+def dA2(A1,A2,ovr1,ma1c):
     ma=0.09#for T in [278,303]
-    return ovr1*A1 - ma*A2
+    return ovr1*A1 - (ma+ma1c)*A2
 
 def dmO(A1,A2,vW_t,vBS_d,ovr1,ovr2,vW_l,mBS_l):
     egn=63.0
@@ -95,6 +95,7 @@ def diff_eqs(Y,t,h,parameters):
     RH_t=parameters.weather.RH(t)
     elr,lpr,par,ovr1,ovr2=vR_D(T_t)
     BS_a,BS_lh,vBS_d,vBS_h,vBS_b,vBS_ef,vAlpha0,m,n,mBS_l=parameters.BS_a,parameters.BS_lh,parameters.vBS_d,parameters.vBS_h,parameters.vBS_b,parameters.vBS_ef,parameters.vAlpha0,parameters.m,parameters.n,parameters.mBS_l
+    mec,mlc,mpc,ma1c,ma2c,wc=parameters.mvc(t)
     EGG,LARVAE,PUPAE,ADULT1,ADULT2,WATER,OVIPOSITION=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.ADULT2,parameters.WATER,parameters.OVIPOSITION
 
     vE,vL,vP,A1,A2,vW=Y[EGG].reshape((n,m)).transpose(),Y[LARVAE],Y[PUPAE],Y[ADULT1],Y[ADULT2],Y[WATER]
@@ -103,12 +104,12 @@ def diff_eqs(Y,t,h,parameters):
     vmf_t=parameters.mf(t)*parameters.vBS_mf*10.# cm -> mm
 
     dY=np.empty(Y.shape)
-    dY[EGG]    = dmE(vE,vL,A1,A2,vW,BS_a,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l).transpose().reshape((1,m*n))
-    dY[LARVAE] = dvL(vE,vL,vW,T_t,BS_a,vBS_d,elr,lpr,vAlpha0,wet_mask)
-    dY[PUPAE]  = dvP(vL,vP,T_t,lpr,par)
-    dY[ADULT1] = dA1(vP,A1,par,ovr1)
-    dY[ADULT2] = dA2(A1,A2,ovr1)
-    dY[WATER] = dW(vW,vBS_h,vBS_ef,T_t,vBS_b*p_t+vmf_t,RH_t,h)
+    dY[EGG]    = dmE(vE,vL,A1,A2,vW,BS_a,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l,mec).transpose().reshape((1,m*n))
+    dY[LARVAE] = dvL(vE,vL,vW,T_t,BS_a,vBS_d,elr,lpr,vAlpha0,wet_mask,mlc)
+    dY[PUPAE]  = dvP(vL,vP,T_t,lpr,par,mpc)
+    dY[ADULT1] = dA1(vP,A1,par,ovr1,ma1c)
+    dY[ADULT2] = dA2(A1,A2,ovr1,ma2c)
+    dY[WATER] = dW(vW,vBS_h,vBS_ef,T_t,vBS_b*p_t+vmf_t,RH_t,h,wc)
     dY[OVIPOSITION]    = dmO(A1,A2,vW,vBS_d,ovr1,ovr2,vW_l,mBS_l).transpose().reshape((1,m*n))
 
     return dY   # For odeint

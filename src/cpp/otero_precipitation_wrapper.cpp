@@ -48,7 +48,8 @@ PYBIND11_MODULE(otero_precipitation_wrapper, m) {
       .def_readonly("WATER", &Parameters::WATER)
       .def_readonly("OVIPOSITION", &Parameters::OVIPOSITION)
       .def_readonly("weather", &Parameters::weather)
-      .def_readonly("mf", &Parameters::mf);
+      .def_readonly("mf", &Parameters::mf)
+      .def_readonly("mvc", &Parameters::mvc);
 
     //https://pybind11.readthedocs.io/en/stable/classes.html
     pybind11::class_<Model>(m, "Model")

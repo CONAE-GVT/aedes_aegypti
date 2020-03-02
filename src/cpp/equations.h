@@ -15,10 +15,10 @@ tensor vDeltaH_H=(tensor(5)<< 100000.0,55990.0,-472379.00,1756481.0,1756481.0).f
 tensor vT_1_2H=(tensor(5)<< 14184.0,304.6,148.0,447.2,447.2).finished();
 
 //<precipitation related functionality>
-tensor dW(tensor& vW, tensor& vBS_h, tensor& vBS_ef, scalar T_t, tensor p_t, scalar RH_t, scalar h){//#in cm/day
+tensor dW(tensor& vW, tensor& vBS_h, tensor& vBS_ef, scalar T_t, tensor p_t, scalar RH_t, scalar h, scalar wc){//#in cm/day
     tensor QG_t=p_t*0.1;//#cm/day
     scalar QR_t=6e-5* std::pow(25 + T_t-273.15, 2) * (100.-RH_t) * 0.1;//#cm/day. #Ivanov
-    tensor dW_t=QG_t- vBS_ef*QR_t;
+    tensor dW_t=QG_t- vBS_ef*QR_t - wc*vW;
     return Utils::minimum(Utils::maximum(dW_t,-vW/h),(vBS_h-vW)/h);
 }
 
@@ -67,35 +67,35 @@ matrix wetMask(const tensor& vW_l, const matrix& mBS_l){
     return (mBS_l<=vW_l.replicate(mBS_l.rows(),1)).cast<scalar>();//this cast seems obscure.https://stackoverflow.com/questions/50009258/how-to-do-element-wise-comparison-with-eigen
 }
 
-matrix dmE(const matrix& mE,const tensor& vL,scalar A1,scalar A2,const tensor& vW_t, scalar BS_a,const tensor&  vBS_d,scalar elr,scalar ovr1, scalar ovr2,const matrix& wet_mask,const tensor& vW_l,const matrix& mBS_l){
+matrix dmE(const matrix& mE,const tensor& vL,scalar A1,scalar A2,const tensor& vW_t, scalar BS_a,const tensor&  vBS_d,scalar elr,scalar ovr1, scalar ovr2,const matrix& wet_mask,const tensor& vW_l,const matrix& mBS_l, scalar mec){
     scalar egn=63.0;
     scalar me=0.01;//#mortality of the egg, for T in [278,303]
     matrix ovsp_t=ovsp(vW_t,vBS_d,vW_l,mBS_l);
-    return egn  *( ovr1 *A1  + ovr2* A2)*ovsp_t - me * mE - elr*(1.-vGamma(vL,BS_a*vBS_d,vW_t)).replicate(mE.rows(),1)* mE*wet_mask;
+    return egn  *( ovr1 *A1  + ovr2* A2)*ovsp_t - (me+mec) * mE - elr*(1.-vGamma(vL,BS_a*vBS_d,vW_t)).replicate(mE.rows(),1)* mE*wet_mask;
 }
 
-tensor dvL(const matrix& mE,const tensor& vL,const tensor& vW,scalar T_t,scalar BS_a,const tensor& vBS_d,scalar elr,scalar lpr,const tensor& vAlpha0,const matrix& wet_mask){
+tensor dvL(const matrix& mE,const tensor& vL,const tensor& vW,scalar T_t,scalar BS_a,const tensor& vBS_d,scalar elr,scalar lpr,const tensor& vAlpha0,const matrix& wet_mask, scalar mlc){
     scalar ml=0.01 + 0.9725 * std::exp(-(T_t-278.0)/2.7035);//#mortality of the larvae, for T in [278,303]
     scalar mdl=2.;//#mortality of dry larvae.TODO:Unjustified!
     tensor vAlpha=vAlpha0/(BS_a*vBS_d);
     scalar epsilon=1e-4;
-    return elr* (1.-vGamma(vL,BS_a*vBS_d,vW)) * Utils::sumAxis0(mE*wet_mask) - ml*vL - vAlpha* vL*vL - lpr *vL - mdl*(1.- vW/(vW+epsilon))*vL;
+    return elr* (1.-vGamma(vL,BS_a*vBS_d,vW)) * Utils::sumAxis0(mE*wet_mask) - (ml+mlc)*vL - vAlpha* vL*vL - lpr *vL - mdl*(1.- vW/(vW+epsilon))*vL;
 }
 
-tensor dvP(const tensor& vL,const tensor& vP,scalar T_t, scalar lpr,scalar par){
+tensor dvP(const tensor& vL,const tensor& vP,scalar T_t, scalar lpr,scalar par, scalar mpc){
     scalar mp=0.01 + 0.9725 * std::exp(-(T_t-278.0)/2.7035);//#death of pupae
-    return lpr*vL - mp*vP  - par*vP;
+    return lpr*vL - (mp+mpc)*vP  - par*vP;
 }
 
-scalar dA1(const tensor& vP,scalar A1, scalar par,scalar ovr1){
+scalar dA1(const tensor& vP,scalar A1, scalar par,scalar ovr1, scalar ma1c){
     scalar ef=0.83;//#emergence factor
     scalar ma=0.09;//#for T in [278,303]
-    return (par*ef*vP/2.0).sum() - ma*A1 - ovr1*A1;
+    return (par*ef*vP/2.0).sum() - (ma+ma1c)*A1 - ovr1*A1;
 }
 
-scalar dA2(scalar A1,scalar A2,scalar ovr1){
+scalar dA2(scalar A1,scalar A2,scalar ovr1, scalar ma2c){
     scalar ma=0.09;//#for T in [278,303]
-    return ovr1*A1 - ma*A2;
+    return ovr1*A1 - (ma+ma2c)*A2;
 }
 
 matrix dmO(scalar A1,scalar A2,const tensor& vW_t, const tensor&  vBS_d,scalar ovr1, scalar ovr2, const tensor& vW_l,const matrix& mBS_l){
@@ -137,14 +137,21 @@ tensor diff_eqs(const tensor& Y,scalar t,scalar h,Parameters& parameters){
     tensor vW_l=vW/BS_lh;
     matrix wet_mask=wetMask(vW_l,mBS_l);
     tensor vmf_t=parameters.mf(t)*parameters.vBS_mf*10.;//# cm -> mm
+    tensor mvc_t=parameters.mvc(t);
+    scalar mec=mvc_t(0);
+    scalar mlc=mvc_t(1);
+    scalar mpc=mvc_t(2);
+    scalar ma1c=mvc_t(3);
+    scalar ma2c=mvc_t(4);
+    scalar wc=mvc_t(5);
 
     tensor dY=tensor(Y.size());
-    dY(parameters.EGG)    = dmE(mE,vL,A1,A2,vW,BS_a,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l).reshaped(1,m*n);
-    dY(parameters.LARVAE) = dvL(mE,vL,vW,T_t,      BS_a,vBS_d,elr,lpr,vAlpha0,wet_mask);
-    dY(parameters.PUPAE)  = dvP(vL,vP,T_t,lpr,par);
-    dY(parameters.ADULT1) = dA1(vP,A1,par,ovr1);
-    dY(parameters.ADULT2) = dA2(A1,A2,ovr1);
-    dY(parameters.WATER) = dW(vW,vBS_h,vBS_ef,T_t,vBS_b*p_t+vmf_t,RH_t,h);
+    dY(parameters.EGG)    = dmE(mE,vL,A1,A2,vW,BS_a,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l,mec).reshaped(1,m*n);
+    dY(parameters.LARVAE) = dvL(mE,vL,vW,T_t,      BS_a,vBS_d,elr,lpr,vAlpha0,wet_mask,mlc);
+    dY(parameters.PUPAE)  = dvP(vL,vP,T_t,lpr,par,mpc);
+    dY(parameters.ADULT1) = dA1(vP,A1,par,ovr1,ma1c);
+    dY(parameters.ADULT2) = dA2(A1,A2,ovr1,ma2c);
+    dY(parameters.WATER) = dW(vW,vBS_h,vBS_ef,T_t,vBS_b*p_t+vmf_t,RH_t,h,wc);
     dY(parameters.OVIPOSITION) = dmO(A1,A2,vW,vBS_d,ovr1,ovr2,vW_l,mBS_l).reshaped(1,m*n);
 
     return dY;//   # For odeint

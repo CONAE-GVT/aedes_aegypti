@@ -51,6 +51,9 @@ class Model:
         W0=configuration.getArray('breeding_site','initial_water')
         O0=np.zeros((m*n))
         self.parameters.initial_condition=np.concatenate( (E0,L0,P0,initial_condition[-2:],W0,O0) )
+        fd=(configuration.getDate('simulation','fumigation_date')-self.start_date).days+0.5#fumigation day
+        vVce=configuration.getArray('simulation','vector_control_effectiveness')
+        self.parameters.mvc=lambda t: -np.log(1.-vVce)*1/0.6184*np.exp(-(3*(t-fd))**4)#0.8 is the fumigants' effectiveness and 1/0.6184 is to make the bump function of area equal 1
 
         WEATHER_DATA_FILENAME='data/public/'+self.parameters.location['name']+'.csv'
         self.parameters.weather=Weather(WEATHER_DATA_FILENAME,self.start_date,self.end_date)

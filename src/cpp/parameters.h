@@ -37,6 +37,7 @@ struct Parameters{
     Eigen::ArithmeticSequence<long int, long int> OVIPOSITION=Eigen::seq(0,0);
     Weather weather;
     std::function<scalar(scalar)> mf;
+    std::function<tensor(scalar)> mvc;
 
 };
 
