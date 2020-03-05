@@ -38,6 +38,7 @@ struct Parameters{
     Weather weather;
     std::function<scalar(scalar)> mf;
     std::function<tensor(scalar)> mvc;
+    std::function<scalar(scalar)> BSrvc;
 
 };
 

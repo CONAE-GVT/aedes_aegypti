@@ -144,6 +144,7 @@ tensor diff_eqs(const tensor& Y,scalar t,scalar h,Parameters& parameters){
     scalar ma1c=mvc_t(3);
     scalar ma2c=mvc_t(4);
     scalar wc=mvc_t(5);
+    BS_a=BS_a * (1-parameters.BSrvc(t));
 
     tensor dY=tensor(Y.size());
     dY(parameters.EGG)    = dmE(mE,vL,A1,A2,vW,BS_a,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l,mec).reshaped(1,m*n);

@@ -69,7 +69,8 @@ class Model
         scalar fd=Utils::getDaysFromCsv(WEATHER_DATA_FILENAME, this->start_date ,configuration.get("simulation","fumigation_date"))+0.5;//#fumigation day
         tensor vVce=configuration.getTensor("simulation","vector_control_effectiveness");
         this->parameters.mvc=[fd,vVce](scalar t) { return -(1.-vVce).log() *1/0.6184*std::exp(-std::pow(3*(t-fd),4) );};//#0.8 is the fumigants' effectiveness and 1/0.6184 is to make the bump function of area equal 1
-
+        float BSr=configuration.getScalar("simulation","breeding_site_reduction");
+        this->parameters.BSrvc=[fd,BSr](scalar t){ return BSr * 1/(std::exp(-5*(t-fd))+1);};//#sigmoid function for breeding site reduction(vector control strategy)
 
         this->parameters.mf=[](scalar t) { return (1.-std::min(int(t)%7,1))* (sin(2.*M_PI*t + 3.*M_PI/2.) +1.); };//<---- this is implemented different in python
     }

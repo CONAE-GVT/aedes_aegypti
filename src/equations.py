@@ -96,6 +96,7 @@ def diff_eqs(Y,t,h,parameters):
     elr,lpr,par,ovr1,ovr2=vR_D(T_t)
     BS_a,BS_lh,vBS_d,vBS_h,vBS_b,vBS_ef,vAlpha0,m,n,mBS_l=parameters.BS_a,parameters.BS_lh,parameters.vBS_d,parameters.vBS_h,parameters.vBS_b,parameters.vBS_ef,parameters.vAlpha0,parameters.m,parameters.n,parameters.mBS_l
     mec,mlc,mpc,ma1c,ma2c,wc=parameters.mvc(t)
+    BS_a=BS_a * (1-parameters.BSrvc(t))
     EGG,LARVAE,PUPAE,ADULT1,ADULT2,WATER,OVIPOSITION=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.ADULT2,parameters.WATER,parameters.OVIPOSITION
 
     vE,vL,vP,A1,A2,vW=Y[EGG].reshape((n,m)).transpose(),Y[LARVAE],Y[PUPAE],Y[ADULT1],Y[ADULT2],Y[WATER]
