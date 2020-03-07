@@ -614,6 +614,35 @@ def plotFittedResults():
     plotFittedOvitrap(worst_ovi['id'],worst_ovi['fun'])
     plotFittedOvitrap(151)
 
+
+def getAfterVectorControl(configuration,fumigation_date,vVce,stages):
+    configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(30)))
+    configuration.config_parser.set('simulation','fumigation_date',str(fumigation_date))
+    configuration.config_parser.set('simulation','vector_control_effectiveness',', '.join( map(str,vVce) ))
+    model=Model(configuration)
+    time_range,Y=model.solveEquations()
+    indexOf=lambda t: (np.abs(time_range-t)).argmin()
+    fd=(configuration.getDate('simulation','fumigation_date')-model.start_date).days#fumigation day
+    parameters=model.parameters
+    ADULT1,ADULT2=parameters.ADULT1,parameters.ADULT2
+    total=0
+    for stage in stages: total+=Y[indexOf(fd+1),stage].sum()
+    return total
+def getAfterVectorControlQuotient(configuration,fumigation_date,vVce,stages):
+    return getAfterVectorControl(configuration,fumigation_date,vVce,stages)/getAfterVectorControl(configuration,fumigation_date,[0,0,0,.0,.0,0],stages)
+
+def vectorControl():
+    configuration=Configuration('resources/1c.cfg')
+    parameters=Model(configuration).parameters#TODO:this is a bit obscure
+    EGG,LARVAE,PUPAE,ADULT1,ADULT2,WATER=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.ADULT2,parameters.WATER
+    fumigation_date=datetime.date(2020,2,12)
+    print(1-getAfterVectorControlQuotient(configuration,fumigation_date,[0.8,0,0,0,0,0],[EGG]))
+    print(1-getAfterVectorControlQuotient(configuration,fumigation_date,[0,0.8,0,0,0,0],[LARVAE]))
+    print(1-getAfterVectorControlQuotient(configuration,fumigation_date,[0,0,.8,0,0,0],[PUPAE]))
+    print(1-getAfterVectorControlQuotient(configuration,fumigation_date,[0,0,0,0.8,0.8,0],[ADULT1,ADULT2]))
+
+
+
 if(__name__ == '__main__'):
     if(len(sys.argv)>1 and sys.argv[1]=='spatial'):
         runSpatial()
@@ -633,6 +662,8 @@ if(__name__ == '__main__'):
         plotFittedResults()
     elif(len(sys.argv)>1 and sys.argv[1]=='plotFitConf'):
         utils.kmeansFittedConfiguration([ OVI_FIT%(sys.argv[2],ovitrap_id) for ovitrap_id in range(1,152)],clusters=3)
+    elif(len(sys.argv)>1 and sys.argv[1]=='vc'):
+        vectorControl()
     else:#the default is just a number indicating which test case to run, or none (test case 1 will will be default)
         if(len(sys.argv)<2):
             case=1
