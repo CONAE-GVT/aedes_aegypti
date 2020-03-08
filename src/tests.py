@@ -615,10 +615,11 @@ def plotFittedResults():
     plotFittedOvitrap(151)
 
 
-def getAfterVectorControl(configuration,fumigation_date,vVce,stages):
+def getAfterVectorControl(configuration,fumigation_date,vVce,BSr,stages,da):
     configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(30)))
     configuration.config_parser.set('simulation','fumigation_date',str(fumigation_date))
     configuration.config_parser.set('simulation','vector_control_effectiveness',', '.join( map(str,vVce) ))
+    configuration.config_parser.set('simulation','breeding_site_reduction',str(BSr))
     model=Model(configuration)
     time_range,Y=model.solveEquations()
     indexOf=lambda t: (np.abs(time_range-t)).argmin()
@@ -626,20 +627,38 @@ def getAfterVectorControl(configuration,fumigation_date,vVce,stages):
     parameters=model.parameters
     ADULT1,ADULT2=parameters.ADULT1,parameters.ADULT2
     total=0
-    for stage in stages: total+=Y[indexOf(fd+1),stage].sum()
+    for stage in stages: total+=Y[indexOf(fd+da),stage].sum()
     return total
-def getAfterVectorControlQuotient(configuration,fumigation_date,vVce,stages):
-    return getAfterVectorControl(configuration,fumigation_date,vVce,stages)/getAfterVectorControl(configuration,fumigation_date,[0,0,0,.0,.0,0],stages)
+def getAfterVectorControlQuotient(configuration,fumigation_date,vVce,BSr,stages,da=1):
+    return getAfterVectorControl(configuration,fumigation_date,vVce,BSr,stages,da)/getAfterVectorControl(configuration,fumigation_date,[0,0,0,.0,.0,0],0,stages,da)
 
 def vectorControl():
     configuration=Configuration('resources/1c.cfg')
     parameters=Model(configuration).parameters#TODO:this is a bit obscure
     EGG,LARVAE,PUPAE,ADULT1,ADULT2,WATER=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.ADULT2,parameters.WATER
     fumigation_date=datetime.date(2020,2,12)
-    print(1-getAfterVectorControlQuotient(configuration,fumigation_date,[0.8,0,0,0,0,0],[EGG]))
-    print(1-getAfterVectorControlQuotient(configuration,fumigation_date,[0,0.8,0,0,0,0],[LARVAE]))
-    print(1-getAfterVectorControlQuotient(configuration,fumigation_date,[0,0,.8,0,0,0],[PUPAE]))
-    print(1-getAfterVectorControlQuotient(configuration,fumigation_date,[0,0,0,0.8,0.8,0],[ADULT1,ADULT2]))
+    print('vector control for eggs,larvae,pupae and adults of 0.8')
+    print(1-getAfterVectorControlQuotient(configuration,fumigation_date,[0.8,0,0,0,0,0],0,[EGG]))
+    print(1-getAfterVectorControlQuotient(configuration,fumigation_date,[0,0.8,0,0,0,0],0,[LARVAE]))
+    print(1-getAfterVectorControlQuotient(configuration,fumigation_date,[0,0,.8,0,0,0],0,[PUPAE]))
+    print(1-getAfterVectorControlQuotient(configuration,fumigation_date,[0,0,0,0.8,0.8,0],0,[ADULT1,ADULT2]))
+    print('breeding site reduction for eggs,larvae,pupae and adults of 0.8')
+    print(1-getAfterVectorControlQuotient(configuration,fumigation_date,[0,0,0,0.0,0.0,0],0.8,[EGG]))
+    print(1-getAfterVectorControlQuotient(configuration,fumigation_date,[0,0,0,0.0,0.0,0],0.8,[LARVAE]))
+    print(1-getAfterVectorControlQuotient(configuration,fumigation_date,[0,0,0,0.0,0.0,0],0.8,[PUPAE]))
+    print(1-getAfterVectorControlQuotient(configuration,fumigation_date,[0,0,0,0.0,0.0,0],0.8,[ADULT1,ADULT2]))
+    print('breeding site reduction for eggs,larvae,pupae and adults of 0.8 after 20 days')
+    da=20#days after fumigation_date
+    print(1-getAfterVectorControlQuotient(configuration,fumigation_date,[0,0,0,0.0,0.0,0],0.8,[EGG],da))
+    print(1-getAfterVectorControlQuotient(configuration,fumigation_date,[0,0,0,0.0,0.0,0],0.8,[LARVAE],da))
+    print(1-getAfterVectorControlQuotient(configuration,fumigation_date,[0,0,0,0.0,0.0,0],0.8,[PUPAE],da))
+    print(1-getAfterVectorControlQuotient(configuration,fumigation_date,[0,0,0,0.0,0.0,0],0.8,[ADULT1,ADULT2],da))
+    print('breeding site reduction for eggs,larvae,pupae and adults of 0.3 and vector control of .5,~ 1-(1 - (.5) -(1-.5)*.3) =%s'%(1-(1 - (.5) -(1-.5)*.3)))
+    da=20#days after fumigation_date
+    print(1-getAfterVectorControlQuotient(configuration,fumigation_date,[.5,0,0,0.0,0.0,0],0.3,[EGG]))
+    print(1-getAfterVectorControlQuotient(configuration,fumigation_date,[0,.5,0,0.0,0.0,0],0.3,[LARVAE]))
+    print(1-getAfterVectorControlQuotient(configuration,fumigation_date,[0,0,.5,0.0,0.0,0],0.3,[PUPAE]))
+
 
 
 

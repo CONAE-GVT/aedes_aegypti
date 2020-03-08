@@ -67,10 +67,11 @@ class Model
         unsigned int days=Utils::getDaysFromCsv(WEATHER_DATA_FILENAME, this->start_date ,this->end_date );
         for(unsigned int i=0;i<days;i++) this->time_range.push_back(i);
         scalar fd=Utils::getDaysFromCsv(WEATHER_DATA_FILENAME, this->start_date ,configuration.get("simulation","fumigation_date"))+0.5;//#fumigation day
-        tensor vVce=configuration.getTensor("simulation","vector_control_effectiveness");
-        this->parameters.mvc=[fd,vVce](scalar t) { return -(1.-vVce).log() *1/0.6184*std::exp(-std::pow(3*(t-fd),4) );};//#0.8 is the fumigants' effectiveness and 1/0.6184 is to make the bump function of area equal 1
         float BSr=configuration.getScalar("simulation","breeding_site_reduction");
         this->parameters.BSrvc=[fd,BSr](scalar t){ return BSr * 1/(std::exp(-5*(t-fd))+1);};//#sigmoid function for breeding site reduction(vector control strategy)
+        tensor vVce=configuration.getTensor("simulation","vector_control_effectiveness");
+        tensor vas=(tensor(6)<< 1,1,1,0,0,0).finished();//#aquatic selector
+        this->parameters.mvc=[fd,vVce,vas,BSr](scalar t) { return -(1.-(vVce+(1-vVce)*vas*BSr) ).log() *1/0.6184*std::exp(-std::pow(3*(t-fd),4) );};//#0.8 is the fumigants' effectiveness and 1/0.6184 is to make the bump function of area equal 1
 
         this->parameters.mf=[](scalar t) { return (1.-std::min(int(t)%7,1))* (sin(2.*M_PI*t + 3.*M_PI/2.) +1.); };//<---- this is implemented different in python
     }
