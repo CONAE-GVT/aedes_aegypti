@@ -4,7 +4,7 @@ pip3 install matplotlib==2.1.1 scipy scikit_image folium moviepy similaritymeasu
 #cupy==7.1.1 optionals
 
 #clone the project
-git clone http://pluton/repositories/aedes_aegypti.git
+git clone http://pluton.hopto.org:8080/repositories/aedes_aegypti.git
 
 #**Installing pybind11**
 git clone https://github.com/pybind/pybind11.git
@@ -18,12 +18,12 @@ sudo cp eigen/Eigen /usr/include/  -r
 cd aedes_aegypti && g++ -std=c++17 -Wall -O3 -march=native -shared -fPIC -I/usr/include/python3.6m src/cpp/otero_precipitation_wrapper.cpp -o src/otero_precipitation_wrapper.so
 
 #download weather data
-wget  -r -l 1 -A .csv -np -nH -R index.html http://pluton/data/public
+wget  -r -l 1 -A .csv -np -nH -R index.html http://pluton.hopto.org:8080/data/public
 
 #TODO: add line  for the cron
 
 #add private folder
-unzip private.zip -d data/
+unzip ../private.zip -d data/
 
 #to test
 #python src/test 0;python src/test 1;python src/test 6;python src/test fit;python src/test plotFit;python src/test plotFitConf;
