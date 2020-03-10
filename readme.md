@@ -43,9 +43,9 @@ source:https://www.webmasterworld.com/apache/4711334.htm
 **To clone the project**
 >git clone exequiel@pluton.hopto.org:/home/exequiel/repositories/aedes_aegypti.git
 or
->git clone ssh://exequiel@pluton.hopto.org:8080/home/exequiel/repositories/aedes_aegypti.git
+>git clone ssh://exequiel@pluton.hopto.org:21/home/exequiel/repositories/aedes_aegypti.git
 or
->git clone http://pluton/repositories/aedes_aegypti.git
+>git clone http://pluton.hopto.org:8080/repositories/aedes_aegypti.git
 
 **To create a new branch**
 >git checkout -b development
