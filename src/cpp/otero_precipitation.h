@@ -66,7 +66,7 @@ class Model
         this->parameters.weather=Weather(WEATHER_DATA_FILENAME, this->start_date ,this->end_date );
         unsigned int days=Utils::getDaysFromCsv(WEATHER_DATA_FILENAME, this->start_date ,this->end_date );
         for(unsigned int i=0;i<days;i++) this->time_range.push_back(i);
-        scalar fd=Utils::getDaysFromCsv(WEATHER_DATA_FILENAME, this->start_date ,configuration.get("simulation","fumigation_date"))+0.5;//#fumigation day
+        scalar fd=Utils::getDaysFromCsv(WEATHER_DATA_FILENAME, this->start_date ,configuration.get("simulation","vector_control_date"))+0.5;//#vector control day
         float BSr=configuration.getScalar("simulation","breeding_site_reduction");
         this->parameters.BSrvc=[fd,BSr](scalar t){ return BSr * 1/(std::exp(-5*(t-fd))+1);};//#sigmoid function for breeding site reduction(vector control strategy)
         tensor vVce=configuration.getTensor("simulation","vector_control_effectiveness");

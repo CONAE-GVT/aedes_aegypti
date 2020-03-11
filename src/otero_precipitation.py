@@ -51,7 +51,7 @@ class Model:
         W0=configuration.getArray('breeding_site','initial_water')
         O0=np.zeros((m*n))
         self.parameters.initial_condition=np.concatenate( (E0,L0,P0,initial_condition[-2:],W0,O0) )
-        fd=(configuration.getDate('simulation','fumigation_date')-self.start_date).days+0.5#fumigation day
+        fd=(configuration.getDate('simulation','vector_control_date')-self.start_date).days+0.5#vector control day
         BSr=configuration.getFloat('simulation','breeding_site_reduction')
         self.parameters.BSrvc=lambda t: BSr * 1/(np.exp(-5*(t-fd))+1)#sigmoid function for breeding site reduction(vector control strategy)
         vVce=configuration.getArray('simulation','vector_control_effectiveness')
