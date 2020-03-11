@@ -458,6 +458,32 @@ def runCases(case):
         dataA+=utils.plot(model,subplots=[{'cd':''}])
         utils.showPlot(dataO,title='Oviposición',xaxis_title='Fecha',yaxis_title='Huevos')
         utils.showPlot(dataA,title='Hembra Adulta por criadero',xaxis_title='Fecha',yaxis_title='Adultos')
+    if(case==21):
+        for location in ['balnearia','marull','rio_cuarto','unquillo','san_francisco','cordoba']:
+            dataO,dataA=[],[]
+            for vector_control in [ [[0,0,0,0,0,0],0],[[0,0,0,.8,.8,0],0], [[0,0,0,0,0,0],.8],[[0,0,0,.8,.8,0],.8] ]:
+                h=10.
+                vVce,BSr=vector_control
+                configuration=Configuration('resources/1c.cfg')
+                configuration.config_parser.set('location','name',location+'.full')
+                configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(30)))
+                configuration.config_parser.set('breeding_site','height',str(h))
+                configuration.config_parser.set('breeding_site','amount','1')
+                configuration.config_parser.set('simulation','vector_control_effectiveness',', '.join( map(str,vVce) ))
+                configuration.config_parser.set('simulation','breeding_site_reduction',str(BSr))
+
+                model=Model(configuration)
+                time_range,Y=model.solveEquations()
+                fumigation_date=configuration.getDate('simulation','fumigation_date')
+                dataO+=utils.plot(model,subplots=[{'lwO':'vce: %s, BSr:%s'%(str(vVce[-3:-1]),BSr),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1))
+                dataA+=utils.plot(model,subplots=[{'A1+A2':'vce: %s, BSr:%s'%(str(vVce[-3:-1]),BSr),'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1))
+                print('h:%s Max E: %s'%(h,np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1))))
+                print(model.warnings)
+            dataO+=utils.plot(model,subplots=[{'cd':''}]) + [go.Scatter(x=[fumigation_date],y=[0],name='Vector Control Date',mode='markers')]
+            dataA+=utils.plot(model,subplots=[{'cd':''}]) + [go.Scatter(x=[fumigation_date],y=[0],name='Vector Control Date',mode='markers')]
+            location_label=location.replace('_',' ').title()
+            utils.showPlot(dataO,title='Oviposición: %s'%location_label, xaxis_title='Fecha',yaxis_title='Huevos')
+            utils.showPlot(dataA,title='Hembra Adulta por criadero: %s'%location_label, xaxis_title='Fecha',yaxis_title='Adultos')
 
 try:
     from otero_precipitation_wrapper import Model as _Model
