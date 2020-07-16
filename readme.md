@@ -172,3 +172,12 @@ error:
 Aparently when you import matplotlib, it changes the behaviour of std::stod (wtf!) , so in the pybind module, the configuration::getScalar returned vBS_lh=0 (instead 0.1), so m=0 (instead of 100) and that ended up messing the line mE0(0,Eigen::all)= initial_condition(0)*this->parameters.vBS_d; in otero_precipitation.h
 Solution: remove matplotlib
 Source: https://github.com/pybind/pybind11/issues/2042
+
+
+**atom-debugger**
+install https://atom.io/packages/dbg-gdb
+>g++ src/cpp/main.cpp -g
+-Right click on an executable in the treeview, select Debug this file, and click Save
+-for example put a breakpoint in check_that_malloc_is_allowed() in /usr/include/Eigen/src/Core/util/Memory.h 
+
+http://eigen.tuxfamily.org/index.php?title=FAQ#Where_in_my_program_are_temporary_objects_created.3F
