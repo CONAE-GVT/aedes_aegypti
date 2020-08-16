@@ -136,7 +136,10 @@ def extractDailyDataFromGDAS(lat,lon,a_date,folder,FIELDS,typeOfLevel,f):
 
 def extractHistoricData(lat,lon,start_date,end_date,out_filename):
     output=''
-    if(not os.path.isfile(out_filename)): output='Date,Minimum Temp (C),Mean Temperature (C),Maximum Temp (C),Rain (mm),Relative Humidity %,CloudCover,Mean Wind SpeedKm/h' + '\n'
+    if(not os.path.isfile(out_filename)):
+        output='Date,Minimum Temp (C),Mean Temperature (C),Maximum Temp (C),Rain (mm),Relative Humidity %,CloudCover,Mean Wind SpeedKm/h' + '\n'
+        first_date,last_date=getStartEndDates(DATA_FOLDER+'cordoba.csv')
+        start_date=min(start_date,first_date)#in case this is a new city, we start from the very beginning
     for a_date in daterange(start_date,end_date):
         FIELDS=['Minimum temperature','Maximum temperature','Relative humidity']
         #to validate that the +360 was ok: 1) gdal_translate a grib to a tif and open qgis with google map as background. 2) use https://www.latlong.net/Show-Latitude-Longitude.html 3)explore.py
