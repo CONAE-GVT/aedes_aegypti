@@ -474,7 +474,7 @@ def runCases(case):
             configuration.config_parser.set('breeding_site','amount','1')
             model=Model(configuration)
             time_range,Y=model.solveEquations()
-            location_label=location.replace('.full','').replace('_',' ').title() + ' (%s)'%line[-1]
+            location_label=location.replace('.full','').replace('_',' ').title() + ' (%s)'%line[-2] + ('*' if line[-1] else '')
             dataO+=utils.plot(model,subplots=[{'lwO':location_label,'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1))
             dataA+=utils.plot(model,subplots=[{'A1+A2':location_label,'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1))
             print('h:%s Max E: %s'%(h,np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1))))
