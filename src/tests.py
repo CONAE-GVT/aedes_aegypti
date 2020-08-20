@@ -15,6 +15,7 @@ import similaritymeasures as sm
 import plotly.graph_objs as go
 from plotly import tools
 import equation_fitter
+import unidecode
 
 def runSpatial():
     configuration=Configuration('resources/otero_precipitation.cfg')
@@ -464,7 +465,7 @@ def runCases(case):
         lines=[line.strip().split(',') for line in open('data/private/Registros de presencia-ausencia de Ae. aegypti (por bibliografía y muestreados).csv').readlines()[1:]]
         for line in lines:
             h=10.
-            location='%s'%line[3].lower().strip().replace(' ','_').replace('í','i')
+            location='%s'%unidecode.unidecode(line[3]).lower().strip().replace(' ','_')
             configuration=Configuration('resources/1c.cfg')
             configuration.config_parser.set('location','name',location)#+'.full'
             location=configuration.getString('location','name')

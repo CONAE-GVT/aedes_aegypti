@@ -457,7 +457,7 @@ def showPlot(data,title='',xaxis_title='',yaxis_title='',scene=dict()):
                     scene=scene,
                     font=dict(
                     family="Arial",
-                    size=45,
+                    #size=45,
                     color="#090909"
                     ),
                     margin=dict(l=160,b=220,r=160))
