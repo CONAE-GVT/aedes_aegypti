@@ -520,6 +520,46 @@ def runCases(case):
            data[key]+=utils.plot(model,subplots=[{'cd':''}])
            utils.showPlot(data[key],title=key,xaxis_title='Fecha',yaxis_title='')
 
+    if(case==23):
+        lwO_values=[]
+        A_values=[]
+        O_PLUS_STD=260.
+        A_MAX=35./15.
+        filenames=os.listdir('data/public/XY/')
+        for i,filename in enumerate(filenames):
+            if(not filename.startswith('XY') or 'full' not in filename): continue
+            h=10.
+            BS_a=1
+            #>sed -i 's/--/0.015/g' *.csv#sanitize files
+            print('%s (%s/%s)'%(filename,i,len(filenames)),end='\r')#
+            location='XY/'+filename.replace('.csv','')
+            configuration=Configuration('resources/1c.cfg')
+            configuration.config_parser.set('location','name',location)#+'.full'
+            location=configuration.getString('location','name')
+            configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(-1)))
+            configuration.config_parser.set('breeding_site','height',str(h))
+            configuration.config_parser.set('breeding_site','amount',str(BS_a))
+            model=Model(configuration)
+            BS_a,vBS_d,m,n,OVIPOSITION,ADULT1,ADULT2=model.parameters.BS_a,model.parameters.vBS_d,model.parameters.m,model.parameters.n,model.parameters.OVIPOSITION,model.parameters.ADULT1,model.parameters.ADULT2
+            time_range,Y=model.solveEquations()
+            indexOf=lambda t: (np.abs(time_range-t)).argmin()
+            lwO=np.array([ (Y[indexOf(t),OVIPOSITION]-Y[indexOf(t-7),OVIPOSITION]).reshape(m,n).sum(axis=0) for t in time_range])/(BS_a*vBS_d)#here index and day number are equal
+            lwO=lwO[:,0]#if multiple container w assume the first one is ovitrap and the rest are wild containers
+            A=(Y[:,ADULT1]+Y[:,ADULT2])/BS_a
+
+            trash,lat,lon=filename.replace('.full.csv','').split('_')
+            lwO_values.append([[lat,lon,lwO_d/O_PLUS_STD + 1e-4] for lwO_d in lwO ])#d in days#for some reason weght 0 is not allowed and produce an spasmodic result
+            A_values.append([[lat,lon,A_d/A_MAX + 1e-4] for A_d in A ])#d in days#for some reason weght 0 is not allowed and produce an spasmodic result
+            date_range=[str(model.start_date+datetime.timedelta(days=d)) for d in time_range]
+
+        #lwO heat map and point map
+        lwO_values=np.moveaxis(np.array(lwO_values),0,1).tolist()
+        utils.plotHeatMap(lwO_values,date_range)
+        #utils.plotPointMap(lwO_values,date_range)
+        #Adults map and point map
+        A_values=np.moveaxis(np.array(A_values),0,1).tolist()
+        utils.plotHeatMap(A_values,date_range)
+        #utils.plotPointMap(A_values,date_range)
 
 
 def exportCSV(data):
