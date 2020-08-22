@@ -485,7 +485,7 @@ def runCases(case):
         utils.showPlot(dataA,title='Hembra Adulta por criadero',xaxis_title='Fecha',yaxis_title='Adultos')
 
     if(case==22):#generalized 21
-        data={'lwO':[],'L':[],'P':[],'A1+A2':[],'W':[],'T':[],'pa':[],'RH':[]}
+        data={'lwO':[],'L':[],'P':[],'A1+A2':[],'W':[],'T':[],'pa':[],'RH':[],'clc':[],'LEx':[],'sP':[],'Lr0':[]}
         lines=[line.strip().split(',') for line in open('data/private/Registros de presencia-ausencia de Ae. aegypti (por bibliografía y muestreados).csv').readlines()[1:]]
         for line in lines:
             if(not line[-2]=='+' or line[-1]): continue

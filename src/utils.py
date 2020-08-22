@@ -353,8 +353,26 @@ def plot(model,subplots,plot_start_date=None,color=None):
 
         #Complete lifecycle
         if('clc' in subplot):
-            data.append(go.Scatter(x=date_range,y=[sum([1./model.R_D(stage,model.T(t)) for stage in [EGG,LARVAE,PUPAE,ADULT1,ADULT2]]) for  t in time_range],label='Complete life cicle(from being an egg to the second oviposition) in days'))
-        #Water in containers(in L)
+            data.append(go.Scatter(x=date_range,y=[sum(1./vR_D(T(t))) for  t in time_range],name=subplot['clc'] or 'Complete life cicle(from being an egg to the second oviposition) in days'))
+
+        if('sP' in subplot):
+            Y=RES
+            indexOf=lambda t: (np.abs(time_range-t)).argmin()
+            LEx =lambda t: 1/vR_D(T(t))[1]
+            sP=np.array([Y[indexOf(t),PUPAE]/Y[indexOf(t-LEx(t)),LARVAE] if Y[indexOf(t-LEx(t)),LARVAE]>1e-2 else np.zeros(len(Y[0,LARVAE]))  for t in time_range])/BS_a
+            data.append(go.Scatter(x=date_range,y=applyFs(sP,subplot), name=subplot['sP'] or 'Surviving pupaes'))
+
+        if('Lr0' in subplot):
+            Y=RES
+            indexOf=lambda t: (np.abs(time_range-t)).argmin()
+            clc =lambda t: sum(1./vR_D(T(t)))
+            Lr0=np.array([Y[indexOf(t),LARVAE]/Y[indexOf(t-clc(t)),LARVAE] if Y[indexOf(t-clc(t)),LARVAE]>1e-2 else np.zeros(len(Y[0,LARVAE]))  for t in time_range])/BS_a
+            data.append(go.Scatter(x=date_range,y=applyFs(Lr0,subplot), name=subplot['Lr0'] or 'L r0(L(t)/L(t-clc))'))
+
+        if('LEx' in subplot):
+            LEx =lambda t: 1/vR_D(T(t))[1]
+            data.append(go.Scatter(x=date_range,y=[LEx(t) for  t in time_range],name=subplot['LEx'] or '( 1/lpr)'))
+        #Water in containers(in cm.)
         if ('W' in subplot):
             mW=RES[:,WATER]
             for y in mW.transpose():#applyFs(mW,subplot).transpose():
