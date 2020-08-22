@@ -327,11 +327,11 @@ def plot(model,subplots,plot_start_date=None,color=None):
                 label='E in [%.1f,%.1f)cm'%(bs_i*BS_lh,(bs_i+1)*BS_lh)
                 data.append(go.Bar(x=date_range,y=y,name=label,text=label))
                 #data.append(go.Scatter(x=date_range,y=y, name='E in [%.1f,%.1f)cm'%(bs_i*BS_lh,(bs_i+1)*BS_lh)))
-        if ('E' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,EGG],subplot), name='Eggs'))
-        if ('L' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,LARVAE],subplot), name='Larvae'))
-        if ('P' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,PUPAE],subplot), name='Pupae'))
-        if ('A1' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,ADULT1],subplot), name='Adults1'))
-        if ('A2' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,ADULT2],subplot), name='Adults2'))
+        if ('E' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,EGG],subplot), name=subplot['E'] or 'Eggs'))
+        if ('L' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,LARVAE],subplot), name=subplot['L'] or 'Larvae'))
+        if ('P' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,PUPAE],subplot), name=subplot['P'] or 'Pupae'))
+        if ('A1' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,ADULT1],subplot), name=subplot['A1'] or 'Adults1'))
+        if ('A2' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,ADULT2],subplot), name=subplot['A2'] or 'Adults2'))
         if ('A1+A2' in subplot): data.append(go.Scatter(x=date_range,y=applyFs(RES[:,ADULT2]+RES[:,ADULT1],subplot), name=subplot['A1+A2'] or 'Adults',line = dict(color= (color)) ))
 
         if('lwO' in subplot):
@@ -362,21 +362,21 @@ def plot(model,subplots,plot_start_date=None,color=None):
 
         #Temperature in K
         if ('T' in subplot):
-            data.append(go.Scatter(x=date_range,y=applyFs(np.array([T(t)- 273.15 for t in time_range]),subplot),name='Temperature in C'))
+            data.append(go.Scatter(x=date_range,y=applyFs(np.array([T(t)- 273.15 for t in time_range]),subplot),name=subplot['T'] or 'Temperature in C'))
 
         #precipitations rate(in mm./day)
         if ('p' in subplot):
-            data.append(go.Scatter(x=date_range,y=applyFs(np.array([p(t+0.5) for t in time_range]),subplot), name='p(t+1/2) in mm./day'))
+            data.append(go.Scatter(x=date_range,y=applyFs(np.array([p(t+0.5) for t in time_range]),subplot), name=subplot['p'] or 'p(t+1/2) in mm./day'))
 
 
         #precipitations accumulated(in mm.)
         if ('pa' in subplot):
-            precipitations = getPrecipitationsFromCsv('data/public/'+model.parameters.location['name']+'.csv',date_range[0].date(),date_range[-1].date())
-            data.append(go.Bar(x=date_range,y=precipitations,name='Accumulated precipitations in mm.'))
+            precipitations = getPrecipitationsFromCsv('data/public/'+model.parameters.location['name']+'.csv',date_range[0].date(),date_range[-1].date()+datetime.timedelta(1))
+            data.append(go.Bar(x=date_range,y=precipitations,name=subplot['pa'] or 'Accumulated precipitations in mm.'))
 
         #relative Humidity
         if ('RH' in subplot):
-            data.append(go.Scatter(x=date_range,y=applyFs(np.array([RH(t) for t in time_range]),subplot), label='RH(t) in %'))
+            data.append(go.Scatter(x=date_range,y=applyFs(np.array([RH(t) for t in time_range]),subplot), name=subplot['RH'] or 'RH(t) in %'))
 
         if('O' in subplot):
             for ovitrap_id in subplot['O']:
@@ -461,10 +461,10 @@ def showPlot(data,title='',xaxis_title='',yaxis_title='',scene=dict()):
                     color="#090909"
                     ),
                     margin=dict(l=160,b=220,r=160))
-    for scatter in data:
-        scatter['marker']=marker=dict(size=12, line=dict(width=2))
+    # for scatter in data:
+    #     scatter['marker']=dict(size=12, line=dict(width=2))
 
-    ply.plot(go.Figure(data=data,layout=layout), filename=tempfile.NamedTemporaryFile(prefix='plot_').name)
+    ply.plot(go.Figure(data=data,layout=layout), filename=tempfile.NamedTemporaryFile(prefix='plot_').name,config={'showLink': True,'plotlyServerURL':'https://chart-studio.plotly.com'})
 
 
 #plot maps

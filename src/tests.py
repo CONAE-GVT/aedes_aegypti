@@ -484,6 +484,58 @@ def runCases(case):
         utils.showPlot(dataO,title='Oviposición',xaxis_title='Fecha',yaxis_title='Huevos')
         utils.showPlot(dataA,title='Hembra Adulta por criadero',xaxis_title='Fecha',yaxis_title='Adultos')
 
+    if(case==22):#generalized 21
+        data={'lwO':[],'L':[],'P':[],'A1+A2':[],'W':[],'T':[],'pa':[],'RH':[]}
+        lines=[line.strip().split(',') for line in open('data/private/Registros de presencia-ausencia de Ae. aegypti (por bibliografía y muestreados).csv').readlines()[1:]]
+        for line in lines:
+            if(not line[-2]=='+' or line[-1]): continue
+            h=10.
+            location='%s'%unidecode.unidecode(line[3]).lower().strip().replace(' ','_')
+            configuration=Configuration('resources/1c.cfg')
+            configuration.config_parser.set('location','name',location)#+'.full'
+            location=configuration.getString('location','name')
+            configuration.config_parser.set('simulation','end_date',str(datetime.date.today()+datetime.timedelta(-1)))
+            configuration.config_parser.set('breeding_site','height',str(h))
+            configuration.config_parser.set('breeding_site','amount','1')
+            model=Model(configuration)
+            time_range,Y=model.solveEquations()
+            location_label=location.replace('.full','').replace('_',' ').title() + ' (%s)'%line[-2] + ('*' if line[-1] else '')
+            for key in data:
+                data[key]+=utils.plot(model,subplots=[{key:location_label,'f':[utils.safeAdd]}],plot_start_date=datetime.date(2017,10,1))
+
+            print('h:%s Max E: %s'%(h,np.max(np.sum(model.Y[:,model.parameters.EGG],axis=1))))
+            print(model.warnings)
+
+        #add mean curves
+        for key in data:
+            y=[]
+            for serie in data[key]: y+=[serie['y']]
+            data[key]+=[go.Scatter(x=data[key][0]['x'],y=np.mean(y,axis=0), name=key+' mean' )]
+            data[key]+=[go.Scatter(x=data[key][0]['x'],y=np.mean(y,axis=0)+np.std(y,axis=0), name=key+' mean + std' )]
+            data[key]+=[go.Scatter(x=data[key][0]['x'],y=np.mean(y,axis=0)-np.std(y,axis=0), name=key+' mean - std' )]
+
+        exportCSV(data)
+
+        for key in data:
+           data[key]+=utils.plot(model,subplots=[{'cd':''}])
+           utils.showPlot(data[key],title=key,xaxis_title='Fecha',yaxis_title='')
+
+
+
+def exportCSV(data):
+    for key in data:
+        #header
+        csv='Date,'
+        for serie in data[key]: csv+=serie['name']+','
+        csv+='\n'
+        #body
+        y=[ [str(datetime.date()) for datetime in data[key][0]['x']] ]
+        for serie in data[key]: y+=[serie['y']]
+        y=np.array(y).transpose()
+        for i in range(len(y)): csv+=','.join(y[i,:]) + '\n'
+        #write csv
+        open('out/'+key+'.csv','w').write(csv)
+
 try:
     from otero_precipitation_wrapper import Model as _Model
 except ImportError:
