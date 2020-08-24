@@ -555,10 +555,12 @@ def runCases(case):
         #lwO heat map and point map
         lwO_values=np.moveaxis(np.array(lwO_values),0,1).tolist()
         utils.plotHeatMap(lwO_values,date_range)
+        utils.plotAnimated3D(lwO_values,date_range)
         #utils.plotPointMap(lwO_values,date_range)
         #Adults map and point map
         A_values=np.moveaxis(np.array(A_values),0,1).tolist()
         utils.plotHeatMap(A_values,date_range)
+        utils.plotAnimated3D(A_values,date_range)
         #utils.plotPointMap(A_values,date_range)
 
 

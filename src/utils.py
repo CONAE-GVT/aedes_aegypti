@@ -544,6 +544,38 @@ def plotPointMap(values,date_range):
     base_map.save(filename)
     webbrowser.open(filename)
 
+def getMatrix(lats,lons,cities):
+    matrix=np.zeros((len(lats),len(lons)))
+    for city in cities:
+        lati=np.where(lats==city[0])[0][0]
+        loni=np.where(lons==city[1])[0][0]
+        matrix[lati,loni]=city[2]
+    return matrix
+
+#https://plotly.com/python/animations/ (Simple Play Button)
+def plotAnimated3D(data,date_range):
+    data=np.array(data)
+    lats=np.unique(data[0,:,0])
+    lons=np.unique(data[0,:,1])
+    frames=[]
+    for i,cities in enumerate(data):
+        frames+=[ go.Frame(data=[go.Surface(z=getMatrix(lats,lons,cities),x=lats,y=lons)],layout=go.Layout(title=date_range[i],scene=dict(zaxis=dict(range=[0,1],autorange=False)) )) ]
+
+    fig = go.Figure(
+        data=frames[0]['data'],
+        layout=go.Layout(
+            updatemenus=[dict(
+                type="buttons",
+                buttons=[dict(label="Play",
+                              method="animate",
+                              args=[None])])],
+                              ),
+        frames=frames
+    )
+
+
+    ply.plot(fig, filename=tempfile.NamedTemporaryFile(prefix='plot_').name,config={'showLink': True,'plotlyServerURL':'https://chart-studio.plotly.com'})
+
 ###############################################################Animation################################################################
 from PIL import ImageFont, ImageDraw,Image
 from moviepy.video.io.bindings import PIL_to_npimage
