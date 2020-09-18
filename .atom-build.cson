@@ -1,7 +1,8 @@
 {
-    "cmd": "pdflatex",
+    "cmd": "xelatex",
     "args":["-output-directory={FILE_ACTIVE_PATH}/.tmp","{FILE_ACTIVE}"],
     "sh": false,
     "cwd":"{FILE_ACTIVE_PATH}",
-    "keymap":"ctrl-b"
+    "keymap":"ctrl-b",
+    "comment":"http://www.bibtex.org/Using/; for the first time to build bbl, >latex main.tex ; bibtex main.aux ; latex main.tex; latex main.tex;   "
 }
