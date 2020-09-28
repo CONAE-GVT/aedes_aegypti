@@ -25,6 +25,7 @@ class Model
         this->parameters.BS_a=configuration.getScalar("breeding_site","amount");
         this->parameters.BS_lh=configuration.getScalar("breeding_site","level_height");//#in cm
         this->parameters.vBS_h=configuration.getTensor("breeding_site","height");//#in cm
+        this->parameters.vBS_r=configuration.getTensor("breeding_site","radius");//#in cm
         this->parameters.vBS_s=configuration.getTensor("breeding_site","surface");//#in cm^2
         this->parameters.vBS_d=configuration.getTensor("breeding_site","distribution");//#distribution of BS. Sum must be equals to 1
         this->parameters.vBS_mf=configuration.getTensor("breeding_site","manually_filled");//#in cm

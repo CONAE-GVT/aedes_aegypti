@@ -12,6 +12,7 @@ struct Parameters{
     tensor vBS_d;
     tensor vBS_s;
     tensor vBS_h;
+    tensor vBS_r;
     tensor vBS_W0;
     tensor vBS_mf;
     tensor vBS_b;

@@ -16,11 +16,11 @@ def dW(vW,vBS_h,vBS_ef,T_t,p_t,RH_t,h):#in cm/day
     dW_t=QG_t- vBS_ef*QR_t
     return np.minimum(np.maximum(dW_t,-vW/h),(vBS_h-vW)/h)
 
-def a0(W):
-    return 70.0* W
+def a0(W,vBS_r):
+    return 70.0* W * math.pi*vBS_r**2 * 1e-3
 
-def vGamma(vL,vBS_a,vW):
-    return np.array([gamma(vL[i],vBS_a[i],vW[i]) for i in range(0,len(vL))])
+def vGamma(vL,vBS_a,vW,vBS_r):
+    return np.array([gamma(vL[i],vBS_a[i],vW[i],vBS_r[i]) for i in range(0,len(vL))])
 
 #</precipitation related functionality v>
 
@@ -30,19 +30,19 @@ def vR_D(T_t):#day^-1
     return vR_D_298K * (T_t/298.0) * np.exp( (vDeltaH_A/R)* ((1.0/298.0)- (1.0/T_t)) ) / ( 1.0+ np.exp( (vDeltaH_H/R)* ((1.0/vT_1_2H)-(1.0/T_t)) ) )
 
 
-def gamma(L,BS,W):
+def gamma(L,BS,W,vBS_r):
     epsilon=1e-4
     if(BS==0 or W <epsilon):#W *1000./BS_s <0.1
         return 1.0#no water total inhibition#1960 Aedes aegypti (L.), The Yellow Fever Mosquito(Page 165)
-    if(L/BS<=a0(W)-epsilon):
+    if(L/BS<=a0(W,vBS_r)-epsilon):
         return 0
-    elif(a0(W)-epsilon < L/BS <a0(W)+epsilon):
+    elif(a0(W,vBS_r)-epsilon < L/BS <a0(W,vBS_r)+epsilon):
         #a (a0-e) + b=0 => b=-a (a0 -e)
         #a (a0 + e) + b=0.63 => a(a0+e) - a(a0-e) = 2 a e = 0.63 =>a=0.63/(2 e)
         a=0.63/(2.0*epsilon)
-        b=-a*(a0(W)-epsilon)
+        b=-a*(a0(W,vBS_r)-epsilon)
         return a * (L/BS) + b
-    elif(L/BS>=a0(W)+epsilon):
+    elif(L/BS>=a0(W,vBS_r)+epsilon):
         return 0.63
 
 
@@ -55,18 +55,18 @@ def ovsp(vW,vBS_d,vW_l,mBS_l):#OViposition Site Preference
 def wetMask(vW_l,mBS_l):
     return np.where(mBS_l<=vW_l,1,0)
 
-def dmE(mE,vL,A1,A2,vW_t,BS_a,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l):
+def dmE(mE,vL,A1,A2,vW_t,vBS_r,BS_a,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l):
     egn=63.0
     me=0.01#mortality of the egg, for T in [278,303]
     ovsp_t=ovsp(vW_t,vBS_d,vW_l,mBS_l)
-    return egn*( ovr1 *A1  + ovr2* A2)*ovsp_t - me * mE - elr* (1-vGamma(vL,BS_a*vBS_d,vW_t)) * mE*wet_mask
+    return egn*( ovr1 *A1  + ovr2* A2)*ovsp_t - me * mE - elr* (1-vGamma(vL,BS_a*vBS_d,vW_t,vBS_r)) * mE*wet_mask
 
-def dvL(mE,vL,vW,T_t,BS_a,vBS_d,elr,lpr,vAlpha0,wet_mask):
+def dvL(mE,vL,vW,vBS_r,T_t,BS_a,vBS_d,elr,lpr,vAlpha0,wet_mask):
     ml=0.01 + 0.9725 * math.exp(-(T_t-278.0)/2.7035)#mortality of the larvae, for T in [278,303]
     epsilon=1e-4
     mdl=2.*(1.- vW/(vW+epsilon))#mortality of dry larvae.TODO:Unjustified!
     vAlpha=vAlpha0/(BS_a*vBS_d)
-    return elr* (1-vGamma(vL,BS_a*vBS_d,vW)) * np.sum(mE*wet_mask,axis=0) - ml*vL - mdl*vL - vAlpha* vL*vL - lpr *vL
+    return elr* (1-vGamma(vL,BS_a*vBS_d,vW,vBS_r)) * np.sum(mE*wet_mask,axis=0) - ml*vL - mdl*vL - vAlpha* vL*vL - lpr *vL
 
 def dvP(vL,vP,T_t,lpr,par):
     mp=0.01 + 0.9725 * math.exp(-(T_t-278.0)/2.7035)#death of pupae
@@ -94,7 +94,7 @@ def diff_eqs(Y,t,h,parameters):
     p_t=parameters.weather.p(t)
     RH_t=parameters.weather.RH(t)
     elr,lpr,par,ovr1,ovr2=vR_D(T_t)
-    BS_a,BS_lh,vBS_d,vBS_h,vBS_b,vBS_ef,vAlpha0,m,n,mBS_l=parameters.BS_a,parameters.BS_lh,parameters.vBS_d,parameters.vBS_h,parameters.vBS_b,parameters.vBS_ef,parameters.vAlpha0,parameters.m,parameters.n,parameters.mBS_l
+    BS_a,BS_lh,vBS_d,vBS_h,vBS_r,vBS_b,vBS_ef,vAlpha0,m,n,mBS_l=parameters.BS_a,parameters.BS_lh,parameters.vBS_d,parameters.vBS_h,parameters.vBS_r,parameters.vBS_b,parameters.vBS_ef,parameters.vAlpha0,parameters.m,parameters.n,parameters.mBS_l
     EGG,LARVAE,PUPAE,ADULT1,ADULT2,WATER,OVIPOSITION=parameters.EGG,parameters.LARVAE,parameters.PUPAE,parameters.ADULT1,parameters.ADULT2,parameters.WATER,parameters.OVIPOSITION
 
     vE,vL,vP,A1,A2,vW=Y[EGG].reshape((n,m)).transpose(),Y[LARVAE],Y[PUPAE],Y[ADULT1],Y[ADULT2],Y[WATER]
@@ -103,8 +103,8 @@ def diff_eqs(Y,t,h,parameters):
     vmf_t=parameters.mf(t)*parameters.vBS_mf*10.# cm -> mm
 
     dY=np.empty(Y.shape)
-    dY[EGG]    = dmE(vE,vL,A1,A2,vW,BS_a,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l).transpose().reshape((1,m*n))
-    dY[LARVAE] = dvL(vE,vL,vW,T_t,BS_a,vBS_d,elr,lpr,vAlpha0,wet_mask)
+    dY[EGG]    = dmE(vE,vL,A1,A2,vW,vBS_r,BS_a,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l).transpose().reshape((1,m*n))
+    dY[LARVAE] = dvL(vE,vL,vW,vBS_r,T_t,BS_a,vBS_d,elr,lpr,vAlpha0,wet_mask)
     dY[PUPAE]  = dvP(vL,vP,T_t,lpr,par)
     dY[ADULT1] = dA1(vP,A1,par,ovr1)
     dY[ADULT2] = dA2(A1,A2,ovr1)

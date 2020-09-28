@@ -22,14 +22,14 @@ tensor dW(tensor& vW, tensor& vBS_h, tensor& vBS_ef, scalar T_t, tensor p_t, sca
     return Utils::minimum(Utils::maximum(dW_t,-vW/h),(vBS_h-vW)/h);
 }
 
-scalar a0(scalar W){
-    return 70.0* W;
+scalar a0(scalar W,scalar BS_r){
+    return 70.0* W * M_PI*std::pow(BS_r,2) * 1e-3;//cm3 -> litres
 }
 
-scalar gamma(scalar L, scalar BS, scalar W);
-tensor vGamma(const tensor& vL, tensor vBS_a, const tensor& vW){
+scalar gamma(scalar L, scalar BS, scalar W,scalar BS_r);
+tensor vGamma(const tensor& vL, tensor vBS_a, const tensor& vW, const tensor& vBS_r){
     tensor vGamma_t=tensor(vW.size());
-    for(unsigned int i=0;i<vL.size();i++) vGamma_t[i]=gamma(vL[i],vBS_a[i],vW[i]);
+    for(unsigned int i=0;i<vL.size();i++) vGamma_t[i]=gamma(vL[i],vBS_a[i],vW[i],vBS_r[i]);
     return vGamma_t;
 }
 //</precipitation related functionality v>
@@ -39,17 +39,17 @@ tensor vR_D(scalar T_t){//#day^-1
     return vR_D_298K * (T_t/298.0) * Eigen::exp( (vDeltaH_A/R)* ((1.0/298.0)- (1.0/T_t)) ) / ( 1.0+ Eigen::exp( (vDeltaH_H/R)* ((1.0/vT_1_2H)-(1.0/T_t)) ) );
 }
 
-scalar gamma(scalar L, scalar BS, scalar W){
+scalar gamma(scalar L, scalar BS, scalar W,scalar BS_r){
     scalar epsilon=1e-4;
     if(BS==0 || W <epsilon)//#W *1000./BS_s <0.1
         return 1.0;//#no water total inhibition#1960 Aedes aegypti (L.), The Yellow Fever Mosquito(Page 165)
-    if(L/BS<=a0(W)-epsilon)
+    if(L/BS<=a0(W,BS_r)-epsilon)
         return  0;
-    else if(a0(W)-epsilon < L/BS && L/BS<a0(W)+epsilon){
+    else if(a0(W,BS_r)-epsilon < L/BS && L/BS<a0(W,BS_r)+epsilon){
         //#a (a0-e) + b=0 => b=-a (a0 -e)
         //#a (a0 + e) + b=0.63 => a(a0+e) - a(a0-e) = 2 a e = 0.63 =>a=0.63/(2 e)
         scalar a=0.63/(2.0*epsilon);
-        scalar b=-a*(a0(W)-epsilon);
+        scalar b=-a*(a0(W,BS_r)-epsilon);
         return a * (L/BS) + b;
     }
     else// if(L/BS>=a0(W)+epsilon)//commented out to avoid warning(should have no effect)
@@ -67,19 +67,19 @@ matrix wetMask(const tensor& vW_l, const matrix& mBS_l){
     return (mBS_l<=vW_l.replicate(mBS_l.rows(),1)).cast<scalar>();//this cast seems obscure.https://stackoverflow.com/questions/50009258/how-to-do-element-wise-comparison-with-eigen
 }
 
-matrix dmE(const matrix& mE,const tensor& vL,scalar A1,scalar A2,const tensor& vW_t, scalar BS_a,const tensor&  vBS_d,scalar elr,scalar ovr1, scalar ovr2,const matrix& wet_mask,const tensor& vW_l,const matrix& mBS_l){
+matrix dmE(const matrix& mE,const tensor& vL,scalar A1,scalar A2,const tensor& vW_t,const tensor& vBS_r, scalar BS_a,const tensor&  vBS_d,scalar elr,scalar ovr1, scalar ovr2,const matrix& wet_mask,const tensor& vW_l,const matrix& mBS_l){
     scalar egn=63.0;
     scalar me=0.01;//#mortality of the egg, for T in [278,303]
     matrix ovsp_t=ovsp(vW_t,vBS_d,vW_l,mBS_l);
-    return egn  *( ovr1 *A1  + ovr2* A2)*ovsp_t - me * mE - elr*(1.-vGamma(vL,BS_a*vBS_d,vW_t)).replicate(mE.rows(),1)* mE*wet_mask;
+    return egn  *( ovr1 *A1  + ovr2* A2)*ovsp_t - me * mE - elr*(1.-vGamma(vL,BS_a*vBS_d,vW_t,vBS_r)).replicate(mE.rows(),1)* mE*wet_mask;
 }
 
-tensor dvL(const matrix& mE,const tensor& vL,const tensor& vW,scalar T_t,scalar BS_a,const tensor& vBS_d,scalar elr,scalar lpr,const tensor& vAlpha0,const matrix& wet_mask){
+tensor dvL(const matrix& mE,const tensor& vL,const tensor& vW,const tensor& vBS_r,scalar T_t,scalar BS_a,const tensor& vBS_d,scalar elr,scalar lpr,const tensor& vAlpha0,const matrix& wet_mask){
     scalar ml=0.01 + 0.9725 * std::exp(-(T_t-278.0)/2.7035);//#mortality of the larvae, for T in [278,303]
     scalar mdl=2.;//#mortality of dry larvae.TODO:Unjustified!
     tensor vAlpha=vAlpha0/(BS_a*vBS_d);
     scalar epsilon=1e-4;
-    return elr* (1.-vGamma(vL,BS_a*vBS_d,vW)) * Utils::sumAxis0(mE*wet_mask) - ml*vL - vAlpha* vL*vL - lpr *vL - mdl*(1.- vW/(vW+epsilon))*vL;
+    return elr* (1.-vGamma(vL,BS_a*vBS_d,vW,vBS_r)) * Utils::sumAxis0(mE*wet_mask) - ml*vL - vAlpha* vL*vL - lpr *vL - mdl*(1.- vW/(vW+epsilon))*vL;
 }
 
 tensor dvP(const tensor& vL,const tensor& vP,scalar T_t, scalar lpr,scalar par){
@@ -119,6 +119,7 @@ tensor diff_eqs(const tensor& Y,scalar t,scalar h,Parameters& parameters){
 
     scalar BS_a=parameters.BS_a;
     tensor vBS_h=parameters.vBS_h;
+    tensor vBS_r=parameters.vBS_r;
     scalar BS_lh=parameters.BS_lh;
     tensor vBS_d=parameters.vBS_d;
     tensor vBS_b=parameters.vBS_b;
@@ -139,8 +140,8 @@ tensor diff_eqs(const tensor& Y,scalar t,scalar h,Parameters& parameters){
     tensor vmf_t=parameters.mf(t)*parameters.vBS_mf*10.;//# cm -> mm
 
     tensor dY=tensor(Y.size());
-    dY(parameters.EGG)    = dmE(mE,vL,A1,A2,vW,BS_a,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l).reshaped(1,m*n);
-    dY(parameters.LARVAE) = dvL(mE,vL,vW,T_t,      BS_a,vBS_d,elr,lpr,vAlpha0,wet_mask);
+    dY(parameters.EGG)    = dmE(mE,vL,A1,A2,vW,vBS_r,BS_a,vBS_d,elr,ovr1,ovr2,wet_mask,vW_l,mBS_l).reshaped(1,m*n);
+    dY(parameters.LARVAE) = dvL(mE,vL,vW,vBS_r,T_t,      BS_a,vBS_d,elr,lpr,vAlpha0,wet_mask);
     dY(parameters.PUPAE)  = dvP(vL,vP,T_t,lpr,par);
     dY(parameters.ADULT1) = dA1(vP,A1,par,ovr1);
     dY(parameters.ADULT2) = dA2(A1,A2,ovr1);

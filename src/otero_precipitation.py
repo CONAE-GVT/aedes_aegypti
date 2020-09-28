@@ -18,6 +18,7 @@ class Model:
         self.parameters.BS_a=configuration.getFloat('breeding_site','amount')
         self.parameters.BS_lh=configuration.getFloat('breeding_site','level_height')#in cm
         self.parameters.vBS_h=configuration.getArray('breeding_site','height')#in cm
+        self.parameters.vBS_r=configuration.getArray('breeding_site','radius')#in cm
         self.parameters.vBS_s=configuration.getArray('breeding_site','surface')#in cm^2
         self.parameters.vBS_d=configuration.getArray('breeding_site','distribution')#distribution of BS. Sum must be equals to 1
         self.parameters.vBS_mf=configuration.getArray('breeding_site','manually_filled')#in cm
