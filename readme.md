@@ -104,7 +104,7 @@ or
 >sudo cp eigen/Eigen /usr/include/  -r
 
 **c++ binding**
->g++ -std=c++17 -Wall -O3 -march=native -shared -fPIC -I/usr/include/python3.6m src/cpp/otero_precipitation_wrapper.cpp -o src/otero_precipitation_wrapper.so
+>g++ -std=c++17 -Wall -O3 -march=native -shared -fPIC -I/usr/include/python3.8 src/cpp/otero_precipitation_wrapper.cpp -o src/otero_precipitation_wrapper.so
 
 **c++ profiling**
 >g++ -std=c++17 -O3 -march=native src/cpp/main.cpp; sudo perf record -g ./a.out;sudo perf report
@@ -178,6 +178,6 @@ Source: https://github.com/pybind/pybind11/issues/2042
 install https://atom.io/packages/dbg-gdb
 >g++ src/cpp/main.cpp -g
 -Right click on an executable in the treeview, select Debug this file, and click Save
--for example put a breakpoint in check_that_malloc_is_allowed() in /usr/include/Eigen/src/Core/util/Memory.h 
+-for example put a breakpoint in check_that_malloc_is_allowed() in /usr/include/Eigen/src/Core/util/Memory.h
 
 http://eigen.tuxfamily.org/index.php?title=FAQ#Where_in_my_program_are_temporary_objects_created.3F

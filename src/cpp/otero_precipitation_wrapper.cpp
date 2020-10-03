@@ -1,4 +1,4 @@
-//g++ -std=c++17 -Wall -O3 -march=native -shared -fPIC -I/usr/include/python3.6m src/cpp/otero_precipitation_wrapper.cpp -o src/otero_precipitation_wrapper.so
+//g++ -std=c++17 -Wall -O3 -march=native -shared -fPIC -I/usr/include/python3.8 src/cpp/otero_precipitation_wrapper.cpp -o src/otero_precipitation_wrapper.so
 #include "otero_precipitation.h"
 #include "configuration.h"
 //order is important! if I put the pybind includes before mine, the result contains nans or infs.(The problem seems to be just with the eigen import)

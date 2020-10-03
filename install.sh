@@ -15,7 +15,7 @@ git clone https://gitlab.com/libeigen/eigen.git
 sudo cp eigen/Eigen /usr/include/  -r
 
 #**c++ binding**
-cd aedes_aegypti && g++ -std=c++17 -Wall -O3 -march=native -shared -fPIC -I/usr/include/python3.6m src/cpp/otero_precipitation_wrapper.cpp -o src/otero_precipitation_wrapper.so
+cd aedes_aegypti && g++ -std=c++17 -Wall -O3 -march=native -shared -fPIC -I/usr/include/python3.8 src/cpp/otero_precipitation_wrapper.cpp -o src/otero_precipitation_wrapper.so
 
 #download weather data
 wget  -r -l 1 -A .csv -np -nH -R index.html http://pluton.hopto.org:8080/data/public

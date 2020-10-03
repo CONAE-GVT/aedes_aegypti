@@ -7,7 +7,7 @@ from config import Configuration
 try:
     from otero_precipitation_wrapper import Model as _Model
 except ImportError:
-    os.system('g++ -std=c++17 -Wall -O3 -march=native -shared -fPIC -I/usr/include/python3.6m src/cpp/otero_precipitation_wrapper.cpp -o src/otero_precipitation_wrapper.so')
+    os.system('g++ -std=c++17 -Wall -O3 -march=native -shared -fPIC -I/usr/include/python3.8 src/cpp/otero_precipitation_wrapper.cpp -o src/otero_precipitation_wrapper.so')
     from otero_precipitation_wrapper import ModelWrapper as _Model
 
 class ParametersDecorator:
